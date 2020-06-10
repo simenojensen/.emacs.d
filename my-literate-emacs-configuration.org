@@ -1,0 +1,658 @@
+#+TITLE: My Literate Emacs Configuration
+#+AUTHOR: Simen Omholt-Jensen
+#+STARTUP:     hideall hidestars
+#+PROPERTY:     header-args:emacs-lisp     :tangle "~/.emacs.d/init.el"
+
+* Start up
+** Lexical Binding
+
+#+BEGIN_QUOTE
+Until Emacs 24.1 (June 2012), Elisp only had dynamically scoped variables, a feature, mostly by accident, common to old lisp dialects. While dynamic scope has some selective uses, it’s widely regarded as a mistake for local variables, and virtually no other languages have adopted it.
+#+END_QUOTE
+
+[[https://nullprogram.com/blog/2016/12/22/][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+;;; init.el --- -*- lexical-binding: t -*-
+#+END_SRC
+** Avoid Garbage Collection at Startup
+
+#+BEGIN_QUOTE
+The GC can easily double startup time, so we suppress it at startup by turning up =gc-cons-threshold= (and perhaps =gc-cons-percentage=) temporarily:
+#+END_QUOTE
+
+[[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how-does-doom-start-up-so-quickly][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
+        gc-cons-percentage 0.6)
+#+END_SRC
+
+** Benchmarking
+
+First, declare a hook which will benchmark the startup process. It reports how long the it took to start up, and how many garbage collections were performed.
+
+[[https://blog.d46.us/advanced-emacs-startup/][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (message "Emacs ready in %s with %d garbage collections."
+                       (format "%.2f seconds"
+                               (float-time
+                                (time-subtract after-init-time before-init-time)))
+                       gcs-done)))
+#+END_SRC
+
+** Unset =file-name-handler-alist=
+
+Every file opened and loaded by Emacs will run through this list to check for a proper handler for the file, but during startup, it won’t need any of them.
+
+#+BEGIN_SRC emacs-lisp
+  (defvar file-name-handler-alist-original file-name-handler-alist)
+  (setq file-name-handler-alist nil)
+#+END_SRC
+
+* Garbage Collection
+** Set =gc-cons-threshold= Smaller for Interactive Use
+
+A large =gc-cons-threshold= may cause freezing and stuttering during long-term interactive use. If you experience freezing, decrease this amount, if you increase stuttering, increase this amount.
+
+#+BEGIN_SRC emacs-lisp
+  (defvar better-gc-cons-threshold 67108864 ; 64mb
+    "The default value to use for `gc-cons-threshold'.
+
+  If you experience freezing, decrease this.  If you experience stuttering, increase this.")
+
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (setq gc-cons-threshold better-gc-cons-threshold)
+              (setq file-name-handler-alist file-name-handler-alist-original)
+              (makunbound 'file-name-handler-alist-original)))
+#+END_SRC
+
+Garbage Collect when Emacs is out of focus and avoid garbage collection when using minibuffer.
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (if (boundp 'after-focus-change-function)
+                  (add-function :after after-focus-change-function
+                                (lambda ()
+                                  (unless (frame-focus-state)
+                                    (garbage-collect))))
+                (add-hook 'after-focus-change-function 'garbage-collect))
+              (defun gc-minibuffer-setup-hook ()
+                (setq gc-cons-threshold (* better-gc-cons-threshold 2)))
+
+              (defun gc-minibuffer-exit-hook ()
+                (garbage-collect)
+                (setq gc-cons-threshold better-gc-cons-threshold))
+
+              (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup-hook)
+              (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit-hook)))
+#+END_SRC
+
+* Package Management
+** =package.el=
+
+By default, Emacs 24 or later comes with a built-in package management system (=package.el=). To add further functionality such as adding package repositories and tweaking package configurations, =package.el= needs to be loaded in the =init.el= file during startup.
+
+[[https://www.gnu.org/software/emacs/manual/html_mono/emacs.html#Package-Installation][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (require 'package)
+#+END_SRC
+
+** Package Repositories
+*** ELPA/MELPA
+
+By default, Emacs comes with the Emacs Lisp Package Archive (ELPA). As the packages need to be FSF-sanctioned, there aren't that many to choose from. By adding the Milkypostman's Emacs Lisp Package Archive ([[https://melpa.org/][MELPA]]), an enormous amount of packages become available. Remember to add ~https~ to urls.
+
+#+BEGIN_SRC emacs-lisp
+  (setq-default package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
+                                   ("melpa" . "https://melpa.org/packages/")
+                                   ("org" . "https://orgmode.org/elpa/")))
+#+END_SRC
+
+*** Other Packages
+
+Add packages contained in =site-elisp/= to =load-path=.
+
+**** Add Packages Manually from Git
+
+#+BEGIN_SRC shell :tangle no
+  cd site-elisp/
+  git submodule add https://github.com/foo/bar.git
+#+END_SRC
+
+**** Update Manually Added Packages
+
+#+BEGIN_SRC shell :tangle no
+  git submodule init
+  git submodule update
+#+END_SRC
+
+** Prepare Packages for Configuration
+
+- Run =package-initialize= to set up the load-paths and autoloads for installed packages.
+
+[[https://www.emacswiki.org/emacs/InstallingPackages][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (package-initialize)
+#+END_SRC
+
+- Set =package-enable-at-startup= to =nil= to prevent superfluous loading of packages.
+
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Package-Installation.html][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (setq-default package-enable-at-startup nil)
+#+END_SRC
+
+** Bootstrap =use-package=
+
+- The =use-package= macro allows cleaner configuration of package loading and installation.
+
+[[https://github.com/jwiegley/use-package][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (when (not (package-installed-p 'use-package))
+    (package-refresh-contents)
+    (package-install 'use-package))
+  (eval-when-compile
+    (require 'use-package))
+#+END_SRC
+
+- By setting =use-package-always-ensure= to =t=, =use-package= will install packages that are not already installed.
+
+[[https://github.com/jwiegley/use-package#package-installation][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (require 'use-package-ensure)
+  (setq use-package-always-ensure t)
+#+END_SRC
+
+** Automatically Update Packages with =auto-package-update=.
+
+[[https://github.com/rranelli/auto-package-update.el][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package auto-package-update
+    :config
+    (setq-default auto-package-update-interval 7) ;; in days
+    (setq-default auto-package-update-delete-old-versions t)
+    (setq-default auto-package-update-hide-results t)
+    (auto-package-update-maybe))
+#+END_SRC
+
+** Prefer Newer =.el= Files Over Older =.elc= Files.
+
+#+BEGIN_SRC emacs-lisp
+  (setq-default load-prefer-newer t)
+#+END_SRC
+
+** Automatically Compile Packages During Startup.
+
+[[https://github.com/emacscollective/auto-compile][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package auto-compile
+    :config
+    (auto-compile-on-load-mode)
+  (auto-compile-on-save-mode))
+#+END_SRC
+
+** =bind-key=
+
+To use with =use-package=.
+
+#+BEGIN_SRC emacs-lisp
+  (require 'bind-key)
+#+END_SRC
+
+** =diminish=
+
+The =diminish= package makes it possible to remove clutter from the modeline. The =:diminish= keyword in the =use-package= declarations signify =diminish= invocation.
+
+[[https://github.com/myrjola/diminish.el][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package diminish)
+#+END_SRC
+
+** =try=
+
+The =try= package let's you try new packages without installed them. On the next restart of Emacs, they are not loaded.
+
+[[https://github.com/larstvei/Try][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package try)
+#+END_SRC
+
+* Global Functionalities
+** User Information
+#+BEGIN_SRC emacs-lisp
+  (setq user-full-name "Simen Omholt-Jensen")
+  (setq user-mail-address "simen@omholt-jensen.com")
+#+END_SRC
+* Convenient Default Settings
+** Defaults
+
+#+BEGIN_SRC emacs-lisp
+  (setq-default frame-title-format (list "[" user-login-name "@" (system-name) "] %b"))   ;; Set frame title to [user@hostname]*BufferName*
+  (global-display-line-numbers-mode)                                                      ;; Display line numbers
+  (setq column-number-mode t)                                                             ;; Display column numbers
+  (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
+  (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
+  (setq custom-file "~/.emacs.d/custom.el")
+  (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
+  (setq-default create-lockfiles nil)                                                     ;; Disable lock files
+  (setq-default backup-directory-alist '(("." . "/Users/simenojensen/.emacs.d/backups"))) ;; Save backup files
+  (setq-default indent-tabs-mode nil)                                                     ;; Don't use hard tabs
+  (setq echo-keystrokes 0.1)                                                              ;; Echo keystrokes fast
+  (fset 'yes-or-no-p 'y-or-n-p)                                                           ;; y-or-n instead of yes-or-no
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)                                ;; Delete trailing whitespace on save
+  (setq require-final-newline t)                                                          ;; Add a newline at end of file on save
+  (global-auto-revert-mode t)                                                             ;; Automatically update buffers if a file content has changed on disk
+  (save-place-mode t)                                                                     ;; Save position of the point in file
+  (global-hl-line-mode t)                                                                 ;; Highlight the line with the point
+  (add-hook 'before-save-hook 'time-stamp)                                                ;; Update timestamp of 8 first lines on save
+  (setq large-file-warning-threshold 100000000)                                           ;; Warn when opening file larger than 100 MB
+#+END_SRC
+
+** Smooth Scrolling
+
+Configurations for smooth scrolling
+
+#+BEGIN_SRC emacs-lisp
+  ;; Vertical Scroll
+  (setq scroll-step 1)
+  (setq scroll-margin 1)
+  (setq scroll-conservatively 101)
+  (setq scroll-up-aggressively 0.01)
+  (setq scroll-down-aggressively 0.01)
+  (setq auto-window-vscroll nil)
+  (setq fast-but-imprecise-scrolling nil)
+  (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
+  (setq mouse-wheel-progressive-speed nil)
+  ;; Horizontal Scroll
+  (setq hscroll-step 1)
+  (setq hscroll-margin 1)
+#+END_SRC
+
+** Disable GUIs
+
+#+BEGIN_SRC emacs-lisp
+  (menu-bar-mode -1)                         ;; Disable menu bar
+  (tool-bar-mode -1)                         ;; Disable tool bar
+  (scroll-bar-mode -1)                       ;; Disable scroll bar
+  (blink-cursor-mode -1)                     ;; Disable blinking cursor
+  (setq-default ring-bell-function 'ignore)  ;; Disable bell function
+
+#+END_SRC
+
+** Killing Emacs
+
+#+BEGIN_SRC emacs-lisp
+  (setq-default confirm-kill-emacs nil)        ;; Do not confirm when killing Emacs
+  (setq-default confirm-kill-processes nil)    ;; do not confirm when killing processes before killing Emacs
+#+END_SRC
+
+* Interface Enhancement
+** =smart-mx=
+
+=smart M-x= suggests ~M-x~ commands based on recency and frequency. Used by Counsel indirectely.
+
+[[https://github.com/nonsequitur/smex/][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package smex)
+#+END_SRC
+
+** =Ivy= / =Counsel= / =Swiper=
+
+=Ivy= is an interactive interface for completion in Emacs.
+
+[[https://oremacs.com/swiper/][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package counsel
+    :bind
+    ("C-x C-f" . counsel-find-file)
+    ("C-h f" . counsel-describe-function)
+    ("C-h v" . counsel-describe-variable)
+    ("C-h l" . counsel-find-library)
+    ("C-h i" . counsel-info-lookup-symbol)
+    ("C-h u" . counsel-unicode-char)
+    ("M-x" . counsel-M-x)
+    ("M-v" . counsel-yank-pop))
+
+  (use-package ivy
+    :diminish
+    :bind
+    ("C-x b" . ivy-switch-buffer)
+    :config
+    (ivy-mode 1)
+    (setq ivy-initial-inputs-alist nil)
+    (setq ivy-display-style 'fancy)
+    (setq ivy-use-virtual-buffers t)
+    (setq ivy-count-format "(%d/%d) "))
+
+  (use-package swiper
+    :bind
+    ("C-s" . swiper-isearch))
+#+END_SRC
+** =undo-tree=
+
+=undo-tree=, a feature that provides a visualization of the undos in a file.
+[[https://www.emacswiki.org/emacs/UndoTree][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package undo-tree
+    :diminish undo-tree-mode
+    :init
+    (global-undo-tree-mode)
+  :config
+    (setq undo-tree-visualizer-diff t)
+    (setq undo-tree-visualizer-timestamps t))
+#+END_SRC
+
+* Navigation
+** =ace-window=
+
+=ace-window= offers fast window navigation with [[https://github.com/zamansky/using-emacs/blob/master/myinit.org#ace-windows-for-easy-window-switching][customizable]] prompts.
+
+[[https://github.com/abo-abo/ace-window][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package ace-window
+    :bind
+    ("C-x o" . ace-window)
+    :init
+    (custom-set-faces
+     '(aw-leading-char-face
+       ((t (:inherit ace-jump-face-foreground :height 3.0))))))
+#+END_SRC
+
+** =winner-mode=
+
+Built-in =winner-mode= for remembering previous window actions.
+
+#+BEGIN_SRC emacs-lisp
+  (winner-mode 1)
+#+END_SRC
+
+* OS Specific Settings
+
+Detect which OS Emacs is being run on, and configure keybindings accordingly.
+
+#+BEGIN_SRC emacs-lisp
+  (cond
+#+END_SRC
+
+** macOS
+
+#+BEGIN_SRC emacs-lisp
+  ((eq system-type 'darwin)
+#+END_SRC
+
+By setting the ~M~ to ~⌘~, ~A~ to ~^~ (left option)  and ~S~ to ~^~ (right option), we can emulate some of the macOS keyboard configurations.
+
+#+BEGIN_SRC emacs-lisp
+  (customize-set-variable 'mac-command-modifier 'meta)
+  (customize-set-variable 'mac-option-modifier 'alt)
+  (customize-set-variable 'mac-right-command-modifier 'super)
+#+END_SRC
+
+Next, we are binding ~M-=~ to increase the font size, and ~M--~ to decrease the font size.
+
+#+BEGIN_SRC emacs-lisp
+  (bind-key "M-=" 'text-scale-increase)
+  (bind-key "M--" 'text-scale-decrease)
+#+END_SRC
+
+Further, a function borrowed from [[https://zzamboni.org/post/my-emacs-configuration-with-commentary/#mac][zzamboni]] is implemented and bound to ~M-0~.
+
+#+BEGIN_SRC emacs-lisp
+  (defun my/text-scale-reset ()
+    "Reset text scaling to default"
+    (interactive)
+    (text-scale-set 0))
+
+  (bind-key "M-0" 'my/text-scale-reset)
+#+END_SRC
+
+Lastly, we make sure the =$PATH= is loaded from the default shell.
+
+[[https://github.com/purcell/exec-path-from-shell][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package exec-path-from-shell
+    :defer nil
+    :config
+    (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "AIRTABLE_API_KEY" "TSI_ENVIRONMENT" "TSI_TENANT_ID" "TSI_CLIENT_ID" "TSI_CLIENT_SECRET" "TSI_APPLICATION_NAME" "VIRTUAL_ENV" "LANG" "LC_ALL" "LC_CTYPE"))
+    (exec-path-from-shell-initialize))
+  ) ;; closing parenthesis
+#+END_SRC
+
+** Windows
+
+Not implemented.
+
+#+BEGIN_SRC emacs-lisp
+  ((eq system-type 'windows-nt))
+#+END_SRC
+
+** Linux
+
+Not Implemented
+
+#+BEGIN_SRC emacs-lisp
+  ((eq system-type 'gnu/linux))
+ )
+#+END_SRC
+* Console
+
+Aweshell extends the eshell
+[[https://github.com/manateelazycat/aweshell][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package aweshell
+    :commands (aweshell-new aweshell-dedicated-open)
+    :bind
+    (("M-#" . aweshell-dedicated-open)
+     (:map eshell-mode-map ("M-#" . aweshell-dedicated-close))))
+#+END_SRC
+
+* Appearance
+** All the Icons
+All The Icons, a utility package to collect various Icon Fonts. Enable only in GUI Emacs.
+[[https://github.com/domtronn/all-the-icons.el][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package all-the-icons)
+#+END_SRC
+
+** Themes
+*** Doom Theme
+
+Doom Themes, an UI plugin and pack of themes
+[[https://github.com/hlissner/emacs-doom-themes][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package doom-themes
+    :custom-face
+    (cursor ((t (:background "BlanchedAlmond"))))
+    :config
+    (doom-themes-visual-bell-config)  ;; flashing mode-line on errors
+    (doom-themes-org-config)          ;; Corrects (and improves) org-mode's native fontification.
+    (load-theme 'doom-gruvbox t))
+#+END_SRC
+
+*** Doom Modeline
+
+Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
+[[https://github.com/seagle0128/doom-modeline][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package doom-modeline
+    :init
+    (doom-modeline-mode 1)
+    :config
+    (setq doom-modeline-minor-modes t)
+    (setq doom-modeline-icon t)
+    (setq doom-modeline-major-mode-color-icon t)
+    (setq doom-modeline-height 15))
+#+END_SRC
+
+*** Other Themes
+
+#+BEGIN_SRC emacs-lisp
+  ;;(use-package solarized-theme)
+  ;;(use-package darktooth-theme)
+  ;;(use-package kaolin-themes)
+  ;; (use-package gruvbox-theme
+    ;; :config
+    ;; (load-theme 'gruvbox))
+#+END_SRC
+
+** =beacon=
+
+[[https://github.com/Malabarba/beacon][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package beacon
+    :config
+    (beacon-mode 1)
+    (setq beacon-color "#39FF14"))
+#+END_SRC
+
+** =rainbow-delimiters=
+
+[[https://github.com/Fanael/rainbow-delimiters][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+    (use-package rainbow-delimiters
+      :hook
+      (prog-mode . rainbow-delimiters-mode))
+#+END_SRC
+
+** =dimmer.el=
+
+[[https://github.com/gonewest818/dimmer.el][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package dimmer
+    :config
+    (setq dimmer-fraction 0.5)
+    (dimmer-mode t))
+#+END_SRC
+* Org-Mode
+** =org-mode=
+
+Install org-mode from the org package repository.
+
+[[https://orgmode.org/][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org
+    :pin org
+    :config
+    (add-to-list 'org-modules 'org-tempo)) ;; add "<s <TAB>" for code block completion
+#+END_SRC
+
+** =toc-org=
+
+Install the =toc-org= package to automatically generate an updated table of contents.
+
+[[https://github.com/snosov1/toc-org][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package toc-org
+    :after org
+    :hook
+    (org-mode . toc-org-enable))
+#+END_SRC
+
+** =org-bullets=
+
+[[https://github.com/sabof/org-bullets][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org-bullets
+    :hook
+    (org-mode . (lambda () (org-bullets-mode t))))
+ #+END_SRC
+
+** =reveal.js=
+
+Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, install [[https://github.com/hexmode/ox-reveal][=ox-reveal=]] and [[https://github.com/hniksic/emacs-htmlize][=htmlize=]].
+
+[[https://github.com/hexmode/ox-reveal][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package ox-reveal
+    :ensure ox-reveal
+    :config
+    (setq org-reveal-root "/Users/simenojensen/.emacs.d/reveal.js/")
+    (setq org-reveal-mathjax t))
+#+END_SRC
+
+** =htmlize=
+
+[[https://github.com/hniksic/emacs-htmlize][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package htmlize)
+#+END_SRC
+
+* Elisp Functions
+** Edit Configuration File
+#+BEGIN_SRC emacs-lisp
+  (defun my/edit-config ()
+    "Opens the my-literate-emacs-configuration.org file."
+    (interactive)
+    (find-file "~/.emacs.d/my-literate-emacs-configuration.org"))
+#+END_SRC
+
+** =my/toggle-comment-on-line=
+
+Comment or uncomment the current line. Bind to ~C-;~.
+
+#+BEGIN_SRC emacs-lisp
+  (defun my/toggle-comment-on-line ()
+    (interactive)
+    (comment-or-uncomment-region (line-beginning-position) (line-end-position)))
+
+  (bind-key "C-;" 'my/toggle-comment-on-line)
+#+END_SRC
+
+* Internet
+** =google-this=
+
+[[http://pragmaticemacs.com/emacs/google-search-from-inside-emacs/][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package google-this
+    :diminish
+    :config
+    (google-this-mode t))
+#+END_SRC
+
+* Keybindings
+** which-key
+
+The =which-key= package automatically displays potential command information as command keys are typed. This makes it easy to explore Emacs functionality.
+
+[[https://github.com/justbur/emacs-which-key][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :diminish which-key-mode
+    :config
+    (setq which-key-idle-delay 0.5)
+    (which-key-mode))
+#+END_SRC
