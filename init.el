@@ -14,6 +14,10 @@
 (defvar file-name-handler-alist-original file-name-handler-alist)
 (setq file-name-handler-alist nil)
 
+(defconst *sys/gui*
+  (display-graphic-p)
+  "Are we running on a GUI Emacs?")
+
 (defvar better-gc-cons-threshold 67108864 ; 64mb
   "The default value to use for `gc-cons-threshold'.
 
@@ -85,12 +89,13 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (setq user-full-name "Simen Omholt-Jensen")
 (setq user-mail-address "simen@omholt-jensen.com")
 
-(setq-default frame-title-format (list "[" user-login-name "@" (system-name) "] %b"))   ;; Set frame title to [user@hostname]*BufferName*
+(setq frame-title-format '(:eval (if (buffer-file-name) (abbreviate-file-name (buffer-file-name)) "%b")))
+;; (setq-default frame-title-format (list "[" user-login-name "@" (system-name) "] %b"))   ;; Set frame title to [user@hostname]*BufferName*
 (global-display-line-numbers-mode)                                                      ;; Display line numbers
 (setq column-number-mode t)                                                             ;; Display column numbers
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
 (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
-(setq debug-on-error t)                                                                 ;; Receive more information errors
+(setq debug-on-error nil)                                                                 ;; Receive more information errors
 (setq custom-file "~/.emacs.d/custom.el")
 (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
 (setq-default create-lockfiles nil)                                                     ;; Disable lock files
@@ -129,33 +134,56 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (setq-default confirm-kill-emacs nil)        ;; Do not confirm when killing Emacs
 (setq-default confirm-kill-processes nil)    ;; do not confirm when killing processes before killing Emacs
 
-(use-package smex)
+(use-package which-key
+  :diminish which-key-mode
+  :config
+  (setq which-key-idle-delay 0.5)
+  (which-key-mode))
 
-(use-package counsel
+(bind-key "s-<left>" 'shrink-window-horizontally)
+(bind-key "s-<right>" 'enlarge-window-horizontally)
+(bind-key "s-<down>" 'shrink-window)
+(bind-key "s-<up>" 'enlarge-window)
+
+(bind-key "C-x C-l" 'toggle-truncate-lines)
+
+(bind-key "M-p" 'backward-paragraph)
+(bind-key "M-n" 'forward-paragraph)
+(bind-key "M-g" 'goto-line)
+
+(bind-key "C-x b" 'ibuffer)
+
+(use-package crux
   :bind
-  ("C-x C-f" . counsel-find-file)
+  ("C-a" . crux-move-beginning-of-line)
+  :config
+  (defalias 'rename-file-and-buffer #'crux-rename-file-and-buffer))
+
+(use-package ivy
+  :diminish
+  :init
+  (use-package amx :defer t)
+  (use-package counsel :diminish :config (counsel-mode 1))
+  (use-package swiper :defer t)
+  (ivy-mode 1)
+  :bind
+  (("C-x C-f" . counsel-find-file)
   ("C-h f" . counsel-describe-function)
   ("C-h v" . counsel-describe-variable)
   ("C-h l" . counsel-find-library)
   ("C-h i" . counsel-info-lookup-symbol)
   ("C-h u" . counsel-unicode-char)
   ("M-x" . counsel-M-x)
-  ("M-v" . counsel-yank-pop))
-
-(use-package ivy
-  :diminish
-  :bind
-  ("C-x b" . ivy-switch-buffer)
+  ("M-v" . counsel-yank-pop)
+  ("C-x C-b" . ivy-switch-buffer)
+  ("C-s" . swiper-isearch))
   :config
   (ivy-mode 1)
+  (setq ivy-height 10)
   (setq ivy-initial-inputs-alist nil)
   (setq ivy-display-style 'fancy)
   (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
-
-(use-package swiper
-  :bind
-  ("C-s" . swiper-isearch))
 
 (use-package undo-tree
   :diminish undo-tree-mode
@@ -165,8 +193,58 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq undo-tree-visualizer-diff t)
   (setq undo-tree-visualizer-timestamps t))
 
+(use-package color-rg
+  :load-path (lambda () (expand-file-name "site-elisp/color-rg" user-emacs-directory))
+  :bind
+  ("C-M-s" . color-rg-search-input))
+
+(use-package snails
+  :disabled
+  :load-path (lambda () (expand-file-name "site-elisp/snails/" user-emacs-directory))
+  :if *sys/gui*
+  :custom-face
+  (snails-content-buffer-face ((t (:background "#111" :height 110))))
+  (snails-input-buffer-face ((t (:background "#222" :foreground "gold" :height 110))))
+  (snails-header-line-face ((t (:inherit font-lock-function-name-face :underline t :height 1.1)))))
+
+(use-package dired
+  :ensure nil
+  :bind
+  (("C-x C-j" . dired-jump)
+   ("C-x j" . dired-jump-other-window))
+  :custom
+  ;; Always delete and copy recursively
+  (dired-recursive-deletes 'always)
+  (dired-recursive-copies 'always)
+  ;; Auto refresh Dired, but be quiet about it
+  (global-auto-revert-non-file-buffers t)
+  (auto-revert-verbose nil)
+  ;; Quickly copy/move file in Dired
+  (dired-dwim-target t)
+  ;; Move files to trash when deleting
+  (delete-by-moving-to-trash t)
+  ;; Load the newest version of a file
+  (load-prefer-newer t)
+  ;; Detect external file changes and auto refresh file
+  (auto-revert-use-notify nil)
+  (auto-revert-interval 3) ; Auto revert every 3 sec
+  :config
+  ;; Enable global auto-revert
+  (global-auto-revert-mode t)
+  ;; Reuse same dired buffer, to prevent numerous buffers while navigating in dired
+  (put 'dired-find-alternate-file 'disabled nil)
+  :hook
+  (dired-mode . (lambda ()
+                  (local-set-key (kbd "<mouse-2>") #'dired-find-alternate-file)
+                  (local-set-key (kbd "RET") #'dired-find-alternate-file)
+                  (local-set-key (kbd "^")
+                                 (lambda () (interactive) (find-alternate-file ".."))))))
+
+(use-package disk-usage :commands (disk-usage))
+
 (use-package ace-window
   :bind
+  ("C-x C-o" . ace-window)
   ("C-x o" . ace-window)
   :init
   (custom-set-faces
@@ -199,7 +277,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 )
 
 (use-package aweshell
-  :disabled  ;; DO NOT USEt
+  :disabled
   :load-path (lambda () (expand-file-name "site-elisp/aweshell" user-emacs-directory))
   :commands (aweshell-new aweshell-dedicated-open)
   :bind
@@ -412,6 +490,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :hook ((java-mode python-mode go-mode
           js-mode js2-mode typescript-mode web-mode
           c-mode c++-mode objc-mode) . lsp))
+
+;; (add-hook 'gud-mode-hook 'lsp-workspace-shutdown)
 
 (use-package lsp-ui
   :after lsp-mode
@@ -634,6 +714,7 @@ If failed try to complete the common part with `company-complete-common'"
   :init
   (doom-modeline-mode 1)
   :config
+  (setq inhibit-compacting-font-caches t)
   (setq doom-modeline-minor-modes t)
   (setq doom-modeline-icon t)
   (setq doom-modeline-major-mode-color-icon t)
@@ -697,14 +778,3 @@ If failed try to complete the common part with `company-complete-common'"
   :diminish
   :config
   (google-this-mode t))
-
-(use-package which-key
-  :diminish which-key-mode
-  :config
-  (setq which-key-idle-delay 0.5)
-  (which-key-mode))
-
-(bind-key "s-<left>" 'shrink-window-horizontally)
-(bind-key "s-<right>" 'enlarge-window-horizontally)
-(bind-key "s-<down>" 'shrink-window)
-(bind-key "s-<up>" 'enlarge-window)

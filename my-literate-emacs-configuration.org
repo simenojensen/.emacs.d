@@ -53,6 +53,14 @@ Every file opened and loaded by Emacs will run through this list to check for a 
   (setq file-name-handler-alist nil)
 #+END_SRC
 
+** Define Constants
+
+#+BEGIN_SRC emacs-lisp
+  (defconst *sys/gui*
+    (display-graphic-p)
+    "Are we running on a GUI Emacs?")
+#+END_SRC
+
 * Garbage Collection
 ** Set =gc-cons-threshold= Smaller for Interactive Use
 
@@ -238,16 +246,16 @@ The =try= package let's you try new packages without installed them. On the next
   (setq user-full-name "Simen Omholt-Jensen")
   (setq user-mail-address "simen@omholt-jensen.com")
 #+END_SRC
-* Convenient Default Settings
-** Defaults
+** Convenient Default Settings
 
 #+BEGIN_SRC emacs-lisp
-  (setq-default frame-title-format (list "[" user-login-name "@" (system-name) "] %b"))   ;; Set frame title to [user@hostname]*BufferName*
+  (setq frame-title-format '(:eval (if (buffer-file-name) (abbreviate-file-name (buffer-file-name)) "%b")))
+  ;; (setq-default frame-title-format (list "[" user-login-name "@" (system-name) "] %b"))   ;; Set frame title to [user@hostname]*BufferName*
   (global-display-line-numbers-mode)                                                      ;; Display line numbers
   (setq column-number-mode t)                                                             ;; Display column numbers
   (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
   (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
-  (setq debug-on-error t)                                                                 ;; Receive more information errors
+  (setq debug-on-error nil)                                                                 ;; Receive more information errors
   (setq custom-file "~/.emacs.d/custom.el")
   (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
   (setq-default create-lockfiles nil)                                                     ;; Disable lock files
@@ -292,7 +300,6 @@ Configurations for smooth scrolling
   (scroll-bar-mode -1)                       ;; Disable scroll bar
   (blink-cursor-mode -1)                     ;; Disable blinking cursor
   (setq-default ring-bell-function 'ignore)  ;; Disable bell function
-
 #+END_SRC
 
 ** Killing Emacs
@@ -302,49 +309,93 @@ Configurations for smooth scrolling
   (setq-default confirm-kill-processes nil)    ;; do not confirm when killing processes before killing Emacs
 #+END_SRC
 
-* Interface Enhancement
-** =smart-mx=
+* Keybindings
+** which-key
 
-=smart M-x= suggests ~M-x~ commands based on recency and frequency. Used by Counsel indirectely.
-
-[[https://github.com/nonsequitur/smex/][More Information]]
+The =which-key= package automatically displays potential command information as command keys are typed. This makes it easy to explore Emacs functionality.
+[[https://github.com/justbur/emacs-which-key][More Information]]
 
 #+BEGIN_SRC emacs-lisp
-  (use-package smex)
+  (use-package which-key
+    :diminish which-key-mode
+    :config
+    (setq which-key-idle-delay 0.5)
+    (which-key-mode))
 #+END_SRC
 
-** =Ivy= / =Counsel= / =Swiper=
+** =bind-key=
+*** Window Adjustment
+#+BEGIN_SRC emacs-lisp
+  (bind-key "s-<left>" 'shrink-window-horizontally)
+  (bind-key "s-<right>" 'enlarge-window-horizontally)
+  (bind-key "s-<down>" 'shrink-window)
+  (bind-key "s-<up>" 'enlarge-window)
+#+END_SRC
 
-=Ivy= is an interactive interface for completion in Emacs.
+*** Truncate Lines
+#+BEGIN_SRC emacs-lisp
+  (bind-key "C-x C-l" 'toggle-truncate-lines)
+#+END_SRC
 
-[[https://oremacs.com/swiper/][More Information]]
+*** Motion
+#+BEGIN_SRC emacs-lisp
+  (bind-key "M-p" 'backward-paragraph)
+  (bind-key "M-n" 'forward-paragraph)
+  (bind-key "M-g" 'goto-line)
+#+END_SRC
+
+*** ibuffer
+#+BEGIN_SRC emacs-lisp
+  (bind-key "C-x b" 'ibuffer)
+#+END_SRC
+
+* Interface Enhancement
+** =crux=
+
+=crux= is Collection of Ridiculously Useful eXtensions for Emacs.
+[[https://github.com/bbatsov/crux][More Information]]
 
 #+BEGIN_SRC emacs-lisp
-  (use-package counsel
+  (use-package crux
     :bind
-    ("C-x C-f" . counsel-find-file)
+    ("C-a" . crux-move-beginning-of-line)
+    :config
+    (defalias 'rename-file-and-buffer #'crux-rename-file-and-buffer))
+#+END_SRC
+
+** =Ivy= / =Counsel= / =Swiper= / =amx=
+
+=Ivy= is an interactive interface for completion in Emacs.
+[[https://oremacs.com/swiper/][More Information]]
+=amx= prioritizes your most used commands
+[[https://github.com/DarwinAwardWinner/amx][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package ivy
+    :diminish
+    :init
+    (use-package amx :defer t)
+    (use-package counsel :diminish :config (counsel-mode 1))
+    (use-package swiper :defer t)
+    (ivy-mode 1)
+    :bind
+    (("C-x C-f" . counsel-find-file)
     ("C-h f" . counsel-describe-function)
     ("C-h v" . counsel-describe-variable)
     ("C-h l" . counsel-find-library)
     ("C-h i" . counsel-info-lookup-symbol)
     ("C-h u" . counsel-unicode-char)
     ("M-x" . counsel-M-x)
-    ("M-v" . counsel-yank-pop))
-
-  (use-package ivy
-    :diminish
-    :bind
-    ("C-x b" . ivy-switch-buffer)
+    ("M-v" . counsel-yank-pop)
+    ("C-x C-b" . ivy-switch-buffer)
+    ("C-s" . swiper-isearch))
     :config
     (ivy-mode 1)
+    (setq ivy-height 10)
     (setq ivy-initial-inputs-alist nil)
     (setq ivy-display-style 'fancy)
     (setq ivy-use-virtual-buffers t)
     (setq ivy-count-format "(%d/%d) "))
-
-  (use-package swiper
-    :bind
-    ("C-s" . swiper-isearch))
 #+END_SRC
 ** =undo-tree=
 
@@ -361,6 +412,83 @@ Configurations for smooth scrolling
     (setq undo-tree-visualizer-timestamps t))
 #+END_SRC
 
+** =color-rg=
+
+=color rg= is a search and refactoring tool based on *ripgrep*.
+[[https://github.com/manateelazycat/color-rg][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package color-rg
+    :load-path (lambda () (expand-file-name "site-elisp/color-rg" user-emacs-directory))
+    :bind
+    ("C-M-s" . color-rg-search-input))
+#+END_SRC
+
+** =snails=
+
+=snails= is a modern, easy-to-expand fuzzy search framework.
+[[https://github.com/manateelazycat/snails][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package snails
+    :disabled
+    :load-path (lambda () (expand-file-name "site-elisp/snails/" user-emacs-directory))
+    :if *sys/gui*
+    :custom-face
+    (snails-content-buffer-face ((t (:background "#111" :height 110))))
+    (snails-input-buffer-face ((t (:background "#222" :foreground "gold" :height 110))))
+    (snails-header-line-face ((t (:inherit font-lock-function-name-face :underline t :height 1.1)))))
+#+END_SRC
+
+** =Dired=
+
+=Dired= is the built-in directory editor
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Dired.html][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package dired
+    :ensure nil
+    :bind
+    (("C-x C-j" . dired-jump)
+     ("C-x j" . dired-jump-other-window))
+    :custom
+    ;; Always delete and copy recursively
+    (dired-recursive-deletes 'always)
+    (dired-recursive-copies 'always)
+    ;; Auto refresh Dired, but be quiet about it
+    (global-auto-revert-non-file-buffers t)
+    (auto-revert-verbose nil)
+    ;; Quickly copy/move file in Dired
+    (dired-dwim-target t)
+    ;; Move files to trash when deleting
+    (delete-by-moving-to-trash t)
+    ;; Load the newest version of a file
+    (load-prefer-newer t)
+    ;; Detect external file changes and auto refresh file
+    (auto-revert-use-notify nil)
+    (auto-revert-interval 3) ; Auto revert every 3 sec
+    :config
+    ;; Enable global auto-revert
+    (global-auto-revert-mode t)
+    ;; Reuse same dired buffer, to prevent numerous buffers while navigating in dired
+    (put 'dired-find-alternate-file 'disabled nil)
+    :hook
+    (dired-mode . (lambda ()
+                    (local-set-key (kbd "<mouse-2>") #'dired-find-alternate-file)
+                    (local-set-key (kbd "RET") #'dired-find-alternate-file)
+                    (local-set-key (kbd "^")
+                                   (lambda () (interactive) (find-alternate-file ".."))))))
+#+END_SRC
+
+** =disk-usage=
+
+=disk-usage= is a file system analyzer that offers a tabulated view of file listings sorted by size.
+[[https://gitlab.com/ambrevar/emacs-disk-usage][More Information]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package disk-usage :commands (disk-usage))
+#+END_SRC
+
 * Navigation
 ** =ace-window=
 
@@ -371,6 +499,7 @@ Configurations for smooth scrolling
 #+BEGIN_SRC emacs-lisp
   (use-package ace-window
     :bind
+    ("C-x C-o" . ace-window)
     ("C-x o" . ace-window)
     :init
     (custom-set-faces
@@ -451,7 +580,7 @@ Aweshell extends the eshell
 
 #+BEGIN_SRC emacs-lisp
   (use-package aweshell
-    :disabled  ;; DO NOT USEt
+    :disabled
     :load-path (lambda () (expand-file-name "site-elisp/aweshell" user-emacs-directory))
     :commands (aweshell-new aweshell-dedicated-open)
     :bind
@@ -749,6 +878,8 @@ Match and automatically pair parenthesis, and show parenthesis even when it went
     :hook ((java-mode python-mode go-mode
             js-mode js2-mode typescript-mode web-mode
             c-mode c++-mode objc-mode) . lsp))
+
+  ;; (add-hook 'gud-mode-hook 'lsp-workspace-shutdown)
 #+END_SRC
 
 ** LSP UI
@@ -781,7 +912,6 @@ Match and automatically pair parenthesis, and show parenthesis even when it went
       (setq mode-line-format nil)))
 #+END_SRC
 
-* Company
 ** Company Mode
 
 #+BEGIN_SRC emacs-lisp
@@ -1031,6 +1161,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     :init
     (doom-modeline-mode 1)
     :config
+    (setq inhibit-compacting-font-caches t)
     (setq doom-modeline-minor-modes t)
     (setq doom-modeline-icon t)
     (setq doom-modeline-major-mode-color-icon t)
@@ -1169,27 +1300,4 @@ Comment or uncomment the current line. Bind to ~C-;~.
     :diminish
     :config
     (google-this-mode t))
-#+END_SRC
-
-* Keybindings
-** which-key
-
-The =which-key= package automatically displays potential command information as command keys are typed. This makes it easy to explore Emacs functionality.
-
-[[https://github.com/justbur/emacs-which-key][More Information]]
-
-#+BEGIN_SRC emacs-lisp
-  (use-package which-key
-    :diminish which-key-mode
-    :config
-    (setq which-key-idle-delay 0.5)
-    (which-key-mode))
-#+END_SRC
-** =bind-key=
-
-#+BEGIN_SRC emacs-lisp
-  (bind-key "s-<left>" 'shrink-window-horizontally)
-  (bind-key "s-<right>" 'enlarge-window-horizontally)
-  (bind-key "s-<down>" 'shrink-window)
-  (bind-key "s-<up>" 'enlarge-window)
 #+END_SRC

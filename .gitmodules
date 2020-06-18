@@ -1,3 +1,9 @@
 [submodule "site-elisp/aweshell"]
 	path = site-elisp/aweshell
 	url = https://github.com/manateelazycat/aweshell.git
+[submodule "site-elisp/color-rg"]
+	path = site-elisp/color-rg
+	url = https://github.com/manateelazycat/color-rg.git
+[submodule "site-elisp/snails"]
+	path = site-elisp/snails
+	url = https://github.com/manateelazycat/snails.git
