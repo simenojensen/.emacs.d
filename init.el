@@ -110,6 +110,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (global-hl-line-mode t)                                                                 ;; Highlight the line with the point
 (add-hook 'before-save-hook 'time-stamp)                                                ;; Update timestamp of 8 first lines on save
 (setq large-file-warning-threshold 100000000)                                           ;; Warn when opening file larger than 100 MB
+(desktop-save-mode 1)                                                                   ;; save desktop
 
 ;; Vertical Scroll
 (setq scroll-step 1)
@@ -506,6 +507,14 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (use-package all-the-icons)
 
+(use-package all-the-icons-ivy-rich
+  :init
+  (all-the-icons-ivy-rich-mode 1))
+
+(use-package ivy-rich
+  :init
+  (ivy-rich-mode 1))
+
 (use-package doom-themes
   :custom-face
   (cursor ((t (:background "BlanchedAlmond"))))
@@ -548,14 +557,11 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package org
   :ensure org-plus-contrib
   :pin org
-
   :config
-  (add-to-list 'org-modules 'org-tempo) ;; add "<s <TAB>" for code block completion
   (defun my/tangle-emacs-config ()
     "If the current file is this file, the code blocks are tangled"
     (when (equal (buffer-file-name) (expand-file-name "~/.emacs.d/my-literate-emacs-configuration.org"))
-      (org-babel-tangle nil "~/.emacs.d/init.el")
-      (byte-compile-file "~/.emacs.d/init.el")))
+      (org-babel-tangle nil "~/.emacs.d/init.el")))
 
   (add-hook 'after-save-hook #'my/tangle-emacs-config))
 
@@ -585,5 +591,3 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :diminish
   :config
   (google-this-mode t))
-
-(desktop-save-mode 1)

@@ -13,3 +13,6 @@
 [submodule "site-elisp/reveal.js"]
 	path = site-elisp/reveal.js
 	url = https://github.com/hakimel/reveal.js.git
+[submodule "site-elisp/texlab"]
+	path = site-elisp/texlab
+	url = https://github.com/latex-lsp/texlab.git

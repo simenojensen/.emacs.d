@@ -6,27 +6,27 @@
 * Start up
 ** Lexical Binding
 
-#+BEGIN_QUOTE
+#+begin_quote
 Until Emacs 24.1 (June 2012), Elisp only had dynamically scoped variables, a feature, mostly by accident, common to old lisp dialects. While dynamic scope has some selective uses, it’s widely regarded as a mistake for local variables, and virtually no other languages have adopted it.
-#+END_QUOTE
+#+end_quote
 
 [[https://nullprogram.com/blog/2016/12/22/][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;;; init.el --- -*- lexical-binding: t -*-
-#+END_SRC
+#+end_src
 ** Avoid Garbage Collection at Startup
 
-#+BEGIN_QUOTE
+#+begin_quote
 The GC can easily double startup time, so we suppress it at startup by turning up =gc-cons-threshold= (and perhaps =gc-cons-percentage=) temporarily:
-#+END_QUOTE
+#+end_quote
 
 [[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how-does-doom-start-up-so-quickly][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
         gc-cons-percentage 0.6)
-#+END_SRC
+#+end_src
 
 ** Benchmarking
 
@@ -34,7 +34,7 @@ First, declare a hook which will benchmark the startup process. It reports how l
 
 [[https://blog.d46.us/advanced-emacs-startup/][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-hook 'emacs-startup-hook
             (lambda ()
               (message "Emacs ready in %s with %d garbage collections."
@@ -42,31 +42,31 @@ First, declare a hook which will benchmark the startup process. It reports how l
                                (float-time
                                 (time-subtract after-init-time before-init-time)))
                        gcs-done)))
-#+END_SRC
+#+end_src
 
 ** Unset =file-name-handler-alist=
 
 Every file opened and loaded by Emacs will run through this list to check for a proper handler for the file, but during startup, it won’t need any of them.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defvar file-name-handler-alist-original file-name-handler-alist)
   (setq file-name-handler-alist nil)
-#+END_SRC
+#+end_src
 
 ** Define Constants
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defconst *sys/gui*
     (display-graphic-p)
     "Are we running on a GUI Emacs?")
-#+END_SRC
+#+end_src
 
 * Garbage Collection
 ** Set =gc-cons-threshold= Smaller for Interactive Use
 
 A large =gc-cons-threshold= may cause freezing and stuttering during long-term interactive use. If you experience freezing, decrease this amount, if you increase stuttering, increase this amount.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defvar better-gc-cons-threshold 100000000 ; 100mb
     "The default value to use for `gc-cons-threshold'.
 
@@ -77,11 +77,11 @@ A large =gc-cons-threshold= may cause freezing and stuttering during long-term i
               (setq gc-cons-threshold better-gc-cons-threshold)
               (setq file-name-handler-alist file-name-handler-alist-original)
               (makunbound 'file-name-handler-alist-original)))
-#+END_SRC
+#+end_src
 
 Garbage Collect when Emacs is out of focus and avoid garbage collection when using minibuffer.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (add-hook 'emacs-startup-hook
             (lambda ()
               (if (boundp 'after-focus-change-function)
@@ -99,7 +99,7 @@ Garbage Collect when Emacs is out of focus and avoid garbage collection when usi
 
               (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup-hook)
               (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit-hook)))
-#+END_SRC
+#+end_src
 
 * Package Management
 ** =package.el=
@@ -108,20 +108,20 @@ By default, Emacs 24 or later comes with a built-in package management system (=
 
 [[https://www.gnu.org/software/emacs/manual/html_mono/emacs.html#Package-Installation][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (require 'package)
-#+END_SRC
+#+end_src
 
 ** Package Repositories
 *** ELPA/MELPA
 
 By default, Emacs comes with the Emacs Lisp Package Archive (ELPA). As the packages need to be FSF-sanctioned, there aren't that many to choose from. By adding the Milkypostman's Emacs Lisp Package Archive ([[https://melpa.org/][MELPA]]), an enormous amount of packages become available. Remember to add ~https~ to urls.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq-default package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
                                    ("melpa" . "https://melpa.org/packages/")
                                    ("org" . "https://orgmode.org/elpa/")))
-#+END_SRC
+#+end_src
 
 *** Other Packages
 
@@ -129,17 +129,17 @@ Add packages contained in =site-elisp/= to =load-path=.
 
 **** Add Packages Manually from Git
 
-#+BEGIN_SRC shell :tangle no
+#+begin_src shell :tangle no
   cd site-elisp/
   git submodule add https://github.com/foo/bar.git
-#+END_SRC
+#+end_src
 
 **** Update Manually Added Packages
 
-#+BEGIN_SRC shell :tangle no
+#+begin_src shell :tangle no
   git submodule init
   git submodule update
-#+END_SRC
+#+end_src
 
 ** Prepare Packages for Configuration
 
@@ -147,17 +147,17 @@ Add packages contained in =site-elisp/= to =load-path=.
 
 [[https://www.emacswiki.org/emacs/InstallingPackages][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (package-initialize)
-#+END_SRC
+#+end_src
 
 - Set =package-enable-at-startup= to =nil= to prevent superfluous loading of packages.
 
 [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Package-Installation.html][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq-default package-enable-at-startup nil)
-#+END_SRC
+#+end_src
 
 ** Bootstrap =use-package=
 
@@ -165,60 +165,60 @@ Add packages contained in =site-elisp/= to =load-path=.
 
 [[https://github.com/jwiegley/use-package][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (when (not (package-installed-p 'use-package))
     (package-refresh-contents)
     (package-install 'use-package))
   (eval-when-compile
     (require 'use-package))
-#+END_SRC
+#+end_src
 
 - By setting =use-package-always-ensure= to =t=, =use-package= will install packages that are not already installed.
 
 [[https://github.com/jwiegley/use-package#package-installation][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (require 'use-package-ensure)
   (setq use-package-always-ensure t)
-#+END_SRC
+#+end_src
 
 ** Automatically Update Packages with =auto-package-update=.
 
 [[https://github.com/rranelli/auto-package-update.el][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package auto-package-update
     :config
     (setq-default auto-package-update-interval 7) ;; in days
     (setq-default auto-package-update-delete-old-versions t)
     (setq-default auto-package-update-hide-results t)
     (auto-package-update-maybe))
-#+END_SRC
+#+end_src
 
 ** Prefer Newer =.el= Files Over Older =.elc= Files.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq-default load-prefer-newer t)
-#+END_SRC
+#+end_src
 
 ** Automatically Compile Packages During Startup.
 
 [[https://github.com/emacscollective/auto-compile][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package auto-compile
     :config
     (auto-compile-on-load-mode)
   (auto-compile-on-save-mode))
-#+END_SRC
+#+end_src
 
 ** =bind-key=
 
 To use with =use-package=.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (require 'bind-key)
-#+END_SRC
+#+end_src
 
 ** =diminish=
 
@@ -226,9 +226,9 @@ The =diminish= package makes it possible to remove clutter from the modeline. Th
 
 [[https://github.com/myrjola/diminish.el][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package diminish)
-#+END_SRC
+#+end_src
 
 ** =try=
 
@@ -236,19 +236,19 @@ The =try= package let's you try new packages without installed them. On the next
 
 [[https://github.com/larstvei/Try][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package try)
-#+END_SRC
+#+end_src
 
 * Global Functionalities
 ** User Information
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq user-full-name "Simen Omholt-Jensen")
   (setq user-mail-address "simen@omholt-jensen.com")
-#+END_SRC
+#+end_src
 ** Convenient Default Settings
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq frame-title-format '(:eval (if (buffer-file-name) (abbreviate-file-name (buffer-file-name)) "%b")))
   ;; (setq-default frame-title-format (list "[" user-login-name "@" (system-name) "] %b"))   ;; Set frame title to [user@hostname]*BufferName*
   (global-display-line-numbers-mode)                                                      ;; Display line numbers
@@ -270,13 +270,14 @@ The =try= package let's you try new packages without installed them. On the next
   (global-hl-line-mode t)                                                                 ;; Highlight the line with the point
   (add-hook 'before-save-hook 'time-stamp)                                                ;; Update timestamp of 8 first lines on save
   (setq large-file-warning-threshold 100000000)                                           ;; Warn when opening file larger than 100 MB
-#+END_SRC
+  (desktop-save-mode 1)                                                                   ;; save desktop
+#+end_src
 
 ** Smooth Scrolling
 
 Configurations for smooth scrolling
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Vertical Scroll
   (setq scroll-step 1)
   (setq scroll-margin 1)
@@ -290,24 +291,24 @@ Configurations for smooth scrolling
   ;; Horizontal Scroll
   (setq hscroll-step 1)
   (setq hscroll-margin 1)
-#+END_SRC
+#+end_src
 
 ** Disable GUIs
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (menu-bar-mode -1)                         ;; Disable menu bar
   (tool-bar-mode -1)                         ;; Disable tool bar
   (scroll-bar-mode -1)                       ;; Disable scroll bar
   (blink-cursor-mode -1)                     ;; Disable blinking cursor
   (setq-default ring-bell-function 'ignore)  ;; Disable bell function
-#+END_SRC
+#+end_src
 
 ** Killing Emacs
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq-default confirm-kill-emacs nil)        ;; Do not confirm when killing Emacs
   (setq-default confirm-kill-processes nil)    ;; do not confirm when killing processes before killing Emacs
-#+END_SRC
+#+end_src
 
 * Keybindings
 ** which-key
@@ -315,40 +316,40 @@ Configurations for smooth scrolling
 The =which-key= package automatically displays potential command information as command keys are typed. This makes it easy to explore Emacs functionality.
 [[https://github.com/justbur/emacs-which-key][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package which-key
     :diminish which-key-mode
     :config
     (setq which-key-idle-delay 0.5)
     (setq which-key-frame-max-height 40)
     (which-key-mode))
-#+END_SRC
+#+end_src
 
 ** =bind-key=
 *** Window Adjustment
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (bind-key "s-<left>" 'shrink-window-horizontally)
   (bind-key "s-<right>" 'enlarge-window-horizontally)
   (bind-key "s-<down>" 'shrink-window)
   (bind-key "s-<up>" 'enlarge-window)
-#+END_SRC
+#+end_src
 
 *** Truncate Lines
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (bind-key "C-x C-l" 'toggle-truncate-lines)
-#+END_SRC
+#+end_src
 
 *** Motion
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (bind-key "M-p" 'backward-paragraph)
   (bind-key "M-n" 'forward-paragraph)
   (bind-key "M-g" 'goto-line)
-#+END_SRC
+#+end_src
 
 *** ibuffer
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (bind-key "C-x b" 'ibuffer)
-#+END_SRC
+#+end_src
 
 * Interface Enhancement
 ** =crux=
@@ -356,13 +357,13 @@ The =which-key= package automatically displays potential command information as 
 =crux= is Collection of Ridiculously Useful eXtensions for Emacs.
 [[https://github.com/bbatsov/crux][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package crux
     :bind
     ("C-a" . crux-move-beginning-of-line)
     :config
     (defalias 'rename-file-and-buffer #'crux-rename-file-and-buffer))
-#+END_SRC
+#+end_src
 
 ** =Ivy= / =Counsel= / =Swiper= / =amx=
 
@@ -371,7 +372,7 @@ The =which-key= package automatically displays potential command information as 
 =amx= prioritizes your most used commands
 [[https://github.com/DarwinAwardWinner/amx][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package ivy
     :diminish
     :init
@@ -397,13 +398,13 @@ The =which-key= package automatically displays potential command information as 
     (setq ivy-display-style 'fancy)
     (setq ivy-use-virtual-buffers t)
     (setq ivy-count-format "(%d/%d) "))
-#+END_SRC
+#+end_src
 ** =undo-tree=
 
 =undo-tree=, a feature that provides a visualization of the undos in a file.
 [[https://www.emacswiki.org/emacs/UndoTree][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package undo-tree
     :diminish undo-tree-mode
     :init
@@ -411,26 +412,26 @@ The =which-key= package automatically displays potential command information as 
   :config
     (setq undo-tree-visualizer-diff t)
     (setq undo-tree-visualizer-timestamps t))
-#+END_SRC
+#+end_src
 
 ** =color-rg=
 
 =color rg= is a search and refactoring tool based on *ripgrep*.
 [[https://github.com/manateelazycat/color-rg][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package color-rg
     :load-path (lambda () (expand-file-name "site-elisp/color-rg" user-emacs-directory))
     :bind
     ("C-M-s" . color-rg-search-input))
-#+END_SRC
+#+end_src
 
 ** =snails=
 
 =snails= is a modern, easy-to-expand fuzzy search framework.
 [[https://github.com/manateelazycat/snails][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package snails
     :disabled
     :load-path (lambda () (expand-file-name "site-elisp/snails/" user-emacs-directory))
@@ -439,14 +440,14 @@ The =which-key= package automatically displays potential command information as 
     (snails-content-buffer-face ((t (:background "#111" :height 110))))
     (snails-input-buffer-face ((t (:background "#222" :foreground "gold" :height 110))))
     (snails-header-line-face ((t (:inherit font-lock-function-name-face :underline t :height 1.1)))))
-#+END_SRC
+#+end_src
 
 ** =Dired=
 
 =Dired= is the built-in directory editor
 [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Dired.html][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package dired
     :ensure nil
     :bind
@@ -479,16 +480,16 @@ The =which-key= package automatically displays potential command information as 
                     (local-set-key (kbd "RET") #'dired-find-alternate-file)
                     (local-set-key (kbd "^")
                                    (lambda () (interactive) (find-alternate-file ".."))))))
-#+END_SRC
+#+end_src
 
 ** =disk-usage=
 
 =disk-usage= is a file system analyzer that offers a tabulated view of file listings sorted by size.
 [[https://gitlab.com/ambrevar/emacs-disk-usage][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package disk-usage :commands (disk-usage))
-#+END_SRC
+#+end_src
 
 * Navigation
 ** =ace-window=
@@ -497,7 +498,7 @@ The =which-key= package automatically displays potential command information as 
 
 [[https://github.com/abo-abo/ace-window][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package ace-window
     :bind
     ("C-x C-o" . ace-window)
@@ -506,80 +507,80 @@ The =which-key= package automatically displays potential command information as 
     (custom-set-faces
      '(aw-leading-char-face
        ((t (:inherit ace-jump-face-foreground :height 3.0))))))
-#+END_SRC
+#+end_src
 
 ** =winner-mode=
 
 Built-in =winner-mode= for remembering previous window actions.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (winner-mode 1)
-#+END_SRC
+#+end_src
 
 * OS Specific Settings
 
 Detect which OS Emacs is being run on, and configure keybindings accordingly.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (cond
-#+END_SRC
+#+end_src
 
 ** macOS
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ((eq system-type 'darwin)
-#+END_SRC
+#+end_src
 
 By setting the ~M~ to ~⌘~, ~A~ to ~^~ (left option)  and ~S~ to ~^~ (right option), we can emulate some of the macOS keyboard configurations.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (customize-set-variable 'mac-command-modifier 'meta)
   (customize-set-variable 'mac-option-modifier 'alt)
   (customize-set-variable 'mac-right-command-modifier 'super)
-#+END_SRC
+#+end_src
 
 Next, we are binding ~M-=~ to increase the font size, and ~M--~ to decrease the font size.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (bind-key "M-=" 'text-scale-increase)
   (bind-key "M--" 'text-scale-decrease)
-#+END_SRC
+#+end_src
 
 Lastly, we make sure the =$PATH= is loaded from the default shell.
 
 [[https://github.com/purcell/exec-path-from-shell][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package exec-path-from-shell
     :defer nil
     :config
     (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "AIRTABLE_API_KEY" "TSI_ENVIRONMENT" "TSI_TENANT_ID" "TSI_CLIENT_ID" "TSI_CLIENT_SECRET" "TSI_APPLICATION_NAME" "VIRTUAL_ENV" "LANG" "LC_ALL" "LC_CTYPE"))
     (exec-path-from-shell-initialize))
   ) ;; closing parenthesis
-#+END_SRC
+#+end_src
 
 ** Windows
 
 Not implemented.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ((eq system-type 'windows-nt))
-#+END_SRC
+#+end_src
 
 ** Linux
 
 Not Implemented
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ((eq system-type 'gnu/linux))
  )
-#+END_SRC
+#+end_src
 * Console
 
 Aweshell extends the eshell
 [[https://github.com/manateelazycat/aweshell][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package aweshell
     :disabled
     :load-path (lambda () (expand-file-name "site-elisp/aweshell" user-emacs-directory))
@@ -587,7 +588,7 @@ Aweshell extends the eshell
     :bind
     (("s-!" . aweshell-dedicated-open)
      (:map eshell-mode-map ("s-!" . aweshell-dedicated-close))))
-#+END_SRC
+#+end_src
 
 * General Programming
 ** Magit
@@ -595,32 +596,32 @@ Aweshell extends the eshell
 Magit is an interface to the version control system Git, implemented as an Emacs package. Magit aspires to be a complete Git porcelain.
 [[https://magit.vc/][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package magit
     :bind
     ("C-x g" . magit-status))
-#+END_SRC
+#+end_src
 
 ** Projectile
 
 Projectile is a project interaction library for Emacs.
 [[https://docs.projectile.mx/projectile/index.html][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package projectile
     :diminish
     :config
     (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
     (setq projectile-completion-system 'ivy)
     (projectile-mode +1))
-#+END_SRC
+#+end_src
 
 ** =treemacs=
 
 =treemacs= is a file and project explorer similar to NeoTree or vim’s NerdTree, but largely inspired by the Project Explorer in Eclipse.
 [[https://github.com/Alexander-Miller/treemacs][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package treemacs
     :custom
     (treemacs-collapse-dirs 3)
@@ -656,37 +657,37 @@ Projectile is a project interaction library for Emacs.
     (("M-0"       . treemacs-select-window)
      (:map treemacs-mode-map ("C-p" . treemacs-previous-line))
      (:map treemacs-mode-map ("C-n" . treemacs-next-line))))
-#+END_SRC
+#+end_src
 
 *** Treemacs Magit
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package treemacs-evil
     :after treemacs evil)
-#+END_SRC
+#+end_src
 
 *** Treemacs Projectile
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package treemacs-projectile
     :after treemacs projectile)
-#+END_SRC
+#+end_src
 
 *** Treemacs Icons Dired
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package treemacs-icons-dired
     :after treemacs dired
     :config
     (treemacs-icons-dired-mode))
-#+END_SRC
+#+end_src
 
 ** Flycheck
 
 Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intended as replacement for the older Flymake extension which is part of GNU Emacs.
 [[https://www.flycheck.org/en/latest/][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package flycheck
     :defer t
     :diminish
@@ -716,14 +717,14 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
         [16 48 112 240 112 48 16] nil nil 'center))
     (flycheck-add-mode 'javascript-eslint 'js-mode)
     (flycheck-add-mode 'typescript-tslint 'rjsx-mode))
-#+END_SRC
+#+end_src
 
 ** Dump Jump
 
 An Emacs "jump to definition" package for 40+ languages
 [[https://github.com/jacktasia/dumb-jump][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package dumb-jump
     :bind
     (:map prog-mode-map
@@ -731,7 +732,7 @@ An Emacs "jump to definition" package for 40+ languages
            ("C-c C-j" . dumb-jump-go)
            ("C-c C-i" . dumb-jump-go-prompt)))
     :custom (dumb-jump-selector 'ivy))
-#+END_SRC
+#+end_src
 
 ** =iedit=
 
@@ -739,11 +740,11 @@ An Emacs "jump to definition" package for 40+ languages
 
 [[https://www.emacswiki.org/emacs/Iedit][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package iedit
     :bind
     ("M-;" . iedit-mode))
-#+END_SRC
+#+end_src
 
 ** =format-all=
 
@@ -751,20 +752,20 @@ An Emacs "jump to definition" package for 40+ languages
 [[https://github.com/lassik/emacs-format-all-the-code][More Information]]
 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package format-all)
-#+END_SRC
+#+end_src
 
 ** =evil-nerd-commenter=
 
 =evil-nerd-commenter= lets one comment/uncomment lines efficiently. Like Nerd Commenter in VIM
 [[https://github.com/redguardtoo/evil-nerd-commenter][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package evil-nerd-commenter
     :bind
     ("C-;" . evilnc-comment-or-uncomment-lines))
-#+END_SRC
+#+end_src
 
 ** =lsp-mode=
 
@@ -772,7 +773,7 @@ LSP Mode - Language Server Protocol support for Emacs
 Language Server Protocol support with multiples languages support for Emacs
 [[https://emacs-lsp.github.io/lsp-mode/][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package lsp-mode
     :defer t
     :commands lsp
@@ -783,14 +784,14 @@ Language Server Protocol support with multiples languages support for Emacs
     :config
     (setq read-process-output-max (* 1024 1024))           ;; 1mb
     (setq lsp-idle-delay 0.5))                             ;; lsp refresh rate
-#+END_SRC
+#+end_src
 
 ** =lsp-ui=
 
-UI integrations for lsp-mode
+UI integration's for lsp-mode
 [[https://emacs-lsp.github.io/lsp-ui/][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package lsp-ui
     :after lsp-mode
     :diminish
@@ -819,21 +820,21 @@ UI integrations for lsp-mode
       (setq mode-line-format nil))
     ;; lsp-ui-sideline
     :hook (python-mode . lsp-ui-sideline))
-#+END_SRC
+#+end_src
 
 ** =lsp-ivy=
 
 This package provides an interactive ~ivy~ interface to the workspace symbol functionality offered by ~lsp-mode~.
 [[https://github.com/emacs-lsp/lsp-ivy][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package lsp-ivy
     :commands lsp-ivy-workspace-symbol)
-#+END_SRC
+#+end_src
 
 ** =company=
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package company
     :diminish company-mode
     :hook (prog-mode . company-mode)
@@ -850,14 +851,14 @@ This package provides an interactive ~ivy~ interface to the workspace symbol fun
       (define-key company-active-map (kbd "M-p") nil)
       (define-key company-active-map (kbd "C-n") #'company-select-next)
       (define-key company-active-map (kbd "C-p") #'company-select-previous)))
-#+END_SRC
+#+end_src
 
 ** =company-tabnine=
 
-A company-mode backend for TabNine, the all-language autocompleter.
+A company-mode backend for TabNine, the all-language auto completer.
 [[https://github.com/TommyX12/company-tabnine][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package company-tabnine
     :defer 1
     :hook
@@ -890,7 +891,7 @@ A company-mode backend for TabNine, the all-language autocompleter.
           (setq candidates-tabnine (nreverse candidates-tabnine))
           (nconc (seq-take candidates-tabnine 3)
                  (seq-take candidates-lsp 6))))))
-#+END_SRC
+#+end_src
 
 * Python
 ** LSP Python MS
@@ -899,7 +900,7 @@ A company-mode backend for TabNine, the all-language autocompleter.
 [[https://emacs-lsp.github.io/lsp-python-ms/][Installation and More Information]]
 
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package lsp-python-ms
     :diminish
     :init
@@ -911,11 +912,11 @@ A company-mode backend for TabNine, the all-language autocompleter.
     :config
     (setq lsp-python-ms-executable
         "~/.emacs.d/site-elisp/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
-#+END_SRC
+#+end_src
 
 ** =conda=
 
-This package lets you activate your conda environments. The setup works for miniconda installed by homebrew.
+This package lets you activate your conda environments. The setup works for miniconda installed by hombre.
 
 [[https://github.com/necaris/conda.el][More Information]]
 
@@ -923,7 +924,7 @@ Usage:
 - ~M-x conda-env-activate~
 - ~M-x conda-env-deactivate~
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package conda
     :init
     (setq conda-anaconda-home "/opt/miniconda3/")
@@ -931,16 +932,28 @@ Usage:
     (conda-env-initialize-interactive-shells) ;; interactive shell support
     (conda-env-initialize-eshell)             ;; eshell support
     (conda-env-autoactivate-mode t))          ;; autoactivate
-#+END_SRC
+#+end_src
 
 * Appearance
 ** All the Icons
 All The Icons, a utility package to collect various Icon Fonts. Enable only in GUI Emacs.
 [[https://github.com/domtronn/all-the-icons.el][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package all-the-icons)
-#+END_SRC
+#+end_src
+
+** all-the-icons-ivy
+
+#+begin_src emacs-lisp
+  (use-package all-the-icons-ivy-rich
+    :init
+    (all-the-icons-ivy-rich-mode 1))
+
+  (use-package ivy-rich
+    :init
+    (ivy-rich-mode 1))
+#+end_src
 
 ** Themes
 *** Doom Theme
@@ -948,7 +961,7 @@ All The Icons, a utility package to collect various Icon Fonts. Enable only in G
 Doom Themes, an UI plugin and pack of themes
 [[https://github.com/hlissner/emacs-doom-themes][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package doom-themes
     :custom-face
     (cursor ((t (:background "BlanchedAlmond"))))
@@ -956,14 +969,14 @@ Doom Themes, an UI plugin and pack of themes
     (doom-themes-visual-bell-config)  ;; flashing mode-line on errors
     (doom-themes-org-config)          ;; Corrects (and improves) org-mode's native fontification.
     (load-theme 'doom-gruvbox t))
-#+END_SRC
+#+end_src
 
 *** Doom Modeline
 
 Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 [[https://github.com/seagle0128/doom-modeline][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package doom-modeline
     :init
     (doom-modeline-mode 1)
@@ -973,50 +986,50 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     (setq doom-modeline-icon t)
     (setq doom-modeline-major-mode-color-icon t)
     (setq doom-modeline-height 15))
-#+END_SRC
+#+end_src
 
 *** Other Themes
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;;(use-package solarized-theme)
   ;;(use-package darktooth-theme)
   ;;(use-package kaolin-themes)
   ;; (use-package gruvbox-theme
     ;; :config
     ;; (load-theme 'gruvbox))
-#+END_SRC
+#+end_src
 
 ** =beacon=
 
 [[https://github.com/Malabarba/beacon][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package beacon
     :config
     (beacon-mode 1)
     (setq beacon-color "#39FF14"))
-#+END_SRC
+#+end_src
 
 ** =rainbow-delimiters=
 
 [[https://github.com/Fanael/rainbow-delimiters][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
     (use-package rainbow-delimiters
       :hook
       (prog-mode . rainbow-delimiters-mode))
-#+END_SRC
+#+end_src
 
 ** =dimmer.el=
 
 [[https://github.com/gonewest818/dimmer.el][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package dimmer
     :config
     (setq dimmer-fraction 0.5)
     (dimmer-mode t))
-#+END_SRC
+#+end_src
 * Org-Mode
 ** =org-mode=
 
@@ -1024,21 +1037,18 @@ Install org-mode from the org package repository.
 
 [[https://orgmode.org/][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package org
     :ensure org-plus-contrib
     :pin org
-
     :config
-    (add-to-list 'org-modules 'org-tempo) ;; add "<s <TAB>" for code block completion
     (defun my/tangle-emacs-config ()
       "If the current file is this file, the code blocks are tangled"
       (when (equal (buffer-file-name) (expand-file-name "~/.emacs.d/my-literate-emacs-configuration.org"))
-        (org-babel-tangle nil "~/.emacs.d/init.el")
-        (byte-compile-file "~/.emacs.d/init.el")))
+        (org-babel-tangle nil "~/.emacs.d/init.el")))
 
     (add-hook 'after-save-hook #'my/tangle-emacs-config))
-#+END_SRC
+#+end_src
 
 ** =toc-org=
 
@@ -1046,22 +1056,22 @@ Install the =toc-org= package to automatically generate an updated table of cont
 
 [[https://github.com/snosov1/toc-org][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package toc-org
     :after org
     :hook
     (org-mode . toc-org-enable))
-#+END_SRC
+#+end_src
 
 ** =org-bullets=
 
 [[https://github.com/sabof/org-bullets][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package org-bullets
     :hook
     (org-mode . (lambda () (org-bullets-mode t))))
- #+END_SRC
+ #+end_src
 
 ** =reveal.js=
 
@@ -1069,44 +1079,86 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
 
 [[https://github.com/hexmode/ox-reveal][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package ox-reveal
     :ensure ox-reveal
     :config
     (setq org-reveal-root "/Users/simenojensen/.emacs.d/site-elisp/reveal.js/")
     (setq org-reveal-mathjax t))
-#+END_SRC
+#+end_src
 
 ** =htmlize=
 
 [[https://github.com/hniksic/emacs-htmlize][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package htmlize)
-#+END_SRC
+#+end_src
 
 * Elisp Functions
 ** Edit Configuration File
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun my/edit-config ()
     "Opens the my-literate-emacs-configuration.org file."
     (interactive)
     (find-file "~/.emacs.d/my-literate-emacs-configuration.org"))
-#+END_SRC
+#+end_src
 
 * Internet
 ** =google-this=
 
 [[http://pragmaticemacs.com/emacs/google-search-from-inside-emacs/][More Information]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package google-this
     :diminish
     :config
     (google-this-mode t))
-#+END_SRC
+#+end_src
 
-* test
-  #+begin_src emacs-lisp
-  (desktop-save-mode 1)
-  #+end_src
+* COMMENT Latex
+#+begin_src emacs-lisp
+  (use-package pdf-tools
+    :config
+    (pdf-tools-install)
+    (setq-default pdf-view-display-size 'fit-page)
+    (setq pdf-annot-activate-created-annotations t)
+    (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+    (define-key pdf-view-mode-map (kbd "C-r") 'isearch-backward)
+    (add-hook 'pdf-view-mode-hook (lambda ()
+                                    (bms/pdf-midnite-amber))) ; automatically turns on midnight-mode for pdfs
+    )
+
+  (use-package auctex-latexmk
+    :config
+    (auctex-latexmk-setup)
+    (setq auctex-latexmk-inherit-TeX-PDF-mode t))
+
+  (use-package reftex
+    :diminish
+    :config
+    (setq reftex-cite-prompt-optional-args t)) ;; Prompt for empty optional arguments in cite
+
+  (use-package company-auctex
+    :init (company-auctex-init))
+
+  (use-package tex
+    :ensure auctex
+    :mode ("\\.tex\\'" . latex-mode)
+    :config (progn
+              (setq TeX-source-correlate-mode t)
+              (setq TeX-source-correlate-method 'synctex)
+              (setq TeX-auto-save t)
+              (setq TeX-parse-self t)
+              (setq-default TeX-master nil)
+              (setq reftex-plug-into-AUCTeX t)
+              (pdf-tools-install)
+              (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
+                    TeX-source-correlate-start-server t)
+              ;; Update PDF buffers after successful LaTeX runs
+              (add-hook 'TeX-after-compilation-finished-functions
+                        #'TeX-revert-document-buffer)
+              (add-hook 'LaTeX-mode-hook
+                        (lambda ()
+                          (reftex-mode t)))))
+#+end_src
