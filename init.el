@@ -329,7 +329,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (treemacs-width 50)
   :config
   :bind
-  (("M-0"       . treemacs-select-window)
+  (("M-0" . treemacs-select-window)
    (:map treemacs-mode-map ("C-p" . treemacs-previous-line))
    (:map treemacs-mode-map ("C-n" . treemacs-next-line))))
 
@@ -341,6 +341,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (use-package treemacs-icons-dired
   :after treemacs dired
+  :disabled
   :config
   (treemacs-icons-dired-mode))
 
@@ -437,7 +438,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (use-package company
   :diminish company-mode
-  :hook (prog-mode . company-mode)
+  :hook
+  ((prog-mode . company-mode)
+   (latex-mode . company-mode)
+   (tex-mode . company-mode))
   :config
   (setq company-minimum-prefix-length 1)
   (setq company-idle-delay 0)
@@ -508,12 +512,17 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package all-the-icons)
 
 (use-package all-the-icons-ivy-rich
-  :init
+  :config
   (all-the-icons-ivy-rich-mode 1))
 
 (use-package ivy-rich
-  :init
-  (ivy-rich-mode 1))
+  :config
+  (ivy-rich-mode 1)
+  (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
+
+(use-package all-the-icons-dired
+  :hook
+  (dired-mode . all-the-icons-dired-mode))
 
 (use-package doom-themes
   :custom-face
@@ -557,13 +566,46 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package org
   :ensure org-plus-contrib
   :pin org
+  :hook
+  (after-save . my/tangle-emacs-config)
   :config
+  ;; Tangle on saving this file
   (defun my/tangle-emacs-config ()
     "If the current file is this file, the code blocks are tangled"
     (when (equal (buffer-file-name) (expand-file-name "~/.emacs.d/my-literate-emacs-configuration.org"))
       (org-babel-tangle nil "~/.emacs.d/init.el")))
+  (setq org-hide-emphasis-markers t)
+  ;; Better Headers
+  (let* ((variable-tuple (cond ((x-list-fonts "Source Sans Pro") '(:font "Source Sans Pro"))
+                               ((x-list-fonts "Lucida Grande")   '(:font "Lucida Grande"))
+                               ((x-list-fonts "Verdana")         '(:font "Verdana"))
+                               ((x-family-fonts "Sans Serif")    '(:family "Sans Serif"))
+                               (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
+         (base-font-color     (face-foreground 'default nil 'default))
+         (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
 
-  (add-hook 'after-save-hook #'my/tangle-emacs-config))
+    (custom-theme-set-faces 'user
+                            `(org-level-8 ((t (,@headline ,@variable-tuple))))
+                            `(org-level-7 ((t (,@headline ,@variable-tuple))))
+                            `(org-level-6 ((t (,@headline ,@variable-tuple))))
+                            `(org-level-5 ((t (,@headline ,@variable-tuple))))
+                            `(org-level-4 ((t (,@headline ,@variable-tuple :height 1.1))))
+                            `(org-level-3 ((t (,@headline ,@variable-tuple :height 1.25))))
+                            `(org-level-2 ((t (,@headline ,@variable-tuple :height 1.5))))
+                            `(org-level-1 ((t (,@headline ,@variable-tuple :height 1.75))))
+                            `(org-document-title ((t (,@headline ,@variable-tuple :height 1.5 :underline nil))))))
+  ;; edit block inserts
+  (setq org-structure-template-alist
+  '(("a" . "export ascii\n")
+    ("c" . "center\n")
+    ("C" . "comment\n")
+    ("e" . "src emacs-lisp\n")
+    ("E" . "export")
+    ("h" . "export html\n")
+    ("l" . "export latex\n")
+    ("q" . "quote\n")
+    ("s" . "src")
+    ("v" . "verse\n"))))
 
 (use-package toc-org
   :after org
@@ -591,3 +633,48 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :diminish
   :config
   (google-this-mode t))
+
+(use-package pdf-tools
+    :config
+    (pdf-tools-install)
+    (setq-default pdf-view-display-size 'fit-page)
+    (setq pdf-annot-activate-created-annotations t)
+    (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+    (define-key pdf-view-mode-map (kbd "C-r") 'isearch-backward)
+    (add-hook 'pdf-view-mode-hook (lambda ()
+                                    (bms/pdf-midnite-amber))) ; automatically turns on midnight-mode for pdfs
+    )
+
+  (use-package auctex-latexmk
+    :config
+    (auctex-latexmk-setup)
+    (setq auctex-latexmk-inherit-TeX-PDF-mode t))
+
+  (use-package reftex
+    :diminish
+    :config
+    (setq reftex-cite-prompt-optional-args t)) ;; Prompt for empty optional arguments in cite
+
+(use-package company-auctex
+  :init
+  (company-auctex-init))
+
+  (use-package tex
+    :ensure auctex
+    :mode ("\\.tex\\'" . latex-mode)
+    :config (progn
+              (setq TeX-source-correlate-mode t)
+              (setq TeX-source-correlate-method 'synctex)
+              (setq TeX-auto-save t)
+              (setq TeX-parse-self t)
+              (setq-default TeX-master nil)
+              (setq reftex-plug-into-AUCTeX t)
+              (pdf-tools-install)
+              (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
+                    TeX-source-correlate-start-server t)
+              ;; Update PDF buffers after successful LaTeX runs
+              (add-hook 'TeX-after-compilation-finished-functions
+                        #'TeX-revert-document-buffer)
+              (add-hook 'LaTeX-mode-hook
+                        (lambda ()
+                          (reftex-mode t)))))

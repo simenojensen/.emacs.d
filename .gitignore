@@ -1,0 +1,15 @@
+/.cache/
+/.emacs.desktop
+/.emacs.desktop.lock
+/.last-package-update-day
+/amx-items
+/auto-save-list/
+/backups/
+/custom.el
+/elpa/
+/nice-configs/
+/places
+/projectile-bookmarks.eld
+/recentf
+/samples/
+/transient/
