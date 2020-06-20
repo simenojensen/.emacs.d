@@ -7,3 +7,9 @@
 [submodule "site-elisp/snails"]
 	path = site-elisp/snails
 	url = https://github.com/manateelazycat/snails.git
+[submodule "site-elisp/python-language-server"]
+	path = site-elisp/python-language-server
+	url = https://github.com/Microsoft/python-language-server.git
+[submodule "site-elisp/reveal.js"]
+	path = site-elisp/reveal.js
+	url = https://github.com/hakimel/reveal.js.git
