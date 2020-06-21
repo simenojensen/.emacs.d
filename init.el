@@ -95,7 +95,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (setq column-number-mode t)                                                             ;; Display column numbers
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
 (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
-(setq debug-on-error nil)                                                                 ;; Receive more information errors
+(setq debug-on-error t)                                                               ;; Receive more information errors
 (setq custom-file "~/.emacs.d/custom.el")
 (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
 (setq-default create-lockfiles nil)                                                     ;; Disable lock files
@@ -111,6 +111,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (add-hook 'before-save-hook 'time-stamp)                                                ;; Update timestamp of 8 first lines on save
 (setq large-file-warning-threshold 100000000)                                           ;; Warn when opening file larger than 100 MB
 (desktop-save-mode 1)                                                                   ;; save desktop
+(setq history-delete-duplicates t)                                                      ;; delete duplicate history
 
 ;; Vertical Scroll
 (setq scroll-step 1)
@@ -242,7 +243,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                   (local-set-key (kbd "^")
                                  (lambda () (interactive) (find-alternate-file ".."))))))
 
-(use-package disk-usage :commands (disk-usage))
+(use-package disk-usage)
+
+(use-package restart-emacs)
 
 (use-package ace-window
   :bind
@@ -255,28 +258,24 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (winner-mode 1)
 
-(cond
-
-((eq system-type 'darwin)
-
-(customize-set-variable 'mac-command-modifier 'meta)
-(customize-set-variable 'mac-option-modifier 'alt)
-(customize-set-variable 'mac-right-command-modifier 'super)
-
-(bind-key "M-=" 'text-scale-increase)
-(bind-key "M--" 'text-scale-decrease)
-
-(use-package exec-path-from-shell
-  :defer nil
-  :config
-  (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "AIRTABLE_API_KEY" "TSI_ENVIRONMENT" "TSI_TENANT_ID" "TSI_CLIENT_ID" "TSI_CLIENT_SECRET" "TSI_APPLICATION_NAME" "VIRTUAL_ENV" "LANG" "LC_ALL" "LC_CTYPE"))
-  (exec-path-from-shell-initialize))
-) ;; closing parenthesis
-
-((eq system-type 'windows-nt))
-
-((eq system-type 'gnu/linux))
-)
+(cond ((eq system-type 'darwin)
+       (customize-set-variable 'mac-command-modifier 'meta)
+       (customize-set-variable 'mac-option-modifier 'alt)
+       (customize-set-variable 'mac-right-command-modifier 'super)
+       (bind-key "M-=" 'text-scale-increase)
+       (bind-key "M--" 'text-scale-decrease)
+       (use-package exec-path-from-shell
+         :defer nil
+         :config
+         (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "AIRTABLE_API_KEY" "TSI_ENVIRONMENT" "TSI_TENANT_ID" "TSI_CLIENT_ID" "TSI_CLIENT_SECRET" "TSI_APPLICATION_NAME" "VIRTUAL_ENV" "LANG" "LC_ALL" "LC_CTYPE"))
+         (exec-path-from-shell-initialize))
+       )
+      ((eq system-type 'windows-nt)
+       
+       )
+      ((eq system-type 'gnu/linux)
+       
+       ))
 
 (use-package aweshell
   :disabled
@@ -444,6 +443,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
    (tex-mode . company-mode))
   :config
   (setq company-minimum-prefix-length 1)
+  (setq company-tooltip-align-annotations t)
+  (setq company-require-match 'never)
   (setq company-idle-delay 0)
   (setq company-show-numbers t)
   (global-company-mode 1)
@@ -455,6 +456,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
     (define-key company-active-map (kbd "M-p") nil)
     (define-key company-active-map (kbd "C-n") #'company-select-next)
     (define-key company-active-map (kbd "C-p") #'company-select-previous)))
+
+(use-package company-lsp
+  :config
+  (setq company-lsp-cache-candidates 'auto))
 
 (use-package company-tabnine
   :defer 1
@@ -521,8 +526,15 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
 
 (use-package all-the-icons-dired
+  :diminish
+  :custom-face
+  (all-the-icons-dired-dir-face ((t (:foreground nil))))
   :hook
   (dired-mode . all-the-icons-dired-mode))
+
+(use-package mode-icons
+  :config
+  (mode-icons-mode))
 
 (use-package doom-themes
   :custom-face
@@ -563,38 +575,86 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq dimmer-fraction 0.5)
   (dimmer-mode t))
 
+(use-package pdf-tools
+  :config
+  (pdf-tools-install)
+  (setq-default pdf-view-display-size 'fit-page)
+  (setq pdf-annot-activate-created-annotations t)
+  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+  (define-key pdf-view-mode-map (kbd "C-r") 'isearch-backward)
+  (add-hook 'pdf-view-mode-hook (lambda ()
+                                  (bms/pdf-midnite-amber)))) ; automatically turns on midnight-mode for pdfs
+
+(use-package auctex-latexmk
+  :config
+  (auctex-latexmk-setup)
+  (setq auctex-latexmk-inherit-TeX-PDF-mode t))
+
+(use-package reftex
+  :diminish
+  :config
+  (setq reftex-cite-prompt-optional-args t)) ;; Prompt for empty optional arguments in cite
+
+(use-package company-auctex
+  :init
+  (company-auctex-init))
+
+(use-package cdlatex)
+
+(use-package tex
+  :ensure auctex
+  :mode ("\\.tex\\'" . latex-mode)
+  :config (progn
+            (setq TeX-source-correlate-mode t)
+            (setq TeX-source-correlate-method 'synctex)
+            (setq TeX-auto-save t)
+            (setq TeX-parse-self t)
+            (setq-default TeX-master nil)
+            (setq reftex-plug-into-AUCTeX t)
+            (pdf-tools-install)
+            (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
+                  TeX-source-correlate-start-server t)
+            ;; Update PDF buffers after successful LaTeX runs
+            (add-hook 'TeX-after-compilation-finished-functions
+                      #'TeX-revert-document-buffer)
+            (add-hook 'LaTeX-mode-hook
+                      (lambda ()
+                        (reftex-mode t)))))
+
 (use-package org
   :ensure org-plus-contrib
   :pin org
   :hook
-  (after-save . my/tangle-emacs-config)
+  ((after-save . my/tangle-emacs-config)
+   (org-mode . turn-on-org-cdlatex))
   :config
   ;; Tangle on saving this file
   (defun my/tangle-emacs-config ()
     "If the current file is this file, the code blocks are tangled"
     (when (equal (buffer-file-name) (expand-file-name "~/.emacs.d/my-literate-emacs-configuration.org"))
       (org-babel-tangle nil "~/.emacs.d/init.el")))
-  (setq org-hide-emphasis-markers t)
-  ;; Better Headers
-  (let* ((variable-tuple (cond ((x-list-fonts "Source Sans Pro") '(:font "Source Sans Pro"))
-                               ((x-list-fonts "Lucida Grande")   '(:font "Lucida Grande"))
-                               ((x-list-fonts "Verdana")         '(:font "Verdana"))
-                               ((x-family-fonts "Sans Serif")    '(:family "Sans Serif"))
-                               (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
-         (base-font-color     (face-foreground 'default nil 'default))
-         (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
+  (setq org-special-ctrl-a/e t)
+  (setq org-src-window-setup 'split-window-below)
+  ;; ;; Better Headers
+  ;; (let* ((variable-tuple (cond ((x-list-fonts "Source Sans Pro") '(:font "Source Sans Pro"))
+  ;;                              ((x-list-fonts "Lucida Grande")   '(:font "Lucida Grande"))
+  ;;                              ((x-list-fonts "Verdana")         '(:font "Verdana"))
+  ;;                              ((x-family-fonts "Sans Serif")    '(:family "Sans Serif"))
+  ;;                              (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
+  ;;        (base-font-color     (face-foreground 'default nil 'default))
+  ;;        (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
 
-    (custom-theme-set-faces 'user
-                            `(org-level-8 ((t (,@headline ,@variable-tuple))))
-                            `(org-level-7 ((t (,@headline ,@variable-tuple))))
-                            `(org-level-6 ((t (,@headline ,@variable-tuple))))
-                            `(org-level-5 ((t (,@headline ,@variable-tuple))))
-                            `(org-level-4 ((t (,@headline ,@variable-tuple :height 1.1))))
-                            `(org-level-3 ((t (,@headline ,@variable-tuple :height 1.25))))
-                            `(org-level-2 ((t (,@headline ,@variable-tuple :height 1.5))))
-                            `(org-level-1 ((t (,@headline ,@variable-tuple :height 1.75))))
-                            `(org-document-title ((t (,@headline ,@variable-tuple :height 1.5 :underline nil))))))
-  ;; edit block inserts
+  ;;   (custom-theme-set-faces 'user
+  ;;                           `(org-level-8 ((t (,@headline ,@variable-tuple))))
+  ;;                           `(org-level-7 ((t (,@headline ,@variable-tuple))))
+  ;;                           `(org-level-6 ((t (,@headline ,@variable-tuple))))
+  ;;                           `(org-level-5 ((t (,@headline ,@variable-tuple))))
+  ;;                           `(org-level-4 ((t (,@headline ,@variable-tuple :height 1.1))))
+  ;;                           `(org-level-3 ((t (,@headline ,@variable-tuple :height 1.25))))
+  ;;                           `(org-level-2 ((t (,@headline ,@variable-tuple :height 1.5))))
+  ;;                           `(org-level-1 ((t (,@headline ,@variable-tuple :height 1.75))))
+  ;;                           `(org-document-title ((t (,@headline ,@variable-tuple :height 1.5 :underline nil))))))
+  ;; ;; edit block inserts
   (setq org-structure-template-alist
   '(("a" . "export ascii\n")
     ("c" . "center\n")
@@ -633,48 +693,3 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :diminish
   :config
   (google-this-mode t))
-
-(use-package pdf-tools
-    :config
-    (pdf-tools-install)
-    (setq-default pdf-view-display-size 'fit-page)
-    (setq pdf-annot-activate-created-annotations t)
-    (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
-    (define-key pdf-view-mode-map (kbd "C-r") 'isearch-backward)
-    (add-hook 'pdf-view-mode-hook (lambda ()
-                                    (bms/pdf-midnite-amber))) ; automatically turns on midnight-mode for pdfs
-    )
-
-  (use-package auctex-latexmk
-    :config
-    (auctex-latexmk-setup)
-    (setq auctex-latexmk-inherit-TeX-PDF-mode t))
-
-  (use-package reftex
-    :diminish
-    :config
-    (setq reftex-cite-prompt-optional-args t)) ;; Prompt for empty optional arguments in cite
-
-(use-package company-auctex
-  :init
-  (company-auctex-init))
-
-  (use-package tex
-    :ensure auctex
-    :mode ("\\.tex\\'" . latex-mode)
-    :config (progn
-              (setq TeX-source-correlate-mode t)
-              (setq TeX-source-correlate-method 'synctex)
-              (setq TeX-auto-save t)
-              (setq TeX-parse-self t)
-              (setq-default TeX-master nil)
-              (setq reftex-plug-into-AUCTeX t)
-              (pdf-tools-install)
-              (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
-                    TeX-source-correlate-start-server t)
-              ;; Update PDF buffers after successful LaTeX runs
-              (add-hook 'TeX-after-compilation-finished-functions
-                        #'TeX-revert-document-buffer)
-              (add-hook 'LaTeX-mode-hook
-                        (lambda ()
-                          (reftex-mode t)))))
