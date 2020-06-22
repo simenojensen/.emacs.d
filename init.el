@@ -605,8 +605,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package org
   :ensure org-plus-contrib
   :pin org
+  :init
   :hook
   ((after-save . my/tangle-emacs-config)
+   (org-mode . visual-line-mode)
    (org-mode . turn-on-org-cdlatex))
   :config
   ;; Tangle on saving this file

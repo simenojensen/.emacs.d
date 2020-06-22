@@ -1125,8 +1125,10 @@ Install org-mode from the org package repository.
   (use-package org
     :ensure org-plus-contrib
     :pin org
+    :init
     :hook
     ((after-save . my/tangle-emacs-config)
+     (org-mode . visual-line-mode)
      (org-mode . turn-on-org-cdlatex))
     :config
     ;; Tangle on saving this file
