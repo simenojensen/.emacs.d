@@ -580,13 +580,12 @@ Not implemented
 #+end_src
 
 * Console
-
 ** Still looking for the perfect terminal
-
 * General Programming
 ** Magit
 
 Magit is an interface to the version control system Git, implemented as an Emacs package. Magit aspires to be a complete Git porcelain.
+
 [[https://magit.vc/][More Information]]
 
 #+begin_src emacs-lisp
@@ -598,6 +597,7 @@ Magit is an interface to the version control system Git, implemented as an Emacs
 ** Projectile
 
 Projectile is a project interaction library for Emacs.
+
 [[https://docs.projectile.mx/projectile/index.html][More Information]]
 
 #+begin_src emacs-lisp
@@ -612,6 +612,7 @@ Projectile is a project interaction library for Emacs.
 ** =treemacs=
 
 =treemacs= is a file and project explorer similar to NeoTree or vim’s NerdTree, but largely inspired by the Project Explorer in Eclipse.
+
 [[https://github.com/Alexander-Miller/treemacs][More Information]]
 
 #+begin_src emacs-lisp
@@ -679,6 +680,7 @@ Projectile is a project interaction library for Emacs.
 ** Dump Jump
 
 An Emacs "jump to definition" package for 40+ languages
+
 [[https://github.com/jacktasia/dumb-jump][More Information]]
 
 #+begin_src emacs-lisp
@@ -706,6 +708,7 @@ An Emacs "jump to definition" package for 40+ languages
 ** =format-all=
 
 =format-all= let one auto-format source code in many languages using the same command.
+
 [[https://github.com/lassik/emacs-format-all-the-code][More Information]]
 
 
@@ -716,6 +719,7 @@ An Emacs "jump to definition" package for 40+ languages
 ** =evil-nerd-commenter=
 
 =evil-nerd-commenter= lets one comment/uncomment lines efficiently. Like Nerd Commenter in VIM
+
 [[https://github.com/redguardtoo/evil-nerd-commenter][More Information]]
 
 #+begin_src emacs-lisp
@@ -737,6 +741,7 @@ An Emacs "jump to definition" package for 40+ languages
 ** =flycheck=
 
 Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intended as replacement for the older Flymake extension which is part of GNU Emacs.
+
 [[https://www.flycheck.org/en/latest/][More Information]]
 
 #+begin_src emacs-lisp
@@ -751,6 +756,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
  LSP Mode - Language Server Protocol support for Emacs
  Language Server Protocol support with multiples languages support for Emacs
+
  [[https://emacs-lsp.github.io/lsp-mode/][More Information]]
 
  #+begin_src emacs-lisp
@@ -782,6 +788,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 *** =lsp-ui=
 
  UI integration's for lsp-mode
+
  [[https://emacs-lsp.github.io/lsp-ui/][More Information]]
 
  #+begin_src emacs-lisp
@@ -905,6 +912,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 ** LSP Python MS
 
 =lsp-mode= client leveraging the Microsoft's [[https://github.com/Microsoft/python-language-server][python-language-server]].
+
 [[https://emacs-lsp.github.io/lsp-python-ms/][Installation and More Information]]
 
 
@@ -943,6 +951,7 @@ Usage:
 *** =all-the-icons=
 
  All The Icons, a utility package to collect various Icon Fonts. Enable only in GUI Emacs.
+
  [[https://github.com/domtronn/all-the-icons.el][More Information]]
 
  #+begin_src emacs-lisp
@@ -985,6 +994,7 @@ Usage:
 *** Doom Theme
 
 Doom Themes, an UI plugin and pack of themes
+
 [[https://github.com/hlissner/emacs-doom-themes][More Information]]
 
 #+begin_src emacs-lisp
@@ -1000,6 +1010,7 @@ Doom Themes, an UI plugin and pack of themes
 *** Doom Modeline
 
 Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
+
 [[https://github.com/seagle0128/doom-modeline][More Information]]
 
 #+begin_src emacs-lisp
@@ -1047,7 +1058,6 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 #+end_src
 
 ** =dimmer.el=
-
 
 [[https://github.com/gonewest818/dimmer.el][More Information]]
 
@@ -1108,6 +1118,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 ** =org-mode=
 
 Install org-mode from the org package repository.
+
 [[https://orgmode.org/][More Information]]
 
 #+begin_src emacs-lisp
@@ -1205,6 +1216,7 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
 
 * Elisp Functions
 ** Edit Configuration File
+
 #+begin_src emacs-lisp
   (defun my/edit-config ()
     "Opens the my-literate-emacs-configuration.org file."
