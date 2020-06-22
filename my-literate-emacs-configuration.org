@@ -117,7 +117,7 @@ By default, Emacs comes with the Emacs Lisp Package Archive (ELPA). As the packa
 
 *** Other Packages
 
-Add packages contained in =site-elisp/= to =load-path=.
+Other packages will be placed in =site/elisp= as ~git submodules~. They will be added to the load path in their =use-package= declaration.
 
 **** Add Packages Manually from Git
 
