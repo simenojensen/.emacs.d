@@ -95,7 +95,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (setq column-number-mode t)                                                             ;; Display column numbers
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
 (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
-(setq debug-on-error t)                                                               ;; Receive more information errors
+(setq debug-on-error nil)                                                               ;; Receive more information errors
 (setq custom-file "~/.emacs.d/custom.el")
 (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
 (setq-default create-lockfiles nil)                                                     ;; Disable lock files
@@ -112,6 +112,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (setq large-file-warning-threshold 100000000)                                           ;; Warn when opening file larger than 100 MB
 (desktop-save-mode 1)                                                                   ;; save desktop
 (setq history-delete-duplicates t)                                                      ;; delete duplicate history
+(setq revert-without-query '(".*"))                                                     ;; do not ask when reverting buffer
 
 ;; Vertical Scroll
 (setq scroll-step 1)
@@ -344,36 +345,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :config
   (treemacs-icons-dired-mode))
 
-(use-package flycheck
-  :defer t
-  :diminish
-  :hook ((prog-mode markdown-mode) . flycheck-mode)
-  :custom
-  (flycheck-global-modes
-   '(not text-mode outline-mode fundamental-mode org-mode
-         diff-mode shell-mode eshell-mode term-mode))
-  (flycheck-emacs-lisp-load-path 'inherit)
-  (flycheck-indication-mode 'right-fringe)
-  :init
-  (use-package flycheck-grammarly :defer t)
-  (use-package flycheck-posframe
-    :custom-face (flycheck-posframe-border-face ((t (:inherit default))))
-    :hook (flycheck-mode . flycheck-posframe-mode)
-    :custom
-    (flycheck-posframe-border-width 1)
-    (flycheck-(point)osframe-inhibit-functions
-              '((lambda (&rest _) (bound-and-true-p company-backend)))))
-  (use-package flycheck-pos-tip
-    :defines flycheck-pos-tip-timeout
-    :hook (flycheck-mode . flycheck-pos-tip-mode)
-    :custom (flycheck-pos-tip-timeout 30))
-  :config
-  (when (fboundp 'define-fringe-bitmap)
-    (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
-      [16 48 112 240 112 48 16] nil nil 'center))
-  (flycheck-add-mode 'javascript-eslint 'js-mode)
-  (flycheck-add-mode 'typescript-tslint 'rjsx-mode))
-
 (use-package dumb-jump
   :bind
   (:map prog-mode-map
@@ -392,14 +363,38 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :bind
   ("C-;" . evilnc-comment-or-uncomment-lines))
 
+(use-package yasnippet
+  :diminish yas-minor-mode
+  :init (use-package yasnippet-snippets :after yasnippet)
+  :config
+  (yas-global-mode 1))
+
+(use-package flycheck
+  :diminish
+  :hook
+  (prog-mode . flycheck-mode))
+
 (use-package lsp-mode
-  :defer t
-  :commands lsp
-  :init
-  (setq lsp-keymap-prefix "s-l")
   :hook ((python-mode . lsp)
          (lsp-mode . lsp-enable-which-key-integration))
   :config
+  ;; debug info
+  (setq lsp-print-io t)
+  (setq lsp-print-performance t)
+  ;; general
+  (setq lsp-keymap-prefix "s-l")                         ;; set keymap
+  (setq lsp-prefer-capf t)                               ;; use company-capf - recommended over company-lsp
+  (setq lsp-keep-workspace-alive nil)                    ;; close workspace when no files
+  (setq lsp-enable-snippet t)                            ;; enable snippet completion
+  (setq lsp-auto-guess-root nil)                         ;; set project files manually
+  (setq lsp-restart 'auto-restart)                       ;; restart if server exits
+  (setq lsp-document-sync-method nil)                    ;; use default method recommended by server. 'incremental 'full
+  (setq lsp-response-timeout 10)                         ;; default timeout val
+  (setq lsp-auto-configure t)                            ;; let lsp-mode autoconfigure company etc
+  (setq lsp-enable-completion-at-point t)                ;; enable completion-at-point
+  (setq lsp-diagnostic-package :flycheck)                ;; use flycheck for syntax highlighting
+  (setq lsp-enable-indentation t)                        ;; indent regions based on lsp
+  (setq lsp-signature-auto-activate nil)                 ;; don't display documentation in minibuffer
   (setq read-process-output-max (* 1024 1024))           ;; 1mb
   (setq lsp-idle-delay 0.5))                             ;; lsp refresh rate
 
@@ -409,99 +404,110 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :commands lsp-ui-mode
   :bind
   ;; lsp-ui-peek
-  (:map lsp-ui-mode-map
+  ((:map lsp-ui-mode-map
         ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
         ([remap xref-find-references] . lsp-ui-peek-find-references)
         ;; lsp-ui-doc
         ("M-i" . lsp-ui-doc-focus-frame))
+   ("s-i" . my/toggle-lsp-ui-doc))
   :config
   ;; lsp-ui-sideline
+  (setq lsp-ui-sideline-enable t)
+  (setq lsp-ui-sideline-ignore-duplicate t)
   (setq lsp-ui-sideline-show-diagnostics t)
-  (setq lsp-ui-sideline-show-hover t)
-  (setq lsp-ui-sideline-show-code-actions t)
-  (setq lsp-ui-sideline-update-mode "point")
-  (setq lsp-ui-sideline-delay 0.2)
+  (setq lsp-ui-sideline-show-hover nil)
+  (setq lsp-ui-sideline-show-code-actions nil)
+  (setq lsp-ui-sideline-show-symbol nil)
+  (setq lsp-ui-sideline-delay 0.1)
   ;; lsp-ui-doc
-  (setq lsp-ui-doc-delay 1.0)
-  (setq lsp-ui-doc-use-webkit t)
+  (setq lsp-ui-doc-enable nil)
   (setq lsp-ui-doc-header t)
   (setq lsp-ui-doc-include-signature t)
-  (setq lsp-ui-doc-border (face-foreground 'default))
-  (defadvice lsp-ui-imenu (after hide-lsp-ui-imenu-mode-line activate)
-    (setq mode-line-format nil))
-  ;; lsp-ui-sideline
-  :hook (python-mode . lsp-ui-sideline))
-
-(use-package lsp-ivy
-  :commands lsp-ivy-workspace-symbol)
+  (setq lsp-ui-doc-position 'at-point)
+  (setq lsp-ui-doc-delay 0)
+  (setq lsp-ui-doc-max-height 50)
+  (setq lsp-ui-doc-max-width 200)
+  (setq lsp-ui-doc-use-childframe t)
+  (setq lsp-ui-doc-use-webkit nil)
+  :preface
+  (defun my/toggle-lsp-ui-doc ()
+    (interactive)
+    (if lsp-ui-doc-mode
+        (progn
+          (lsp-ui-doc-mode -1)
+          (lsp-ui-doc--hide-frame))
+      (lsp-ui-doc-mode 1)))
+  :hook
+  (lsp-mode . lsp-ui-mode))
 
 (use-package company
   :diminish company-mode
   :hook
-  ((prog-mode . company-mode)
-   (latex-mode . company-mode)
-   (tex-mode . company-mode))
+  (after-init . global-company-mode)
+  :bind
+  ((:map company-active-map
+         ("C-n" . company-select-next)
+         ("C-p" . company-select-previous))
+   (:map company-search-map
+         ("C-n" . company-select-next)
+         ("C-p" . company-select-previous)))
   :config
   (setq company-minimum-prefix-length 1)
-  (setq company-tooltip-align-annotations t)
-  (setq company-require-match 'never)
   (setq company-idle-delay 0)
+  (setq company-echo-delay 0)
+  (setq company-tooltip-idle-delay 0)
+  (setq company-tooltip-align-annotations t)
+  (setq company-require-match nil)
   (setq company-show-numbers t)
   (global-company-mode 1)
   ;; Don't use company in debugger mode
-  (setq company-global-modes '(not gud-mode))
-  ;; Remap company's select next/previous condidate
-  (with-eval-after-load 'company
-    (define-key company-active-map (kbd "M-n") nil)
-    (define-key company-active-map (kbd "M-p") nil)
-    (define-key company-active-map (kbd "C-n") #'company-select-next)
-    (define-key company-active-map (kbd "C-p") #'company-select-previous)))
+  (setq company-global-modes '(not gud-mode)))
 
-(use-package company-lsp
-  :config
-  (setq company-lsp-cache-candidates 'auto))
-
-(use-package company-tabnine
-  :defer 1
+(use-package company-box
+  :diminish
   :hook
-  (lsp-after-open . (lambda ()
-                      (setq company-tabnine-max-num-results 3)
-                      (add-to-list 'company-transformers 'company//sort-by-tabnine t)
-                      (add-to-list 'company-backends '(company-lsp :with company-tabnine :separate))))
-  (kill-emacs . company-tabnine-kill-process)
+  (company-mode . company-box-mode)
   :config
-  (setq company-tabnine-max-num-results 9)
-  ;; Enable TabNine on default
-  (add-to-list 'company-backends #'company-tabnine)
-
-  ;; Integrate company-tabnine with lsp-mode
-  (defun company//sort-by-tabnine (candidates)
-    (if (or (functionp company-backend)
-            (not (and (listp company-backend) (memq 'company-tabnine company-backend))))
-        candidates
-      (let ((candidates-table (make-hash-table :test #'equal))
-            candidates-lsp
-            candidates-tabnine)
-        (dolist (candidate candidates)
-          (if (eq (get-text-property 0 'company-backend candidate)
-                  'company-tabnine)
-              (unless (gethash candidate candidates-table)
-                (push candidate candidates-tabnine))
-            (push candidate candidates-lsp)
-            (puthash candidate t candidates-table)))
-        (setq candidates-lsp (nreverse candidates-lsp))
-        (setq candidates-tabnine (nreverse candidates-tabnine))
-        (nconc (seq-take candidates-tabnine 3)
-               (seq-take candidates-lsp 6))))))
+  (setq company-box-doc-delay 0)
+  (setq company-box-enable-icon t)
+  (setq company-box-color-icons nil)
+  (setq company-box-max-candidates 10)
+  (setq company-box-show-single-candidate t)
+  ;; all-the-icons-integration
+  (setq company-box-icons-all-the-icons
+      `((Unknown . ,(all-the-icons-faicon "cog" :height 0.85 :v-adjust -0.02))
+        (Text . ,(all-the-icons-octicon "file-text" :height 0.85))
+        (Method . ,(all-the-icons-faicon "cube" :height 0.85 :v-adjust -0.02))
+        (Function . ,(all-the-icons-faicon "cube" :height 0.85 :v-adjust -0.02))
+        (Constructor . ,(all-the-icons-faicon "cube" :height 0.85 :v-adjust -0.02))
+        (Field . ,(all-the-icons-material "loyalty" :height 0.85 :v-adjust -0.2))
+        (Variable . ,(all-the-icons-material "loyalty" :height 0.85 :v-adjust -0.2))
+        (Class . ,(all-the-icons-faicon "cogs" :height 0.85 :v-adjust -0.02))
+        (Interface . ,(all-the-icons-material "control_point_duplicate" :height 0.85 :v-adjust -0.02))
+        (Module . ,(all-the-icons-alltheicon "less" :height 0.85 :v-adjust -0.05))
+        (Property . ,(all-the-icons-faicon "wrench" :height 0.85))
+        (Unit . ,(all-the-icons-material "streetview" :height 0.85))
+        (Value . ,(all-the-icons-faicon "tag" :height 0.85 :v-adjust -0.2))
+        (Enum . ,(all-the-icons-material "library_books" :height 0.85))
+        (Keyword . ,(all-the-icons-material "functions" :height 0.85))
+        (Snippet . ,(all-the-icons-material "content_paste" :height 0.85))
+        (Color . ,(all-the-icons-material "palette" :height 0.85))
+        (File . ,(all-the-icons-faicon "file" :height 0.85))
+        (Reference . ,(all-the-icons-faicon "cog" :height 0.85 :v-adjust -0.02))
+        (Folder . ,(all-the-icons-faicon "folder" :height 0.85))
+        (EnumMember . ,(all-the-icons-material "collections_bookmark" :height 0.85))
+        (Constant . ,(all-the-icons-material "class" :height 0.85))
+        (Struct . ,(all-the-icons-faicon "cogs" :height 0.85 :v-adjust -0.02))
+        (Event . ,(all-the-icons-faicon "bolt" :height 0.85))
+        (Operator . ,(all-the-icons-material "streetview" :height 0.85))
+        (TypeParameter . ,(all-the-icons-faicon "cogs" :height 0.85 :v-adjust -0.02))
+        (Template . ,(all-the-icons-material "settings_ethernet" :height 0.9)))
+      company-box-icons-alist 'company-box-icons-all-the-icons))
 
 (use-package lsp-python-ms
   :diminish
   :init
   (setq lsp-python-ms-auto-install-server t)
-  :hook
-  (python-mode . (lambda ()
-                   (require 'lsp-python-ms)
-                   (lsp)))
   :config
   (setq lsp-python-ms-executable
       "~/.emacs.d/site-elisp/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
@@ -577,13 +583,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (use-package pdf-tools
   :config
-  (pdf-tools-install)
+  ;; (pdf-tools-install)
   (setq-default pdf-view-display-size 'fit-page)
-  (setq pdf-annot-activate-created-annotations t)
-  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
-  (define-key pdf-view-mode-map (kbd "C-r") 'isearch-backward)
-  (add-hook 'pdf-view-mode-hook (lambda ()
-                                  (bms/pdf-midnite-amber)))) ; automatically turns on midnight-mode for pdfs
+  (setq pdf-annot-activate-created-annotations t))
 
 (use-package auctex-latexmk
   :config
@@ -693,3 +695,20 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :diminish
   :config
   (google-this-mode t))
+
+(use-package engine-mode
+  :config
+  (engine-mode t)
+  (defengine google
+    "http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s"
+    :keybinding "g")
+  (defengine github
+    "https://github.com/search?ref=simplesearch&q=%s")
+  (defengine google-maps
+    "http://maps.google.com/maps?q=%s"
+    :docstring "Mappin' it up.")
+  (defengine youtube
+    "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
+    :keybinding "y"))
+
+
