@@ -89,8 +89,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (setq user-full-name "Simen Omholt-Jensen")
 (setq user-mail-address "simen@omholt-jensen.com")
 
-(setq frame-title-format '(:eval (if (buffer-file-name) (abbreviate-file-name (buffer-file-name)) "%b")))
-;; (setq-default frame-title-format (list "[" user-login-name "@" (system-name) "] %b"))   ;; Set frame title to [user@hostname]*BufferName*
+(setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
+                                     (abbreviate-file-name (buffer-file-name)) "%b")))
 (global-display-line-numbers-mode)                                                      ;; Display line numbers
 (setq column-number-mode t)                                                             ;; Display column numbers
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message

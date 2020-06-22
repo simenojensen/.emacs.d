@@ -249,8 +249,8 @@ The =try= package let's you try new packages without installed them. On the next
 ** Convenient Default Settings
 
 #+begin_src emacs-lisp
-  (setq frame-title-format '(:eval (if (buffer-file-name) (abbreviate-file-name (buffer-file-name)) "%b")))
-  ;; (setq-default frame-title-format (list "[" user-login-name "@" (system-name) "] %b"))   ;; Set frame title to [user@hostname]*BufferName*
+  (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
+                                       (abbreviate-file-name (buffer-file-name)) "%b")))
   (global-display-line-numbers-mode)                                                      ;; Display line numbers
   (setq column-number-mode t)                                                             ;; Display column numbers
   (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
