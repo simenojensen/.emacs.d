@@ -53,14 +53,6 @@ Every file opened and loaded by Emacs will run through this list to check for a 
   (setq file-name-handler-alist nil)
 #+end_src
 
-** Define Constants
-
-#+begin_src emacs-lisp
-  (defconst *sys/gui*
-    (display-graphic-p)
-    "Are we running on a GUI Emacs?")
-#+end_src
-
 * Garbage Collection
 ** Set =gc-cons-threshold= Smaller for Interactive Use
 
@@ -316,6 +308,7 @@ Configurations for smooth scrolling
 ** which-key
 
 The =which-key= package automatically displays potential command information as command keys are typed. This makes it easy to explore Emacs functionality.
+
 [[https://github.com/justbur/emacs-which-key][More Information]]
 
 #+begin_src emacs-lisp
@@ -329,6 +322,7 @@ The =which-key= package automatically displays potential command information as 
 
 ** =bind-key=
 *** Window Adjustment
+
 #+begin_src emacs-lisp
   (bind-key "s-<left>" 'shrink-window-horizontally)
   (bind-key "s-<right>" 'enlarge-window-horizontally)
@@ -337,11 +331,13 @@ The =which-key= package automatically displays potential command information as 
 #+end_src
 
 *** Truncate Lines
+
 #+begin_src emacs-lisp
   (bind-key "C-x C-l" 'toggle-truncate-lines)
 #+end_src
 
 *** Motion
+
 #+begin_src emacs-lisp
   (bind-key "M-p" 'backward-paragraph)
   (bind-key "M-n" 'forward-paragraph)
@@ -349,6 +345,7 @@ The =which-key= package automatically displays potential command information as 
 #+end_src
 
 *** ibuffer
+
 #+begin_src emacs-lisp
   (bind-key "C-x b" 'ibuffer)
 #+end_src
@@ -357,6 +354,7 @@ The =which-key= package automatically displays potential command information as 
 ** =crux=
 
 =crux= is Collection of Ridiculously Useful eXtensions for Emacs.
+
 [[https://github.com/bbatsov/crux][More Information]]
 
 #+begin_src emacs-lisp
@@ -370,8 +368,11 @@ The =which-key= package automatically displays potential command information as 
 ** =Ivy= / =Counsel= / =Swiper= / =amx=
 
 =Ivy= is an interactive interface for completion in Emacs.
+
 [[https://oremacs.com/swiper/][More Information]]
+
 =amx= prioritizes your most used commands
+
 [[https://github.com/DarwinAwardWinner/amx][More Information]]
 
 #+begin_src emacs-lisp
@@ -404,6 +405,7 @@ The =which-key= package automatically displays potential command information as 
 ** =undo-tree=
 
 =undo-tree=, a feature that provides a visualization of the undos in a file.
+
 [[https://www.emacswiki.org/emacs/UndoTree][More Information]]
 
 #+begin_src emacs-lisp
@@ -419,6 +421,7 @@ The =which-key= package automatically displays potential command information as 
 ** =color-rg=
 
 =color rg= is a search and refactoring tool based on *ripgrep*.
+
 [[https://github.com/manateelazycat/color-rg][More Information]]
 
 #+begin_src emacs-lisp
@@ -428,25 +431,10 @@ The =which-key= package automatically displays potential command information as 
     ("C-M-s" . color-rg-search-input))
 #+end_src
 
-** =snails=
-
-=snails= is a modern, easy-to-expand fuzzy search framework.
-[[https://github.com/manateelazycat/snails][More Information]]
-
-#+begin_src emacs-lisp
-  (use-package snails
-    :disabled
-    :load-path (lambda () (expand-file-name "site-elisp/snails/" user-emacs-directory))
-    :if *sys/gui*
-    :custom-face
-    (snails-content-buffer-face ((t (:background "#111" :height 110))))
-    (snails-input-buffer-face ((t (:background "#222" :foreground "gold" :height 110))))
-    (snails-header-line-face ((t (:inherit font-lock-function-name-face :underline t :height 1.1)))))
-#+end_src
-
 ** =Dired=
 
 =Dired= is the built-in directory editor
+
 [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Dired.html][More Information]]
 
 #+begin_src emacs-lisp
@@ -487,6 +475,7 @@ The =which-key= package automatically displays potential command information as 
 ** =disk-usage=
 
 =disk-usage= is a file system analyzer that offers a tabulated view of file listings sorted by size.
+
 [[https://gitlab.com/ambrevar/emacs-disk-usage][More Information]]
 
 #+begin_src emacs-lisp
@@ -494,6 +483,10 @@ The =which-key= package automatically displays potential command information as 
 #+end_src
 
 ** =restart-emacs=
+
+=restart-emacs= is a simple emacs package to restart emacs from within emacs.
+
+[[https://github.com/iqbalansari/restart-emacs][More Information]]
 
 #+begin_src emacs-lisp
   (use-package restart-emacs)
@@ -588,18 +581,7 @@ Not implemented
 
 * Console
 
-Aweshell extends the eshell
-[[https://github.com/manateelazycat/aweshell][More Information]]
-
-#+begin_src emacs-lisp
-  (use-package aweshell
-    :disabled
-    :load-path (lambda () (expand-file-name "site-elisp/aweshell" user-emacs-directory))
-    :commands (aweshell-new aweshell-dedicated-open)
-    :bind
-    (("s-!" . aweshell-dedicated-open)
-     (:map eshell-mode-map ("s-!" . aweshell-dedicated-close))))
-#+end_src
+** Still looking for the perfect terminal
 
 * General Programming
 ** Magit

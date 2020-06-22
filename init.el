@@ -14,10 +14,6 @@
 (defvar file-name-handler-alist-original file-name-handler-alist)
 (setq file-name-handler-alist nil)
 
-(defconst *sys/gui*
-  (display-graphic-p)
-  "Are we running on a GUI Emacs?")
-
 (defvar better-gc-cons-threshold 100000000 ; 100mb
   "The default value to use for `gc-cons-threshold'.
 
@@ -202,15 +198,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :bind
   ("C-M-s" . color-rg-search-input))
 
-(use-package snails
-  :disabled
-  :load-path (lambda () (expand-file-name "site-elisp/snails/" user-emacs-directory))
-  :if *sys/gui*
-  :custom-face
-  (snails-content-buffer-face ((t (:background "#111" :height 110))))
-  (snails-input-buffer-face ((t (:background "#222" :foreground "gold" :height 110))))
-  (snails-header-line-face ((t (:inherit font-lock-function-name-face :underline t :height 1.1)))))
-
 (use-package dired
   :ensure nil
   :bind
@@ -277,14 +264,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
       ((eq system-type 'gnu/linux)
        
        ))
-
-(use-package aweshell
-  :disabled
-  :load-path (lambda () (expand-file-name "site-elisp/aweshell" user-emacs-directory))
-  :commands (aweshell-new aweshell-dedicated-open)
-  :bind
-  (("s-!" . aweshell-dedicated-open)
-   (:map eshell-mode-map ("s-!" . aweshell-dedicated-close))))
 
 (use-package magit
   :bind
