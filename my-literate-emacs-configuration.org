@@ -347,7 +347,7 @@ The =which-key= package automatically displays potential command information as 
 *** ibuffer
 
 #+begin_src emacs-lisp
-  (bind-key "C-x b" 'ibuffer)
+  (bind-key "C-x b" 'ibuffer-other-window)
 #+end_src
 
 * Interface Enhancement
@@ -1242,5 +1242,5 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
 
 #+begin_src emacs-lisp
 
-
+;; test
 #+end_src

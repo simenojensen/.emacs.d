@@ -151,7 +151,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (bind-key "M-n" 'forward-paragraph)
 (bind-key "M-g" 'goto-line)
 
-(bind-key "C-x b" 'ibuffer)
+(bind-key "C-x b" 'ibuffer-other-window)
 
 (use-package crux
   :bind
@@ -673,4 +673,4 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
     "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
     :keybinding "y"))
 
-
+;; test
