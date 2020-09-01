@@ -87,6 +87,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
                                      (abbreviate-file-name (buffer-file-name)) "%b")))
+(set-language-environment "UTF-8")                                                      ;; Set enconding language
 (global-display-line-numbers-mode)                                                      ;; Display line numbers
 (setq column-number-mode t)                                                             ;; Display column numbers
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
@@ -255,7 +256,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
        (use-package exec-path-from-shell
          :defer nil
          :config
-         (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "AIRTABLE_API_KEY" "TSI_ENVIRONMENT" "TSI_TENANT_ID" "TSI_CLIENT_ID" "TSI_CLIENT_SECRET" "TSI_APPLICATION_NAME" "VIRTUAL_ENV" "LANG" "LC_ALL" "LC_CTYPE"))
+         (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "AIRTABLE_API_KEY" "TSI_ENVIRONMENT" "TSI_TENANT_ID" "TSI_CLIENT_ID" "TSI_CLIENT_SECRET" "TSI_APPLICATION_NAME" "VIRTUAL_ENV"))
          (exec-path-from-shell-initialize))
        )
       ((eq system-type 'windows-nt)
@@ -404,8 +405,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq lsp-ui-doc-include-signature t)
   (setq lsp-ui-doc-position 'at-point)
   (setq lsp-ui-doc-delay 0)
-  (setq lsp-ui-doc-max-height 50)
-  (setq lsp-ui-doc-max-width 200)
+  (setq lsp-ui-doc-max-height 100)
+  (setq lsp-ui-doc-max-width 400)
   (setq lsp-ui-doc-use-childframe t)
   (setq lsp-ui-doc-use-webkit nil)
   :preface
@@ -492,12 +493,12 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
       "~/.emacs.d/site-elisp/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
 
 (use-package conda
-  :init
-  (setq conda-anaconda-home "/opt/miniconda3/")
   :config
   (conda-env-initialize-interactive-shells) ;; interactive shell support
   (conda-env-initialize-eshell)             ;; eshell support
-  (conda-env-autoactivate-mode t))          ;; autoactivate
+  (conda-env-autoactivate-mode t)           ;; autoactivate
+  (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
+  (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
 
 (use-package all-the-icons)
 
@@ -561,46 +562,50 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (dimmer-mode t))
 
 (use-package pdf-tools
-  :config
-  ;; (pdf-tools-install)
-  (setq-default pdf-view-display-size 'fit-page)
-  (setq pdf-annot-activate-created-annotations t))
-
-(use-package auctex-latexmk
-  :config
-  (auctex-latexmk-setup)
-  (setq auctex-latexmk-inherit-TeX-PDF-mode t))
+    :config
+    (setq-default pdf-view-display-size 'fit-page)
+      (setq pdf-annot-activate-created-annotations t)
+    (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+    (pdf-tools-install :no-query))
 
 (use-package reftex
   :diminish
+  :commands turn-on-reftex
   :config
-  (setq reftex-cite-prompt-optional-args t)) ;; Prompt for empty optional arguments in cite
+  (setq reftex-cite-prompt-optional-args t) ;; Prompt for empty optional arguments in cite
+  (setq reftex-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib"))
+  (setq reftex-plug-into-AUCTeX t))
 
-(use-package company-auctex
-  :init
-  (company-auctex-init))
+  (use-package auctex-latexmk
+    :config
+    (auctex-latexmk-setup)
+    (setq auctex-latexmk-inherit-TeX-PDF-mode t))
 
-(use-package cdlatex)
+  (use-package company-auctex
+    :init
+    (company-auctex-init))
 
-(use-package tex
-  :ensure auctex
-  :mode ("\\.tex\\'" . latex-mode)
-  :config (progn
-            (setq TeX-source-correlate-mode t)
-            (setq TeX-source-correlate-method 'synctex)
-            (setq TeX-auto-save t)
-            (setq TeX-parse-self t)
-            (setq-default TeX-master nil)
-            (setq reftex-plug-into-AUCTeX t)
-            (pdf-tools-install)
-            (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
-                  TeX-source-correlate-start-server t)
-            ;; Update PDF buffers after successful LaTeX runs
-            (add-hook 'TeX-after-compilation-finished-functions
-                      #'TeX-revert-document-buffer)
-            (add-hook 'LaTeX-mode-hook
-                      (lambda ()
-                        (reftex-mode t)))))
+  (use-package cdlatex)
+
+  (use-package tex
+    :ensure auctex
+    :mode ("\\.tex\\'" . latex-mode)
+    :config (progn
+              (setq TeX-source-correlate-mode t)
+              (setq TeX-source-correlate-method 'synctex)
+              (setq TeX-auto-save t)
+              (setq TeX-parse-self t)
+              (setq-default TeX-master nil)
+              (setq reftex-plug-into-AUCTeX t)
+              (pdf-tools-install)
+              (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
+                    TeX-source-correlate-start-server t)
+              ;; Update PDF buffers after successful LaTeX runs
+              (add-hook 'TeX-after-compilation-finished-functions
+                        #'TeX-revert-document-buffer)
+              (add-hook 'LaTeX-mode-hook
+                        (lambda ()
+                          (reftex-mode t)))))
 
 (use-package org
   :ensure org-plus-contrib
@@ -609,6 +614,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :hook
   ((after-save . my/tangle-emacs-config)
    (org-mode . visual-line-mode)
+   (org-mode . flyspell-mode)
    (org-mode . turn-on-org-cdlatex))
   :config
   ;; Tangle on saving this file
@@ -628,8 +634,132 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
     ("h" . "export html\n")
     ("l" . "export latex\n")
     ("q" . "quote\n")
+    ("p" . "src python\n")
     ("s" . "src")
-    ("v" . "verse\n"))))
+    ("v" . "verse\n")))
+  ;; Configure latex exports
+  (setq org-latex-logfiles-extensions (quote ("lof" "lot" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
+  (setq org-latex-remove-logfiles t)
+  ;; https://so.nwalsh.com/2020/01/05-latex
+  (setq org-latex-compiler "xelatex")
+  (setq org-latex-pdf-process
+        (list (concat "latexmk -"
+                      org-latex-compiler
+                      " -recorder -synctex=1 -bibtex-cond %b")))
+  (setq org-latex-listings t)
+  (setq org-latex-default-packages-alist
+        '(("" "graphicx" t)
+          ("" "grffile" t)
+          ("" "longtable" nil)
+          ("" "wrapfig" nil)
+          ("" "rotating" nil)
+          ("normalem" "ulem" t)
+          ("" "amsmath" t)
+          ("" "textcomp" t)
+          ("" "amssymb" t)
+          ("" "capt-of" nil)
+          ("" "hyperref" nil)))
+  (setq org-latex-classes
+        '(("article"
+           "\\RequirePackage{fix-cm}
+\\PassOptionsToPackage{svgnames}{xcolor}
+\\documentclass[11pt]{article}
+\\usepackage{fontspec}
+\\setmainfont{ETBembo RomanOSF}
+\\setsansfont[Scale=MatchLowercase]{Raleway}
+\\setmonofont[Scale=MatchLowercase]{Operator Mono}
+\\usepackage{sectsty}
+\\allsectionsfont{\\sffamily}
+\\usepackage{enumitem}
+\\setlist[description]{style=unboxed,font=\\sffamily\\bfseries}
+\\usepackage{listings}
+\\lstset{frame=single,aboveskip=1em,
+        framesep=.5em,backgroundcolor=\\color{AliceBlue},
+        rulecolor=\\color{LightSteelBlue},framerule=1pt}
+\\usepackage{xcolor}
+\\newcommand\\basicdefault[1]{\\scriptsize\\color{Black}\\ttfamily#1}
+\\lstset{basicstyle=\\basicdefault{\\spaceskip1em}}
+\\lstset{literate=
+            {§}{{\\S}}1
+            {©}{{\\raisebox{.125ex}{\\copyright}\\enspace}}1
+            {«}{{\\guillemotleft}}1
+            {»}{{\\guillemotright}}1
+            {Á}{{\\'A}}1
+            {Ä}{{\\\"A}}1
+            {É}{{\\'E}}1
+            {Í}{{\\'I}}1
+            {Ó}{{\\'O}}1
+            {Ö}{{\\\"O}}1
+            {Ú}{{\\'U}}1
+            {Ü}{{\\\"U}}1
+            {ß}{{\\ss}}2
+            {à}{{\\`a}}1
+            {á}{{\\'a}}1
+            {ä}{{\\\"a}}1
+            {é}{{\\'e}}1
+            {í}{{\\'i}}1
+            {ó}{{\\'o}}1
+            {ö}{{\\\"o}}1
+            {ú}{{\\'u}}1
+            {ü}{{\\\"u}}1
+            {¹}{{\\textsuperscript1}}1
+            {²}{{\\textsuperscript2}}1
+            {³}{{\\textsuperscript3}}1
+            {ı}{{\\i}}1
+            {—}{{---}}1
+            {’}{{'}}1
+            {…}{{\\dots}}1
+            {⮠}{{$\\hookleftarrow$}}1
+            {␣}{{\\textvisiblespace}}1,
+            keywordstyle=\\color{DarkGreen}\\bfseries,
+            identifierstyle=\\color{DarkRed},
+            commentstyle=\\color{Gray}\\upshape,
+            stringstyle=\\color{DarkBlue}\\upshape,
+            emphstyle=\\color{Chocolate}\\upshape,
+            showstringspaces=false,
+            columns=fullflexible,
+            keepspaces=true}
+\\usepackage[a4paper,margin=1in,left=1.5in]{geometry}
+\\usepackage{parskip}
+\\makeatletter
+\\renewcommand{\\maketitle}{%
+  \\begingroup\\parindent0pt
+  \\sffamily
+  \\Huge{\\bfseries\\@title}\\par\\bigskip
+  \\LARGE{\\bfseries\\@author}\\par\\medskip
+  \\normalsize\\@date\\par\\bigskip
+  \\endgroup\\@afterindentfalse\\@afterheading}
+\\makeatother
+[DEFAULT-PACKAGES]
+\\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
+  citecolor=DarkRed,colorlinks=true}
+\\AtBeginDocument{\\renewcommand{\\UrlFont}{\\ttfamily}}
+[PACKAGES]
+[EXTRA]"
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+           ("\\paragraph{%s}" . "\\paragraph*{%s}")
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+
+          ("report" "\\documentclass[11pt]{report}"
+           ("\\part{%s}" . "\\part*{%s}")
+           ("\\chapter{%s}" . "\\chapter*{%s}")
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+
+          ("book" "\\documentclass[11pt]{book}"
+           ("\\part{%s}" . "\\part*{%s}")
+           ("\\chapter{%s}" . "\\chapter*{%s}")
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))))
+
+(use-package org-ref
+  :after org
+  :config
+  (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")))
 
 (use-package toc-org
   :after org
@@ -673,4 +803,4 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
     "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
     :keybinding "y"))
 
-;; test
+
