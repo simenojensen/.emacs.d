@@ -562,8 +562,10 @@ Lastly, we make sure the =$PATH= is loaded from the default shell.
   (use-package exec-path-from-shell
     :defer nil
     :config
-    (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "AIRTABLE_API_KEY" "TSI_ENVIRONMENT" "TSI_TENANT_ID" "TSI_CLIENT_ID" "TSI_CLIENT_SECRET" "TSI_APPLICATION_NAME" "VIRTUAL_ENV"))
-    (exec-path-from-shell-initialize))
+    (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
+    (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
+    (if (string-equal system-type "darwin")
+        (exec-path-from-shell-initialize)))
 #+end_src
 
 ** Windows
@@ -1077,52 +1079,83 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 
 * Latex
 
+Install Latex.
+[[https://people.umass.edu/weikaichen/zh/post/emacs-academic-tools/][More Information]]
+
 #+begin_src emacs-lisp
-    (use-package pdf-tools
-      :config
-      (setq-default pdf-view-display-size 'fit-page)
-        (setq pdf-annot-activate-created-annotations t)
-      (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
-      (pdf-tools-install :no-query))
-
-  (use-package reftex
-    :diminish
-    :commands turn-on-reftex
+  (use-package tex-site
+    :ensure auctex
+    :mode ("\\.tex\\'" . latex-mode)
     :config
-    (setq reftex-cite-prompt-optional-args t) ;; Prompt for empty optional arguments in cite
-    (setq reftex-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib"))
-    (setq reftex-plug-into-AUCTeX t))
+    ;; Enable document parsing to get support for Latex packages
+    (setq TeX-auto-save t)  ;; enable parsing on load
+    (setq TeX-parse-self t) ;; enable parsing on save
+    (setq-default TeX-master nil) ;; make AUCTeX aware of multi-file document structure
+    (setq TeX-view-program-selection '((output-pdf "pdf-tools")))
+    (setq TeX-view-program-list '(("pdf-tools" "TeX-pdf-tools-sync-view")))
+    :hook
+    (LaTeX-mode . (lambda ()
+                    (rainbow-delimiters-mode)
+                    (company-mode)
+                    (turn-on-reftex)
+                    (setq reftex-plug-into-AUCTeX t)
+                    (reftex-isearch-minor-mode)
+                    (turn-on-auto-fill) ;; insert automatically fill and indent linebreaks
+                    (setq TeX-PDF-mode t)
+                    (setq TeX-source-correlate-mode t)
+                    (setq TeX-source-correlate-method 'synctex)
+                    (setq TeX-source-correlate-start-server t)
+                    (pdf-tools-install))) ;; use PDF-tools
+    ;; automatically insert '\(...\)' in Latex files by pressing $
+    (LaTeX-mode . (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+                       (cons "\\(" "\\)"))))
+    (TeX-after-TeX-LaTeX-command-finished . TeX-revert-document-buffer))
+#+end_src
 
-    (use-package auctex-latexmk
-      :config
-      (auctex-latexmk-setup)
-      (setq auctex-latexmk-inherit-TeX-PDF-mode t))
+** =auctex-latexmk=
 
+=auctex-latexmk= adds LatexMk support to =AUCTeX=.
+[[https://github.com/tom-tan/auctex-latexmk][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package auctex-latexmk
+    :config
+    (auctex-latexmk-setup)
+    (setq auctex-latexmk-inherit-TeX-PDF-mode t))
+#+end_src
+
+** =company-auctex=
+
+=company-auctex= is a group of backends for =company-mode= providing auto-completion for =AUCTeX=.
+[[https://github.com/alexeyr/company-auctex][More Information]]
+
+#+begin_src emacs-lisp
     (use-package company-auctex
       :init
       (company-auctex-init))
+#+end_src
 
-    (use-package cdlatex)
+** =cdlatex=
 
-    (use-package tex
-      :ensure auctex
-      :mode ("\\.tex\\'" . latex-mode)
-      :config (progn
-                (setq TeX-source-correlate-mode t)
-                (setq TeX-source-correlate-method 'synctex)
-                (setq TeX-auto-save t)
-                (setq TeX-parse-self t)
-                (setq-default TeX-master nil)
-                (setq reftex-plug-into-AUCTeX t)
-                (pdf-tools-install)
-                (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
-                      TeX-source-correlate-start-server t)
-                ;; Update PDF buffers after successful LaTeX runs
-                (add-hook 'TeX-after-compilation-finished-functions
-                          #'TeX-revert-document-buffer)
-                (add-hook 'LaTeX-mode-hook
-                          (lambda ()
-                            (reftex-mode t)))))
+=cdlatex= is a minor mode supporting fast insertion of environment templates and math stuff inn $/latex$.
+[[https://github.com/cdominik/cdlatex][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package cdlatex)
+#+end_src
+
+** =pdftools=
+
+=pdf-tools= is an Emacs support library for PDF files.
+[[https://github.com/politza/pdf-tools][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package pdf-tools
+    :config
+    (setq-default pdf-view-display-size 'fit-page)
+    (setq pdf-annot-activate-created-annotations t)
+    (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+    (pdf-tools-install :no-query))
 #+end_src
 
 * Org-Mode
@@ -1132,7 +1165,7 @@ Install org-mode from the org package repository.
 
 [[https://orgmode.org/][More Information]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :noweb tangle
   (use-package org
     :ensure org-plus-contrib
     :pin org
@@ -1148,23 +1181,32 @@ Install org-mode from the org package repository.
       "If the current file is this file, the code blocks are tangled"
       (when (equal (buffer-file-name) (expand-file-name "~/.emacs.d/my-literate-emacs-configuration.org"))
         (org-babel-tangle nil "~/.emacs.d/init.el")))
+    ;; Run/highlight code using babel in org-mode
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((python . t)
+       (shell . t)
+       (emacs-lisp . t)))
+    ;; Syntax highlight in #+BEGIN_SRC blocks
+    (setq org-src-fontify-natively t)
+    ;; cycle C-e and C-a
     (setq org-special-ctrl-a/e t)
-    (setq org-src-window-setup 'split-window-below)
+    (setq org-src-window-setup 'split-window-right)
     ;; ;; edit block inserts
     (setq org-structure-template-alist
-    '(("a" . "export ascii\n")
-      ("c" . "center\n")
-      ("C" . "comment\n")
-      ("e" . "src emacs-lisp\n")
-      ("E" . "export")
-      ("h" . "export html\n")
-      ("l" . "export latex\n")
-      ("q" . "quote\n")
-      ("p" . "src python\n")
-      ("s" . "src")
-      ("v" . "verse\n")))
+          '(("a" . "export ascii\n")
+            ("c" . "center\n")
+            ("C" . "comment\n")
+            ("e" . "src emacs-lisp\n")
+            ("E" . "export")
+            ("h" . "export html\n")
+            ("l" . "src latex\n")
+            ("q" . "quote\n")
+            ("p" . "src python\n")
+            ("s" . "src")
+            ("v" . "verse\n")))
     ;; Configure latex exports
-    (setq org-latex-logfiles-extensions (quote ("lof" "lot" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
+    (setq org-latex-logfiles-extensions (quote ("lof" "lot" "xdv" "synctex.gz" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
     (setq org-latex-remove-logfiles t)
     ;; https://so.nwalsh.com/2020/01/05-latex
     (setq org-latex-compiler "xelatex")
@@ -1172,22 +1214,31 @@ Install org-mode from the org package repository.
           (list (concat "latexmk -"
                         org-latex-compiler
                         " -recorder -synctex=1 -bibtex-cond %b")))
+    ;; Configure Org to use lstlisting for source environments.
     (setq org-latex-listings t)
-    (setq org-latex-default-packages-alist
-          '(("" "graphicx" t)
-            ("" "grffile" t)
-            ("" "longtable" nil)
-            ("" "wrapfig" nil)
-            ("" "rotating" nil)
-            ("normalem" "ulem" t)
-            ("" "amsmath" t)
-            ("" "textcomp" t)
-            ("" "amssymb" t)
-            ("" "capt-of" nil)
-            ("" "hyperref" nil)))
-    (setq org-latex-classes
-          '(("article"
-             "\\RequirePackage{fix-cm}
+    ;; Use predefine latex template for orgmode export to latex
+    ;; https://so.nwalsh.com/2020/01/05-latex
+    <<LatexTemplates>>)
+#+end_src
+
+** LatexTemplates
+
+#+begin_src emacs-lisp :tangle no :noweb-ref LatexTemplates
+  (setq org-latex-default-packages-alist
+        '(("" "graphicx" t)
+          ("" "grffile" t)
+          ("" "longtable" nil)
+          ("" "wrapfig" nil)
+          ("" "rotating" nil)
+          ("normalem" "ulem" t)
+          ("" "amsmath" t)
+          ("" "textcomp" t)
+          ("" "amssymb" t)
+          ("" "capt-of" nil)
+          ("" "hyperref" nil)))
+  (setq org-latex-classes
+  '(("article"
+  "\\RequirePackage{fix-cm}
   \\PassOptionsToPackage{svgnames}{xcolor}
   \\documentclass[11pt]{article}
   \\usepackage{fontspec}
@@ -1262,39 +1313,34 @@ Install org-mode from the org package repository.
   \\AtBeginDocument{\\renewcommand{\\UrlFont}{\\ttfamily}}
   [PACKAGES]
   [EXTRA]"
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-             ("\\paragraph{%s}" . "\\paragraph*{%s}")
-             ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+  ("\\section{%s}" . "\\section*{%s}")
+  ("\\subsection{%s}" . "\\subsection*{%s}")
+  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+  ("\\paragraph{%s}" . "\\paragraph*{%s}")
+  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
 
-            ("report" "\\documentclass[11pt]{report}"
-             ("\\part{%s}" . "\\part*{%s}")
-             ("\\chapter{%s}" . "\\chapter*{%s}")
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+  ("report" "\\documentclass[11pt]{report}"
+  ("\\part{%s}" . "\\part*{%s}")
+  ("\\chapter{%s}" . "\\chapter*{%s}")
+  ("\\section{%s}" . "\\section*{%s}")
+  ("\\subsection{%s}" . "\\subsection*{%s}")
+  ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
 
-            ("book" "\\documentclass[11pt]{book}"
-             ("\\part{%s}" . "\\part*{%s}")
-             ("\\chapter{%s}" . "\\chapter*{%s}")
-             ("\\section{%s}" . "\\section*{%s}")
-             ("\\subsection{%s}" . "\\subsection*{%s}")
-             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))))
+  ("book" "\\documentclass[11pt]{book}"
+  ("\\part{%s}" . "\\part*{%s}")
+  ("\\chapter{%s}" . "\\chapter*{%s}")
+  ("\\section{%s}" . "\\section*{%s}")
+  ("\\subsection{%s}" . "\\subsection*{%s}")
+  ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
 #+end_src
 
-** =org-ref=
+** =org-download=
 
-=org-ref= - citations, cross-references, indexes, glossaries and bibtex utilities for org-mode
-[[https://github.com/jkitchin/org-ref][More Information]]
-
-[[https://nickgeorge.net/science/org_ref_setup/][Guide for setup]]
+=org-download= is an extension that facilitates moving images to org files.
+[[https://github.com/abo-abo/org-download][More Information]]
 
 #+begin_src emacs-lisp
-  (use-package org-ref
-    :after org
-    :config
-    (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")))
+  (use-package org-download)
 #+end_src
 
 ** =toc-org=
@@ -1342,7 +1388,66 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
   (use-package htmlize)
 #+end_src
 
+* Bibliography
+** =reftex=
+
+=RefTEX= is a specialized package for support of labels, references, citations, and the indices in $\latex$.
+[[https://www.gnu.org/software/auctex/reftex.html][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package reftex
+    :diminish
+    :commands turn-on-reftex
+    :config
+    (setq reftex-cite-prompt-optional-args t) ;; Prompt for empty optional arguments in cite
+    (setq reftex-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib"))
+    (setq reftex-plug-into-AUCTeX t))
+#+end_src
+** =ivy-bibtex=
+
+=ivy-bibtex= allow you to search and manage your BibTeX bibliography.
+[[https://github.com/tmalsburg/helm-bibtex][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package ivy-bibtex
+    :config
+    (setq bibtex-completion-bibliography "/Users/simenojensen/Documents/Org/Bibliography/library.bib") ;; location of bibtex file
+    (setq bibtex-completion-library-path "/Users/simenojensen/Documents/Org/Bibliography") ;; directory of bibtex pdf files
+    (setq bibtex-completion-notes-path "/Users/simenojensen/Documents/Org/Bibliography/notes.org") ;; location of bibliography notes file
+    (setq bibtex-completion-pdf-field "File") ;; using bibtex path reference to pdf file
+    ;; open pdf with system pdf viewer (works on mac)
+    (setq bibtex-completion-pdf-open-function (lambda (fpath)
+                                                (start-process "open" "*open" "open" fpath)))
+    (setq ivy-bibtex-default-action 'bibtex-completion-insert-citation))
+#+end_src
+** =org-ref=
+
+=org-ref= - citations, cross-references, indexes, glossaries and bibtex utilities for org-mode
+[[https://github.com/jkitchin/org-ref][More Information]]
+
+[[https://nickgeorge.net/science/org_ref_setup/][Guide for setup]]
+
+#+begin_src emacs-lisp
+  (use-package org-ref
+    :after org
+    :config
+    (setq org-ref-bibliography-notes "/Users/simenojensen/Documents/Org/Bibliography/notes.org") ;; bibtex notes file
+    (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")) ;; bibtex file
+    (setq org-ref-pdf-directory "/Users/simenojensen/Documents/Org/Bibliography")) ;; bibliography pdf folder
+#+end_src
+
 * Elisp Functions
+
+** Read content of file
+
+#+begin_src emacs-lisp
+  (defun my/get-file-content-as-string (filePath)
+    "Return filePath's content as string."
+    (with-temp-buffer
+      (insert-file-contents filePath)
+      (buffer-string)))
+#+end_src
+
 ** Edit Configuration File
 
 #+begin_src emacs-lisp
@@ -1384,7 +1489,16 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
 #+end_src
 
 * Experimental
-
 #+begin_src emacs-lisp
 
 #+end_src
+
+** Writing tools to look into
+-[[https://people.umass.edu/weikaichen/post/emacs-academic-tools/][emacs-academic-tools]]
+- [[https://github.com/nashamri/academic-phrases][academic-phrases]]
+- [[https://github.com/gromnitsky/wordnut][wordnut]]
+- [[https://github.com/hpdeifel/synosaurus][synosaurus]]
+- [[https://github.com/org-roam/org-roam][org-roam]]
+  - [[https://rgoswami.me/posts/org-note-workflow/][org-mode notes workflow]]
+** podcasts
+- robin hood snacks

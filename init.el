@@ -256,8 +256,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
        (use-package exec-path-from-shell
          :defer nil
          :config
-         (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "AIRTABLE_API_KEY" "TSI_ENVIRONMENT" "TSI_TENANT_ID" "TSI_CLIENT_ID" "TSI_CLIENT_SECRET" "TSI_APPLICATION_NAME" "VIRTUAL_ENV"))
-         (exec-path-from-shell-initialize))
+         (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
+         (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
+         (if (string-equal system-type "darwin")
+             (exec-path-from-shell-initialize)))
        )
       ((eq system-type 'windows-nt)
        
@@ -561,51 +563,51 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq dimmer-fraction 0.5)
   (dimmer-mode t))
 
-(use-package pdf-tools
-    :config
-    (setq-default pdf-view-display-size 'fit-page)
-      (setq pdf-annot-activate-created-annotations t)
-    (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
-    (pdf-tools-install :no-query))
-
-(use-package reftex
-  :diminish
-  :commands turn-on-reftex
+(use-package tex-site
+  :ensure auctex
+  :mode ("\\.tex\\'" . latex-mode)
   :config
-  (setq reftex-cite-prompt-optional-args t) ;; Prompt for empty optional arguments in cite
-  (setq reftex-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib"))
-  (setq reftex-plug-into-AUCTeX t))
+  ;; Enable document parsing to get support for Latex packages
+  (setq TeX-auto-save t)  ;; enable parsing on load
+  (setq TeX-parse-self t) ;; enable parsing on save
+  (setq-default TeX-master nil) ;; make AUCTeX aware of multi-file document structure
+  (setq TeX-view-program-selection '((output-pdf "pdf-tools")))
+  (setq TeX-view-program-list '(("pdf-tools" "TeX-pdf-tools-sync-view")))
+  :hook
+  (LaTeX-mode . (lambda ()
+                  (rainbow-delimiters-mode)
+                  (company-mode)
+                  (turn-on-reftex)
+                  (setq reftex-plug-into-AUCTeX t)
+                  (reftex-isearch-minor-mode)
+                  (turn-on-auto-fill) ;; insert automatically fill and indent linebreaks
+                  (setq TeX-PDF-mode t)
+                  (setq TeX-source-correlate-mode t)
+                  (setq TeX-source-correlate-method 'synctex)
+                  (setq TeX-source-correlate-start-server t)
+                  (pdf-tools-install))) ;; use PDF-tools
+  ;; automatically insert '\(...\)' in Latex files by pressing $
+  (LaTeX-mode . (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+                     (cons "\\(" "\\)"))))
+  (TeX-after-TeX-LaTeX-command-finished . TeX-revert-document-buffer))
 
-  (use-package auctex-latexmk
-    :config
-    (auctex-latexmk-setup)
-    (setq auctex-latexmk-inherit-TeX-PDF-mode t))
+(use-package auctex-latexmk
+  :config
+  (auctex-latexmk-setup)
+  (setq auctex-latexmk-inherit-TeX-PDF-mode t))
 
-  (use-package company-auctex
-    :init
-    (company-auctex-init))
+(use-package company-auctex
+  :init
+  (company-auctex-init))
 
-  (use-package cdlatex)
+(use-package cdlatex)
 
-  (use-package tex
-    :ensure auctex
-    :mode ("\\.tex\\'" . latex-mode)
-    :config (progn
-              (setq TeX-source-correlate-mode t)
-              (setq TeX-source-correlate-method 'synctex)
-              (setq TeX-auto-save t)
-              (setq TeX-parse-self t)
-              (setq-default TeX-master nil)
-              (setq reftex-plug-into-AUCTeX t)
-              (pdf-tools-install)
-              (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
-                    TeX-source-correlate-start-server t)
-              ;; Update PDF buffers after successful LaTeX runs
-              (add-hook 'TeX-after-compilation-finished-functions
-                        #'TeX-revert-document-buffer)
-              (add-hook 'LaTeX-mode-hook
-                        (lambda ()
-                          (reftex-mode t)))))
+(use-package pdf-tools
+  :config
+  (setq-default pdf-view-display-size 'fit-page)
+  (setq pdf-annot-activate-created-annotations t)
+  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+  (pdf-tools-install :no-query))
 
 (use-package org
   :ensure org-plus-contrib
@@ -622,23 +624,32 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
     "If the current file is this file, the code blocks are tangled"
     (when (equal (buffer-file-name) (expand-file-name "~/.emacs.d/my-literate-emacs-configuration.org"))
       (org-babel-tangle nil "~/.emacs.d/init.el")))
+  ;; Run/highlight code using babel in org-mode
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((python . t)
+     (shell . t)
+     (emacs-lisp . t)))
+  ;; Syntax highlight in #+BEGIN_SRC blocks
+  (setq org-src-fontify-natively t)
+  ;; cycle C-e and C-a
   (setq org-special-ctrl-a/e t)
-  (setq org-src-window-setup 'split-window-below)
+  (setq org-src-window-setup 'split-window-right)
   ;; ;; edit block inserts
   (setq org-structure-template-alist
-  '(("a" . "export ascii\n")
-    ("c" . "center\n")
-    ("C" . "comment\n")
-    ("e" . "src emacs-lisp\n")
-    ("E" . "export")
-    ("h" . "export html\n")
-    ("l" . "export latex\n")
-    ("q" . "quote\n")
-    ("p" . "src python\n")
-    ("s" . "src")
-    ("v" . "verse\n")))
+        '(("a" . "export ascii\n")
+          ("c" . "center\n")
+          ("C" . "comment\n")
+          ("e" . "src emacs-lisp\n")
+          ("E" . "export")
+          ("h" . "export html\n")
+          ("l" . "src latex\n")
+          ("q" . "quote\n")
+          ("p" . "src python\n")
+          ("s" . "src")
+          ("v" . "verse\n")))
   ;; Configure latex exports
-  (setq org-latex-logfiles-extensions (quote ("lof" "lot" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
+  (setq org-latex-logfiles-extensions (quote ("lof" "lot" "xdv" "synctex.gz" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
   (setq org-latex-remove-logfiles t)
   ;; https://so.nwalsh.com/2020/01/05-latex
   (setq org-latex-compiler "xelatex")
@@ -646,7 +657,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
         (list (concat "latexmk -"
                       org-latex-compiler
                       " -recorder -synctex=1 -bibtex-cond %b")))
+  ;; Configure Org to use lstlisting for source environments.
   (setq org-latex-listings t)
+  ;; Use predefine latex template for orgmode export to latex
+  ;; https://so.nwalsh.com/2020/01/05-latex
   (setq org-latex-default-packages-alist
         '(("" "graphicx" t)
           ("" "grffile" t)
@@ -660,106 +674,103 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
           ("" "capt-of" nil)
           ("" "hyperref" nil)))
   (setq org-latex-classes
-        '(("article"
-           "\\RequirePackage{fix-cm}
-\\PassOptionsToPackage{svgnames}{xcolor}
-\\documentclass[11pt]{article}
-\\usepackage{fontspec}
-\\setmainfont{ETBembo RomanOSF}
-\\setsansfont[Scale=MatchLowercase]{Raleway}
-\\setmonofont[Scale=MatchLowercase]{Operator Mono}
-\\usepackage{sectsty}
-\\allsectionsfont{\\sffamily}
-\\usepackage{enumitem}
-\\setlist[description]{style=unboxed,font=\\sffamily\\bfseries}
-\\usepackage{listings}
-\\lstset{frame=single,aboveskip=1em,
-        framesep=.5em,backgroundcolor=\\color{AliceBlue},
-        rulecolor=\\color{LightSteelBlue},framerule=1pt}
-\\usepackage{xcolor}
-\\newcommand\\basicdefault[1]{\\scriptsize\\color{Black}\\ttfamily#1}
-\\lstset{basicstyle=\\basicdefault{\\spaceskip1em}}
-\\lstset{literate=
-            {§}{{\\S}}1
-            {©}{{\\raisebox{.125ex}{\\copyright}\\enspace}}1
-            {«}{{\\guillemotleft}}1
-            {»}{{\\guillemotright}}1
-            {Á}{{\\'A}}1
-            {Ä}{{\\\"A}}1
-            {É}{{\\'E}}1
-            {Í}{{\\'I}}1
-            {Ó}{{\\'O}}1
-            {Ö}{{\\\"O}}1
-            {Ú}{{\\'U}}1
-            {Ü}{{\\\"U}}1
-            {ß}{{\\ss}}2
-            {à}{{\\`a}}1
-            {á}{{\\'a}}1
-            {ä}{{\\\"a}}1
-            {é}{{\\'e}}1
-            {í}{{\\'i}}1
-            {ó}{{\\'o}}1
-            {ö}{{\\\"o}}1
-            {ú}{{\\'u}}1
-            {ü}{{\\\"u}}1
-            {¹}{{\\textsuperscript1}}1
-            {²}{{\\textsuperscript2}}1
-            {³}{{\\textsuperscript3}}1
-            {ı}{{\\i}}1
-            {—}{{---}}1
-            {’}{{'}}1
-            {…}{{\\dots}}1
-            {⮠}{{$\\hookleftarrow$}}1
-            {␣}{{\\textvisiblespace}}1,
-            keywordstyle=\\color{DarkGreen}\\bfseries,
-            identifierstyle=\\color{DarkRed},
-            commentstyle=\\color{Gray}\\upshape,
-            stringstyle=\\color{DarkBlue}\\upshape,
-            emphstyle=\\color{Chocolate}\\upshape,
-            showstringspaces=false,
-            columns=fullflexible,
-            keepspaces=true}
-\\usepackage[a4paper,margin=1in,left=1.5in]{geometry}
-\\usepackage{parskip}
-\\makeatletter
-\\renewcommand{\\maketitle}{%
-  \\begingroup\\parindent0pt
-  \\sffamily
-  \\Huge{\\bfseries\\@title}\\par\\bigskip
-  \\LARGE{\\bfseries\\@author}\\par\\medskip
-  \\normalsize\\@date\\par\\bigskip
-  \\endgroup\\@afterindentfalse\\@afterheading}
-\\makeatother
-[DEFAULT-PACKAGES]
-\\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
-  citecolor=DarkRed,colorlinks=true}
-\\AtBeginDocument{\\renewcommand{\\UrlFont}{\\ttfamily}}
-[PACKAGES]
-[EXTRA]"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-           ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+  '(("article"
+  "\\RequirePackage{fix-cm}
+  \\PassOptionsToPackage{svgnames}{xcolor}
+  \\documentclass[11pt]{article}
+  \\usepackage{fontspec}
+  \\setmainfont{ETBembo RomanOSF}
+  \\setsansfont[Scale=MatchLowercase]{Raleway}
+  \\setmonofont[Scale=MatchLowercase]{Operator Mono}
+  \\usepackage{sectsty}
+  \\allsectionsfont{\\sffamily}
+  \\usepackage{enumitem}
+  \\setlist[description]{style=unboxed,font=\\sffamily\\bfseries}
+  \\usepackage{listings}
+  \\lstset{frame=single,aboveskip=1em,
+          framesep=.5em,backgroundcolor=\\color{AliceBlue},
+          rulecolor=\\color{LightSteelBlue},framerule=1pt}
+  \\usepackage{xcolor}
+  \\newcommand\\basicdefault[1]{\\scriptsize\\color{Black}\\ttfamily#1}
+  \\lstset{basicstyle=\\basicdefault{\\spaceskip1em}}
+  \\lstset{literate=
+              {§}{{\\S}}1
+              {©}{{\\raisebox{.125ex}{\\copyright}\\enspace}}1
+              {«}{{\\guillemotleft}}1
+              {»}{{\\guillemotright}}1
+              {Á}{{\\'A}}1
+              {Ä}{{\\\"A}}1
+              {É}{{\\'E}}1
+              {Í}{{\\'I}}1
+              {Ó}{{\\'O}}1
+              {Ö}{{\\\"O}}1
+              {Ú}{{\\'U}}1
+              {Ü}{{\\\"U}}1
+              {ß}{{\\ss}}2
+              {à}{{\\`a}}1
+              {á}{{\\'a}}1
+              {ä}{{\\\"a}}1
+              {é}{{\\'e}}1
+              {í}{{\\'i}}1
+              {ó}{{\\'o}}1
+              {ö}{{\\\"o}}1
+              {ú}{{\\'u}}1
+              {ü}{{\\\"u}}1
+              {¹}{{\\textsuperscript1}}1
+              {²}{{\\textsuperscript2}}1
+              {³}{{\\textsuperscript3}}1
+              {ı}{{\\i}}1
+              {—}{{---}}1
+              {’}{{'}}1
+              {…}{{\\dots}}1
+              {⮠}{{$\\hookleftarrow$}}1
+              {␣}{{\\textvisiblespace}}1,
+              keywordstyle=\\color{DarkGreen}\\bfseries,
+              identifierstyle=\\color{DarkRed},
+              commentstyle=\\color{Gray}\\upshape,
+              stringstyle=\\color{DarkBlue}\\upshape,
+              emphstyle=\\color{Chocolate}\\upshape,
+              showstringspaces=false,
+              columns=fullflexible,
+              keepspaces=true}
+  \\usepackage[a4paper,margin=1in,left=1.5in]{geometry}
+  \\usepackage{parskip}
+  \\makeatletter
+  \\renewcommand{\\maketitle}{%
+    \\begingroup\\parindent0pt
+    \\sffamily
+    \\Huge{\\bfseries\\@title}\\par\\bigskip
+    \\LARGE{\\bfseries\\@author}\\par\\medskip
+    \\normalsize\\@date\\par\\bigskip
+    \\endgroup\\@afterindentfalse\\@afterheading}
+  \\makeatother
+  [DEFAULT-PACKAGES]
+  \\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
+    citecolor=DarkRed,colorlinks=true}
+  \\AtBeginDocument{\\renewcommand{\\UrlFont}{\\ttfamily}}
+  [PACKAGES]
+  [EXTRA]"
+  ("\\section{%s}" . "\\section*{%s}")
+  ("\\subsection{%s}" . "\\subsection*{%s}")
+  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+  ("\\paragraph{%s}" . "\\paragraph*{%s}")
+  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+  
+  ("report" "\\documentclass[11pt]{report}"
+  ("\\part{%s}" . "\\part*{%s}")
+  ("\\chapter{%s}" . "\\chapter*{%s}")
+  ("\\section{%s}" . "\\section*{%s}")
+  ("\\subsection{%s}" . "\\subsection*{%s}")
+  ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+  
+  ("book" "\\documentclass[11pt]{book}"
+  ("\\part{%s}" . "\\part*{%s}")
+  ("\\chapter{%s}" . "\\chapter*{%s}")
+  ("\\section{%s}" . "\\section*{%s}")
+  ("\\subsection{%s}" . "\\subsection*{%s}")
+  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))))
 
-          ("report" "\\documentclass[11pt]{report}"
-           ("\\part{%s}" . "\\part*{%s}")
-           ("\\chapter{%s}" . "\\chapter*{%s}")
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-
-          ("book" "\\documentclass[11pt]{book}"
-           ("\\part{%s}" . "\\part*{%s}")
-           ("\\chapter{%s}" . "\\chapter*{%s}")
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))))
-
-(use-package org-ref
-  :after org
-  :config
-  (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")))
+(use-package org-download)
 
 (use-package toc-org
   :after org
@@ -777,6 +788,38 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq org-reveal-mathjax t))
 
 (use-package htmlize)
+
+(use-package reftex
+  :diminish
+  :commands turn-on-reftex
+  :config
+  (setq reftex-cite-prompt-optional-args t) ;; Prompt for empty optional arguments in cite
+  (setq reftex-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib"))
+  (setq reftex-plug-into-AUCTeX t))
+
+(use-package ivy-bibtex
+  :config
+  (setq bibtex-completion-bibliography "/Users/simenojensen/Documents/Org/Bibliography/library.bib") ;; location of bibtex file
+  (setq bibtex-completion-library-path "/Users/simenojensen/Documents/Org/Bibliography") ;; directory of bibtex pdf files
+  (setq bibtex-completion-notes-path "/Users/simenojensen/Documents/Org/Bibliography/notes.org") ;; location of bibliography notes file
+  (setq bibtex-completion-pdf-field "File") ;; using bibtex path reference to pdf file
+  ;; open pdf with system pdf viewer (works on mac)
+  (setq bibtex-completion-pdf-open-function (lambda (fpath)
+                                              (start-process "open" "*open" "open" fpath)))
+  (setq ivy-bibtex-default-action 'bibtex-completion-insert-citation))
+
+(use-package org-ref
+  :after org
+  :config
+  (setq org-ref-bibliography-notes "/Users/simenojensen/Documents/Org/Bibliography/notes.org") ;; bibtex notes file
+  (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")) ;; bibtex file
+  (setq org-ref-pdf-directory "/Users/simenojensen/Documents/Org/Bibliography")) ;; bibliography pdf folder
+
+(defun my/get-file-content-as-string (filePath)
+  "Return filePath's content as string."
+  (with-temp-buffer
+    (insert-file-contents filePath)
+    (buffer-string)))
 
 (defun my/edit-config ()
   "Opens the my-literate-emacs-configuration.org file."
