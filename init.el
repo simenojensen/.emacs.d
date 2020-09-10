@@ -110,6 +110,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (desktop-save-mode 1)                                                                   ;; save desktop
 (setq history-delete-duplicates t)                                                      ;; delete duplicate history
 (setq revert-without-query '(".*"))                                                     ;; do not ask when reverting buffer
+(setq-default cursor-type '(bar . 4))                                                         ;; use bar for cursort
 
 ;; Vertical Scroll
 (setq scroll-step 1)
@@ -223,6 +224,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :config
   ;; Enable global auto-revert
   (global-auto-revert-mode t)
+  ;; sort directory first
+  (setq insert-directory-program "gls" dired-use-ls-dired t)
+  (setq dired-listing-switches "-laXGh --group-directories-first")
   ;; Reuse same dired buffer, to prevent numerous buffers while navigating in dired
   (put 'dired-find-alternate-file 'disabled nil)
   :hook
@@ -243,7 +247,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :init
   (custom-set-faces
    '(aw-leading-char-face
-     ((t (:inherit ace-jump-face-foreground :height 3.0))))))
+     ((t (:inherit fixed-pitch :height 4.0 :foreground "firebrick3"))))))
 
 (winner-mode 1)
 
@@ -267,6 +271,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
       ((eq system-type 'gnu/linux)
        
        ))
+
+(bind-key "M-`" 'other-frame)
 
 (use-package magit
   :bind
@@ -526,10 +532,17 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (use-package doom-themes
   :custom-face
-  (cursor ((t (:background "BlanchedAlmond"))))
+  (cursor ((t (:background "DarkRed"))))
   :config
+  (setq doom-themes-treemacs-theme "doom-colors") ; use the colorful treemacs theme
+  (doom-themes-treemacs-config)
   (doom-themes-visual-bell-config)  ;; flashing mode-line on errors
   (doom-themes-org-config)          ;; Corrects (and improves) org-mode's native fontification.
+  ;; (load-theme 'doom-city-lights t))
+  ;; (load-theme 'doom-molokai t)
+  ;; (load-theme 'doom-sourcerer t)
+  ;; (load-theme 'doom-tomorrow-night t)
+  ;; (load-theme 'doom-gruvbox t)
   (load-theme 'doom-gruvbox t))
 
 (use-package doom-modeline
@@ -542,12 +555,15 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq doom-modeline-major-mode-color-icon t)
   (setq doom-modeline-height 15))
 
-;;(use-package solarized-theme)
-;;(use-package darktooth-theme)
-;;(use-package kaolin-themes)
+;; (use-package spacemacs-theme
+;;   :config
+;;   (load-theme spacemacs-theme-light))
+;; ;; (use-package solarized-theme)
+;; (use-package darktooth-theme)
+;; (use-package kaolin-themes)
 ;; (use-package gruvbox-theme
-  ;; :config
-  ;; (load-theme 'gruvbox))
+;;   :config
+;;   (load-theme 'gruvbox))
 
 (use-package beacon
   :config
@@ -609,32 +625,60 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
   (pdf-tools-install :no-query))
 
+(use-package pdf-view-restore
+  :after pdf-tools
+  :config
+  (add-hook 'pdf-view-mode-hook 'pdf-view-restore-mode))
+
 (use-package org
   :ensure org-plus-contrib
   :pin org
   :init
   :hook
-  ((after-save . my/tangle-emacs-config)
-   (org-mode . visual-line-mode)
-   (org-mode . flyspell-mode)
-   (org-mode . turn-on-org-cdlatex))
+  (after-save . my/tangle-emacs-config)
+  (org-mode . visual-line-mode)
+  (org-mode . flyspell-mode)
+  (org-mode . (lambda () (setq-local company-idle-delay 0.4)))
+  (org-mode . turn-on-org-cdlatex)
+  ;; (org-mode . variable-pitch-mode) ;; beautifying
+  (org-mode . visual-line-mode) ;; beautifying
   :config
+  (setq org-directory "~/Documents/Org") ;; Set default org directory
+  (setq org-default-notes-file (concat org-directory "/tasks.org")) ;; Set default org capture file
+  ;; Org agenda
+  (setq org-todo-keywords
+        '((sequence "TODO"  "|" "DONE" "CANCELED")))
+  (setq org-agenda-files '("~/Documents/Org/"))
+  ;; org capture
+  (setq org-capture-templates
+        '(("a" "Assignment" entry
+           (file+headline "~/Documents/Org/Academic.org" "Assignments")
+           "* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")
+          ("E" "Exam" entry
+           (file+headline "~/Documents/Org/Academic.org" "Exams")
+           "* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")
+          ("P" "Project" entry
+           (file+headline "~/Documents/Org/Academic.org" "Projects")
+           "* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")))
   ;; Tangle on saving this file
   (defun my/tangle-emacs-config ()
     "If the current file is this file, the code blocks are tangled"
     (when (equal (buffer-file-name) (expand-file-name "~/.emacs.d/my-literate-emacs-configuration.org"))
       (org-babel-tangle nil "~/.emacs.d/init.el")))
+  ;; Do not confirm when evaluating code blocks
+  (setq org-confirm-babel-evaluate nil)
   ;; Run/highlight code using babel in org-mode
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((python . t)
+     (latex . t)
      (shell . t)
      (emacs-lisp . t)))
   ;; Syntax highlight in #+BEGIN_SRC blocks
   (setq org-src-fontify-natively t)
   ;; cycle C-e and C-a
   (setq org-special-ctrl-a/e t)
-  (setq org-src-window-setup 'split-window-right)
+  (setq org-src-window-setup 'current-window)
   ;; ;; edit block inserts
   (setq org-structure-template-alist
         '(("a" . "export ascii\n")
@@ -651,7 +695,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ;; Configure latex exports
   (setq org-latex-logfiles-extensions (quote ("lof" "lot" "xdv" "synctex.gz" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
   (setq org-latex-remove-logfiles t)
-  ;; https://so.nwalsh.com/2020/01/05-latex
+   ;; https://so.nwalsh.com/2020/01/05-latex
   (setq org-latex-compiler "xelatex")
   (setq org-latex-pdf-process
         (list (concat "latexmk -"
@@ -662,30 +706,39 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ;; Use predefine latex template for orgmode export to latex
   ;; https://so.nwalsh.com/2020/01/05-latex
   (setq org-latex-default-packages-alist
-        '(("" "graphicx" t)
-          ("" "grffile" t)
+        '(
+          ;; packages from template creator
           ("" "longtable" nil)
+          ("normalem" "ulem" t)
+          ("" "textcomp" t)
+          ("" "capt-of" nil)
+          ("" "hyperref" nil)
+          ;; images/figures
+          ("" "graphicx" t)
+          ("" "grffile" t)
           ("" "wrapfig" nil)
           ("" "rotating" nil)
-          ("normalem" "ulem" t)
+          ;; tables
+          ("" "array" t)
+          ("" "tabu" t)
+          ("" "multirow" t)
+          ("" "tabularx" t)
+          ;; math
           ("" "amsmath" t)
-          ("" "textcomp" t)
           ("" "amssymb" t)
-          ("" "capt-of" nil)
-          ("" "hyperref" nil)))
+          ("" "amsfonts" t)
+          ("" "amsthm" t)
+          ("" "relsize" t)
+          ("" "mathtools" t)
+          ))
   (setq org-latex-classes
   '(("article"
-  "\\RequirePackage{fix-cm}
+  " \\RequirePackage{fix-cm}
   \\PassOptionsToPackage{svgnames}{xcolor}
   \\documentclass[11pt]{article}
   \\usepackage{fontspec}
-  \\setmainfont{ETBembo RomanOSF}
-  \\setsansfont[Scale=MatchLowercase]{Raleway}
-  \\setmonofont[Scale=MatchLowercase]{Operator Mono}
-  \\usepackage{sectsty}
-  \\allsectionsfont{\\sffamily}
   \\usepackage{enumitem}
-  \\setlist[description]{style=unboxed,font=\\sffamily\\bfseries}
+  \\setlist{nosep,after=\\vspace{4pt}}
   \\usepackage{listings}
   \\lstset{frame=single,aboveskip=1em,
           framesep=.5em,backgroundcolor=\\color{AliceBlue},
@@ -733,21 +786,25 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
               showstringspaces=false,
               columns=fullflexible,
               keepspaces=true}
-  \\usepackage[a4paper,margin=1in,left=1.5in]{geometry}
+  \\usepackage[a4paper,top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
   \\usepackage{parskip}
+  \\setlength\\parindent{0pt}
+  \\setlength\\parskip{0pt}
   \\makeatletter
   \\renewcommand{\\maketitle}{%
-    \\begingroup\\parindent0pt
-    \\sffamily
-    \\Huge{\\bfseries\\@title}\\par\\bigskip
-    \\LARGE{\\bfseries\\@author}\\par\\medskip
-    \\normalsize\\@date\\par\\bigskip
-    \\endgroup\\@afterindentfalse\\@afterheading}
+  \\begingroup\\parindent0pt
+  \\Large{\\bfseries\\@title}\\newline
+  \\normalsize{\\bfseries\\@author}\\newline
+  \\normalsize\\@date
+  \\noindent\\makebox[\\textwidth]{\\rule{\\textwidth}{0.4pt}}
+  \\endgroup\\@afterindentfalse\\@afterheading}
   \\makeatother
   [DEFAULT-PACKAGES]
+  \\let\\oldtextbf\\textbf
+  \\renewcommand{\\textbf}[1]{\\textcolor{red}{\\oldtextbf{#1}}}
+  \\renewcommand{\\baselinestretch}{1.0}
   \\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
     citecolor=DarkRed,colorlinks=true}
-  \\AtBeginDocument{\\renewcommand{\\UrlFont}{\\ttfamily}}
   [PACKAGES]
   [EXTRA]"
   ("\\section{%s}" . "\\section*{%s}")
@@ -768,7 +825,51 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ("\\chapter{%s}" . "\\chapter*{%s}")
   ("\\section{%s}" . "\\section*{%s}")
   ("\\subsection{%s}" . "\\subsection*{%s}")
-  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))))
+  ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+    (setq org-hide-emphasis-markers t) ;; hide emphasis markers *...*, /.../, etc
+      ;; proportional fonts, in different sizes, for the headlines.
+    ;; https://edwardtufte.github.io/et-book/
+    (let* ((variable-tuple
+            (cond ((x-list-fonts "ETBembo")         '(:font "ETBembo"))
+                  ((x-list-fonts "Source Sans Pro") '(:font "Source Sans Pro"))
+                  ((x-list-fonts "Lucida Grande")   '(:font "Lucida Grande"))
+                  ((x-list-fonts "Verdana")         '(:font "Verdana"))
+                  ((x-family-fonts "Sans Serif")    '(:family "Sans Serif"))
+                  (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
+           (base-font-color     (face-foreground 'default nil 'default))
+           (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
+  
+      (custom-theme-set-faces
+       'user
+       `(org-level-8 ((t (,@headline ,@variable-tuple))))
+       `(org-level-7 ((t (,@headline ,@variable-tuple))))
+       `(org-level-6 ((t (,@headline ,@variable-tuple))))
+       `(org-level-5 ((t (,@headline ,@variable-tuple))))
+       `(org-level-4 ((t (,@headline ,@variable-tuple :forground "RoyalBlue1"   :height 1.1))))
+       `(org-level-3 ((t (,@headline ,@variable-tuple :foreground "firebrick3" :height 1.25))))
+       `(org-level-2 ((t (,@headline ,@variable-tuple :foreground "green3" :height 1.5))))
+       `(org-level-1 ((t (,@headline ,@variable-tuple :foreground "DarkOrange2" :height 1.75))))
+       `(org-document-title ((t (,@headline ,@variable-tuple :height 2.0 :underline nil))))))
+  
+  (custom-theme-set-faces
+     'user
+     '(variable-pitch ((t (:family "ETBembo" :height 180 :weight thin))))
+     '(fixed-pitch ((t ( :family "Fira Code Retina" :height 160)))))
+  
+    (custom-theme-set-faces
+     'user
+     '(org-block ((t (:inherit fixed-pitch))))
+     '(org-code ((t (:inherit (shadow fixed-pitch)))))
+     '(org-document-info ((t (:foreground "dark orange"))))
+     '(org-document-info-keyword ((t (:inherit (shadow fixed-pitch)))))
+     '(org-indent ((t (:inherit (org-hide fixed-pitch)))))
+     '(org-link ((t (:foreground "royal blue" :underline t))))
+     '(org-meta-line ((t (:inherit (font-lock-comment-face fixed-pitch)))))
+     '(org-property-value ((t (:inherit fixed-pitch))) t)
+     '(org-special-keyword ((t (:inherit (font-lock-comment-face fixed-pitch)))))
+     '(org-table ((t (:inherit fixed-pitch :foreground "#83a598"))))
+     '(org-tag ((t (:inherit (shadow fixed-pitch) :weight bold :height 0.8))))
+     '(org-verbatim ((t (:inherit (shadow fixed-pitch)))))))
 
 (use-package org-download)
 
