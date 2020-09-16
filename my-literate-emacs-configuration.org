@@ -1,6 +1,6 @@
 #+TITLE: My Literate Emacs Configuration
 #+AUTHOR: Simen Omholt-Jensen
-#+STARTUP:     hideall hidestars
+#+STARTUP:     overview hidestars
 #+PROPERTY:     header-args:emacs-lisp     :tangle "~/.emacs.d/init.el"    :results silent
 
 [[https://github.com/simenojensen/.emacs.d/blob/master/my-literate-emacs-configuration.org][My Configs]]
@@ -827,7 +827,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
      (setq lsp-ui-sideline-show-hover nil)
      (setq lsp-ui-sideline-show-code-actions nil)
      (setq lsp-ui-sideline-show-symbol nil)
-     (setq lsp-ui-sideline-delay 0.1)
+     (setq lsp-ui-sideline-delay 0.5)
      ;; lsp-ui-doc
      (setq lsp-ui-doc-enable nil)
      (setq lsp-ui-doc-header t)
@@ -867,9 +867,9 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
            ("C-p" . company-select-previous)))
     :config
     (setq company-minimum-prefix-length 1)
-    (setq company-idle-delay 0)
-    (setq company-echo-delay 0)
-    (setq company-tooltip-idle-delay 0)
+    (setq company-idle-delay 0.5)
+    (setq company-echo-delay 0.5)
+    (setq company-tooltip-idle-delay 0.5)
     (setq company-tooltip-align-annotations t)
     (setq company-require-match nil)
     (setq company-show-numbers t)
@@ -959,6 +959,17 @@ Usage:
     (conda-env-autoactivate-mode t)           ;; autoactivate
     (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
     (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
+#+end_src
+
+** =py-autopep8=
+
+=py-autopep8= provides commands to tidy up the current buffer.
+[[https://github.com/paetzke/py-autopep8.el][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package py-autopep8
+    :config
+    (setq py-autopep8-options '("--max-line-length=80")))
 #+end_src
 
 * Appearance
@@ -1097,6 +1108,22 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     (dimmer-mode t))
 #+end_src
 
+** =dashboard=
+
+=dashboard= is an extensible emacs startup screen showing you what's most important.
+[[https://github.com/emacs-dashboard/emacs-dashboard][More Information]]
+
+#+begin_src emacs-lisp
+   ;; Dependency
+  (use-package page-break-lines)
+
+  (use-package dashboard
+    :ensure t
+    :config
+    (setq show-week-agenda-p t)
+    (dashboard-setup-startup-hook))
+#+end_src
+
 * Latex
 
 Install Latex.
@@ -1221,13 +1248,13 @@ Install org-mode from the org package repository.
     (setq org-capture-templates
           '(("a" "Assignment" entry
              (file+headline "~/Documents/Org/Academic.org" "Assignments")
-             "* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")
+             "* TODO %?\n")
             ("E" "Exam" entry
              (file+headline "~/Documents/Org/Academic.org" "Exams")
-             "* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")
+             "* TODO %?\n")
             ("P" "Project" entry
              (file+headline "~/Documents/Org/Academic.org" "Projects")
-             "* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")))
+             "* TODO %?\n")))
     ;; Tangle on saving this file
     (defun my/tangle-emacs-config ()
       "If the current file is this file, the code blocks are tangled"
@@ -1313,6 +1340,7 @@ Install org-mode from the org package repository.
   \\documentclass[11pt]{article}
   \\usepackage{fontspec}
   \\usepackage{enumitem}
+  \\usepackage[nottoc]{tocbibind}
   \\setlist{nosep,after=\\vspace{4pt}}
   \\usepackage{listings}
   \\lstset{frame=single,aboveskip=1em,

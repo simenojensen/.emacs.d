@@ -406,7 +406,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq lsp-ui-sideline-show-hover nil)
   (setq lsp-ui-sideline-show-code-actions nil)
   (setq lsp-ui-sideline-show-symbol nil)
-  (setq lsp-ui-sideline-delay 0.1)
+  (setq lsp-ui-sideline-delay 0.5)
   ;; lsp-ui-doc
   (setq lsp-ui-doc-enable nil)
   (setq lsp-ui-doc-header t)
@@ -441,9 +441,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
          ("C-p" . company-select-previous)))
   :config
   (setq company-minimum-prefix-length 1)
-  (setq company-idle-delay 0)
-  (setq company-echo-delay 0)
-  (setq company-tooltip-idle-delay 0)
+  (setq company-idle-delay 0.5)
+  (setq company-echo-delay 0.5)
+  (setq company-tooltip-idle-delay 0.5)
   (setq company-tooltip-align-annotations t)
   (setq company-require-match nil)
   (setq company-show-numbers t)
@@ -507,6 +507,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (conda-env-autoactivate-mode t)           ;; autoactivate
   (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
   (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
+
+(use-package py-autopep8
+  :config
+  (setq py-autopep8-options '("--max-line-length=80")))
 
 (use-package all-the-icons)
 
@@ -578,6 +582,15 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :config
   (setq dimmer-fraction 0.5)
   (dimmer-mode t))
+
+;; Dependency
+(use-package page-break-lines)
+
+(use-package dashboard
+  :ensure t
+  :config
+  (setq show-week-agenda-p t)
+  (dashboard-setup-startup-hook))
 
 (use-package tex-site
   :ensure auctex
@@ -653,13 +666,13 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq org-capture-templates
         '(("a" "Assignment" entry
            (file+headline "~/Documents/Org/Academic.org" "Assignments")
-           "* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")
+           "* TODO %?\n")
           ("E" "Exam" entry
            (file+headline "~/Documents/Org/Academic.org" "Exams")
-           "* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")
+           "* TODO %?\n")
           ("P" "Project" entry
            (file+headline "~/Documents/Org/Academic.org" "Projects")
-           "* TODO %?\n:PROPERTIES:\n\n:END:\nDEADLINE: %^T \n %i\n")))
+           "* TODO %?\n")))
   ;; Tangle on saving this file
   (defun my/tangle-emacs-config ()
     "If the current file is this file, the code blocks are tangled"
@@ -738,6 +751,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   \\documentclass[11pt]{article}
   \\usepackage{fontspec}
   \\usepackage{enumitem}
+  \\usepackage[nottoc]{tocbibind}
   \\setlist{nosep,after=\\vspace{4pt}}
   \\usepackage{listings}
   \\lstset{frame=single,aboveskip=1em,
