@@ -587,7 +587,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package page-break-lines)
 
 (use-package dashboard
-  :ensure t
+  :disabled
   :config
   (setq show-week-agenda-p t)
   (dashboard-setup-startup-hook))
@@ -714,6 +714,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
         (list (concat "latexmk -"
                       org-latex-compiler
                       " -recorder -synctex=1 -bibtex-cond %b")))
+  (setq org-export-in-background t) ;; export async
   ;; Configure Org to use lstlisting for source environments.
   (setq org-latex-listings t)
   ;; Use predefine latex template for orgmode export to latex

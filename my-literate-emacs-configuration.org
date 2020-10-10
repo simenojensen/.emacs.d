@@ -1118,7 +1118,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
   (use-package page-break-lines)
 
   (use-package dashboard
-    :ensure t
+    :disabled
     :config
     (setq show-week-agenda-p t)
     (dashboard-setup-startup-hook))
@@ -1296,6 +1296,7 @@ Install org-mode from the org package repository.
           (list (concat "latexmk -"
                         org-latex-compiler
                         " -recorder -synctex=1 -bibtex-cond %b")))
+    (setq org-export-in-background t) ;; export async
     ;; Configure Org to use lstlisting for source environments.
     (setq org-latex-listings t)
     ;; Use predefine latex template for orgmode export to latex
