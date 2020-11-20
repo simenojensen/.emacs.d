@@ -266,13 +266,15 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
              (exec-path-from-shell-initialize)))
        )
       ((eq system-type 'windows-nt)
-
+       
        )
       ((eq system-type 'gnu/linux)
-
+       
        ))
 
 (bind-key "M-`" 'other-frame)
+
+;; (use-package vterm)
 
 (use-package magit
   :bind
@@ -711,6 +713,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ;; cycle C-e and C-a
   (setq org-special-ctrl-a/e t)
   (setq org-src-window-setup 'current-window)
+  ;; do not indent after sections
+  (setq org-adapt-indentation nil)
   ;; ;; edit block inserts
   (setq org-structure-template-alist
         '(("a" . "export ascii\n")
@@ -829,13 +833,13 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   \\begingroup\\parindent0pt
   \\Large{\\bfseries\\@title}\\newline
   \\normalsize{\\bfseries\\@author}\\newline
-  \\normalsize\\@date
+  \\normalsize{\\@date}\\vspace{-0.2cm}\\newline
   \\noindent\\makebox[\\textwidth]{\\rule{\\textwidth}{0.4pt}}
   \\endgroup\\@afterindentfalse\\@afterheading}
   \\makeatother
   [DEFAULT-PACKAGES]
   \\let\\oldtextbf\\textbf
-  \\renewcommand{\\textbf}[1]{\\textcolor{red}{\\oldtextbf{#1}}}
+  \\renewcommand{\\textbf}[1]{\\textcolor{black}{\\oldtextbf{#1}}}
   \\renewcommand{\\baselinestretch}{1.0}
   \\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
     citecolor=DarkRed,colorlinks=true}
@@ -846,14 +850,14 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
   ("\\paragraph{%s}" . "\\paragraph*{%s}")
   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-
+  
   ("report" "\\documentclass[11pt]{report}"
   ("\\part{%s}" . "\\part*{%s}")
   ("\\chapter{%s}" . "\\chapter*{%s}")
   ("\\section{%s}" . "\\section*{%s}")
   ("\\subsection{%s}" . "\\subsection*{%s}")
   ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-
+  
   ("book" "\\documentclass[11pt]{book}"
   ("\\part{%s}" . "\\part*{%s}")
   ("\\chapter{%s}" . "\\chapter*{%s}")
@@ -872,7 +876,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                   (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
            (base-font-color     (face-foreground 'default nil 'default))
            (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
-
+  
       (custom-theme-set-faces
        'user
        `(org-level-8 ((t (,@headline ,@variable-tuple))))
@@ -884,12 +888,12 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
        `(org-level-2 ((t (,@headline ,@variable-tuple :foreground "green3" :height 1.5))))
        `(org-level-1 ((t (,@headline ,@variable-tuple :foreground "DarkOrange2" :height 1.75))))
        `(org-document-title ((t (,@headline ,@variable-tuple :height 2.0 :underline nil))))))
-
+  
   (custom-theme-set-faces
      'user
      '(variable-pitch ((t (:family "ETBembo" :height 180 :weight thin))))
      '(fixed-pitch ((t ( :family "Fira Code Retina" :height 160)))))
-
+  
     (custom-theme-set-faces
      'user
      '(org-block ((t (:inherit fixed-pitch))))
@@ -982,4 +986,3 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
     :keybinding "y"))
 
 
-(put 'narrow-to-region 'disabled nil)

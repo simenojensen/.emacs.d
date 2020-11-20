@@ -596,6 +596,11 @@ Not implemented
 
 * Console
 ** Still looking for the perfect terminal
+
+#+begin_src emacs-lisp
+  ;; (use-package vterm)
+#+end_src
+
 * General Programming
 ** Magit
 
@@ -1293,6 +1298,8 @@ Install org-mode from the org package repository.
     ;; cycle C-e and C-a
     (setq org-special-ctrl-a/e t)
     (setq org-src-window-setup 'current-window)
+    ;; do not indent after sections
+    (setq org-adapt-indentation nil)
     ;; ;; edit block inserts
     (setq org-structure-template-alist
           '(("a" . "export ascii\n")
@@ -1418,13 +1425,13 @@ Install org-mode from the org package repository.
   \\begingroup\\parindent0pt
   \\Large{\\bfseries\\@title}\\newline
   \\normalsize{\\bfseries\\@author}\\newline
-  \\normalsize\\@date
+  \\normalsize{\\@date}\\vspace{-0.2cm}\\newline
   \\noindent\\makebox[\\textwidth]{\\rule{\\textwidth}{0.4pt}}
   \\endgroup\\@afterindentfalse\\@afterheading}
   \\makeatother
   [DEFAULT-PACKAGES]
   \\let\\oldtextbf\\textbf
-  \\renewcommand{\\textbf}[1]{\\textcolor{red}{\\oldtextbf{#1}}}
+  \\renewcommand{\\textbf}[1]{\\textcolor{black}{\\oldtextbf{#1}}}
   \\renewcommand{\\baselinestretch}{1.0}
   \\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
     citecolor=DarkRed,colorlinks=true}
