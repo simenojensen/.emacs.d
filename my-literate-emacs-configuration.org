@@ -616,7 +616,9 @@ Not implemented
 #+end_src
 
 * Console
-** Still looking for the perfect terminal
+** =vterm=
+Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based on libvterm, a C library. As a result of using compiled code (instead of elisp), emacs-libvterm is fully capable, fast, and it can seamlessly handle large outputs.
+[[https://github.com/akermu/emacs-libvterm][More Information]]
 
 #+begin_src emacs-lisp
   (use-package vterm
