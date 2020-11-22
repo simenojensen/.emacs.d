@@ -89,9 +89,12 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                                      (abbreviate-file-name (buffer-file-name)) "%b")))
 (set-language-environment "UTF-8")                                                      ;; Set enconding language
 (global-display-line-numbers-mode)                                                      ;; Display line numbers
+(dolist (mode '(vterm-mode-hook))                                                       ;; disable line number for some modes
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
 (setq column-number-mode t)                                                             ;; Display column numbers
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
 (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
+(set-fringe-mode 10)                                                                    ;; Give some breathing room
 (setq debug-on-error nil)                                                               ;; Receive more information errors
 (setq custom-file "~/.emacs.d/custom.el")
 (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
@@ -177,7 +180,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ("C-h u" . counsel-unicode-char)
   ("M-x" . counsel-M-x)
   ("M-v" . counsel-yank-pop)
-  ("C-x C-b" . ivy-switch-buffer)
+  ("C-x C-b" . counsel-switch-buffer)
   ("C-s" . swiper-isearch))
   :config
   (ivy-mode 1)
@@ -186,6 +189,16 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq ivy-display-style 'fancy)
   (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
+
+(use-package helpful
+  :custom
+  (counsel-describe-function-function #'helpful-callable)
+  (counsel-describe-variable-function #'helpful-variable)
+  :bind
+  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-command] . helpful-command)
+  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-key] . helpful-key))
 
 (use-package undo-tree
   :diminish undo-tree-mode
@@ -274,7 +287,20 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (bind-key "M-`" 'other-frame)
 
-;; (use-package vterm)
+(use-package vterm
+  ;; add functionality for counsel-yank-pop
+  :after counsel
+  :config
+  (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
+    (if (equal major-mode 'vterm-mode)
+      (let ((inhibit-read-only t)
+            (yank-undo-function (lambda (_start _end) (vterm-undo))))
+        (cl-letf (((symbol-function 'insert-for-yank)
+                   (lambda (str) (vterm-send-string str t))))
+          (apply orig-fun args)))
+    (apply orig-fun args)))
+
+  (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action))
 
 (use-package magit
   :bind

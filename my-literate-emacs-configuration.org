@@ -1,6 +1,6 @@
 #+TITLE: My Literate Emacs Configuration
 #+AUTHOR: Simen Omholt-Jensen
-#+STARTUP:     overview hidestars
+#+STARTUP:     hidestars overview
 #+PROPERTY:     header-args:emacs-lisp     :tangle "~/.emacs.d/init.el"    :results silent
 
 [[https://github.com/simenojensen/.emacs.d/blob/master/my-literate-emacs-configuration.org][My Configs]]
@@ -247,9 +247,12 @@ The =try= package let's you try new packages without installed them. On the next
                                        (abbreviate-file-name (buffer-file-name)) "%b")))
   (set-language-environment "UTF-8")                                                      ;; Set enconding language
   (global-display-line-numbers-mode)                                                      ;; Display line numbers
+  (dolist (mode '(vterm-mode-hook))                                                       ;; disable line number for some modes
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
   (setq column-number-mode t)                                                             ;; Display column numbers
   (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
   (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
+  (set-fringe-mode 10)                                                                    ;; Give some breathing room
   (setq debug-on-error nil)                                                               ;; Receive more information errors
   (setq custom-file "~/.emacs.d/custom.el")
   (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
@@ -396,7 +399,7 @@ The =which-key= package automatically displays potential command information as 
     ("C-h u" . counsel-unicode-char)
     ("M-x" . counsel-M-x)
     ("M-v" . counsel-yank-pop)
-    ("C-x C-b" . ivy-switch-buffer)
+    ("C-x C-b" . counsel-switch-buffer)
     ("C-s" . swiper-isearch))
     :config
     (ivy-mode 1)
@@ -406,6 +409,24 @@ The =which-key= package automatically displays potential command information as 
     (setq ivy-use-virtual-buffers t)
     (setq ivy-count-format "(%d/%d) "))
 #+end_src
+
+** =helpful=
+
+Helpful is an alternative to the built-in Emacs help that provides much more contextual information.
+[[https://github.com/Wilfred/helpful][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package helpful
+    :custom
+    (counsel-describe-function-function #'helpful-callable)
+    (counsel-describe-variable-function #'helpful-variable)
+    :bind
+    ([remap describe-function] . counsel-describe-function)
+    ([remap describe-command] . helpful-command)
+    ([remap describe-variable] . counsel-describe-variable)
+    ([remap describe-key] . helpful-key))
+#+end_src
+
 ** =undo-tree=
 
 =undo-tree=, a feature that provides a visualization of the undos in a file.
@@ -598,7 +619,20 @@ Not implemented
 ** Still looking for the perfect terminal
 
 #+begin_src emacs-lisp
-  ;; (use-package vterm)
+  (use-package vterm
+    ;; add functionality for counsel-yank-pop
+    :after counsel
+    :config
+    (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
+      (if (equal major-mode 'vterm-mode)
+        (let ((inhibit-read-only t)
+              (yank-undo-function (lambda (_start _end) (vterm-undo))))
+          (cl-letf (((symbol-function 'insert-for-yank)
+                     (lambda (str) (vterm-send-string str t))))
+            (apply orig-fun args)))
+      (apply orig-fun args)))
+
+    (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action))
 #+end_src
 
 * General Programming
@@ -1012,18 +1046,27 @@ Usage:
    (use-package all-the-icons)
  #+end_src
 
-*** =all-the-icons-ivy=
+*** =all-the-icons-ivy-rich=
+
+[[https://github.com/seagle0128/all-the-icons-ivy-rich][More Information]]
 
   #+begin_src emacs-lisp
     (use-package all-the-icons-ivy-rich
       :config
       (all-the-icons-ivy-rich-mode 1))
-
-    (use-package ivy-rich
-      :config
-      (ivy-rich-mode 1)
-      (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
   #+end_src
+
+*** =ivy-rich=
+
+More friendly interface for ivy.
+[[https://github.com/Yevgnen/ivy-rich][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package ivy-rich
+    :config
+    (ivy-rich-mode 1)
+    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
+#+end_src
 
 *** =all-the-icons-dired=
 
@@ -1208,7 +1251,7 @@ Install Latex.
 
 ** =cdlatex=
 
-=cdlatex= is a minor mode supporting fast insertion of environment templates and math stuff inn $/latex$.
+=cdlatex= is a minor mode supporting fast insertion of environment templates and math stuff inn $\latex$.
 [[https://github.com/cdominik/cdlatex][More Information]]
 
 #+begin_src emacs-lisp
@@ -1665,7 +1708,6 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
 
 * Experimental
 #+begin_src emacs-lisp
-
 #+end_src
 
 ** Writing tools to look into
