@@ -946,6 +946,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :hook
   (org-mode . (lambda () (org-bullets-mode t))))
 
+(use-package ox-twbs)
+
 (use-package ox-reveal
   :ensure ox-reveal
   :config

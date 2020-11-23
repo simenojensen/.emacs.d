@@ -764,9 +764,7 @@ An Emacs "jump to definition" package for 40+ languages
 ** =format-all=
 
 =format-all= let one auto-format source code in many languages using the same command.
-
 [[https://github.com/lassik/emacs-format-all-the-code][More Information]]
-
 
 #+begin_src emacs-lisp
   (use-package format-all)
@@ -1586,6 +1584,13 @@ Install the =toc-org= package to automatically generate an updated table of cont
     (org-mode . (lambda () (org-bullets-mode t))))
  #+end_src
 
+** =ox-twbs=
+Export org-mode docs as HTML compatible with Twitter Bootstrap.
+[[https://github.com/marsmining/ox-twbs][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package ox-twbs)
+#+end_src
 ** =reveal.js=
 
 Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, install [[https://github.com/hexmode/ox-reveal][=ox-reveal=]] and [[https://github.com/hniksic/emacs-htmlize][=htmlize=]].
@@ -1719,3 +1724,6 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
 - [[https://github.com/hpdeifel/synosaurus][synosaurus]]
 - [[https://github.com/org-roam/org-roam][org-roam]]
   - [[https://rgoswami.me/posts/org-note-workflow/][org-mode notes workflow]]
+- [[https://github.com/marsmining/ox-twbs][twitter-bootstrap]]
+- =org2blog= to wordspress
+- =org-publish=
