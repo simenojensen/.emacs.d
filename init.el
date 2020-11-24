@@ -617,8 +617,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :init
   (doom-modeline-mode 1)
   :config
-  (setq inhibit-compacting-font-caches t)
-  (setq doom-modeline-minor-modes t)
+  ;; (setq inhibit-compacting-font-caches t)
+  (setq doom-modeline-minor-modes nil)
   (setq doom-modeline-icon t)
   (setq doom-modeline-major-mode-color-icon t)
   (setq doom-modeline-height 15))
