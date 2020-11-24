@@ -74,9 +74,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package auto-compile
   :config
   (auto-compile-on-load-mode)
-(auto-compile-on-save-mode))
+  (auto-compile-on-save-mode))
 
-(require 'bind-key)
+(use-package bind-key)
 
 (use-package diminish)
 
@@ -173,15 +173,15 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (ivy-mode 1)
   :bind
   (("C-x C-f" . counsel-find-file)
-  ("C-h f" . counsel-describe-function)
-  ("C-h v" . counsel-describe-variable)
-  ("C-h l" . counsel-find-library)
-  ("C-h i" . counsel-info-lookup-symbol)
-  ("C-h u" . counsel-unicode-char)
-  ("M-x" . counsel-M-x)
-  ("M-v" . counsel-yank-pop)
-  ("C-x C-b" . counsel-switch-buffer)
-  ("C-s" . swiper-isearch))
+   ("C-h f" . counsel-describe-function)
+   ("C-h v" . counsel-describe-variable)
+   ("C-h l" . counsel-find-library)
+   ("C-h i" . counsel-info-lookup-symbol)
+   ("C-h u" . counsel-unicode-char)
+   ("M-x" . counsel-M-x)
+   ("M-v" . counsel-yank-pop)
+   ("C-x C-b" . counsel-switch-buffer)
+   ("C-s" . swiper-isearch))
   :config
   (ivy-mode 1)
   (setq ivy-height 10)
@@ -204,7 +204,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :diminish undo-tree-mode
   :init
   (global-undo-tree-mode)
-:config
+  :config
   (setq undo-tree-visualizer-diff t)
   (setq undo-tree-visualizer-timestamps t))
 
@@ -294,12 +294,12 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ;; Counsel-yank-pop
   (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
     (if (equal major-mode 'vterm-mode)
-      (let ((inhibit-read-only t)
-            (yank-undo-function (lambda (_start _end) (vterm-undo))))
-        (cl-letf (((symbol-function 'insert-for-yank)
-                   (lambda (str) (vterm-send-string str t))))
-          (apply orig-fun args)))
-    (apply orig-fun args)))
+        (let ((inhibit-read-only t)
+              (yank-undo-function (lambda (_start _end) (vterm-undo))))
+          (cl-letf (((symbol-function 'insert-for-yank)
+                     (lambda (str) (vterm-send-string str t))))
+            (apply orig-fun args)))
+      (apply orig-fun args)))
   (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
   ;; show vterm in bottom side
   ;; (setq vterm-toggle-fullscreen-p nil)
@@ -432,10 +432,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :bind
   ;; lsp-ui-peek
   ((:map lsp-ui-mode-map
-        ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
-        ([remap xref-find-references] . lsp-ui-peek-find-references)
-        ;; lsp-ui-doc
-        ("M-i" . lsp-ui-doc-focus-frame))
+         ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
+         ([remap xref-find-references] . lsp-ui-peek-find-references)
+         ;; lsp-ui-doc
+         ("M-i" . lsp-ui-doc-focus-frame))
    ("s-i" . my/toggle-lsp-ui-doc))
   :config
   ;; lsp-ui-sideline
@@ -517,38 +517,38 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                 (t . nil)))))
     (advice-add #'company-box-icons--elisp :override #'my-company-box-icons--elisp))
 
-    (declare-function all-the-icons-faicon 'all-the-icons)
-    (declare-function all-the-icons-material 'all-the-icons)
-    (declare-function all-the-icons-octicon 'all-the-icons)
-    (setq company-box-icons-all-the-icons
-          `((Unknown . ,(all-the-icons-material "find_in_page" :height 0.8 :v-adjust -0.15))
-            (Text . ,(all-the-icons-faicon "text-width" :height 0.8 :v-adjust -0.02))
-            (Method . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
-            (Function . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
-            (Constructor . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
-            (Field . ,(all-the-icons-octicon "tag" :height 0.85 :v-adjust 0 :face 'all-the-icons-lblue))
-            (Variable . ,(all-the-icons-octicon "tag" :height 0.85 :v-adjust 0 :face 'all-the-icons-lblue))
-            (Class . ,(all-the-icons-material "settings_input_component" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
-            (Interface . ,(all-the-icons-material "share" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
-            (Module . ,(all-the-icons-material "view_module" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
-            (Property . ,(all-the-icons-faicon "wrench" :height 0.8 :v-adjust -0.02))
-            (Unit . ,(all-the-icons-material "settings_system_daydream" :height 0.8 :v-adjust -0.15))
-            (Value . ,(all-the-icons-material "format_align_right" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
-            (Enum . ,(all-the-icons-material "storage" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
-            (Keyword . ,(all-the-icons-material "filter_center_focus" :height 0.8 :v-adjust -0.15))
-            (Snippet . ,(all-the-icons-material "format_align_center" :height 0.8 :v-adjust -0.15))
-            (Color . ,(all-the-icons-material "palette" :height 0.8 :v-adjust -0.15))
-            (File . ,(all-the-icons-faicon "file-o" :height 0.8 :v-adjust -0.02))
-            (Reference . ,(all-the-icons-material "collections_bookmark" :height 0.8 :v-adjust -0.15))
-            (Folder . ,(all-the-icons-faicon "folder-open" :height 0.8 :v-adjust -0.02))
-            (EnumMember . ,(all-the-icons-material "format_align_right" :height 0.8 :v-adjust -0.15))
-            (Constant . ,(all-the-icons-faicon "square-o" :height 0.8 :v-adjust -0.1))
-            (Struct . ,(all-the-icons-material "settings_input_component" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
-            (Event . ,(all-the-icons-octicon "zap" :height 0.8 :v-adjust 0 :face 'all-the-icons-orange))
-            (Operator . ,(all-the-icons-material "control_point" :height 0.8 :v-adjust -0.15))
-            (TypeParameter . ,(all-the-icons-faicon "arrows" :height 0.8 :v-adjust -0.02))
-            (Template . ,(all-the-icons-material "format_align_left" :height 0.8 :v-adjust -0.15)))
-          company-box-icons-alist 'company-box-icons-all-the-icons))
+  (declare-function all-the-icons-faicon 'all-the-icons)
+  (declare-function all-the-icons-material 'all-the-icons)
+  (declare-function all-the-icons-octicon 'all-the-icons)
+  (setq company-box-icons-all-the-icons
+        `((Unknown . ,(all-the-icons-material "find_in_page" :height 0.8 :v-adjust -0.15))
+          (Text . ,(all-the-icons-faicon "text-width" :height 0.8 :v-adjust -0.02))
+          (Method . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
+          (Function . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
+          (Constructor . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
+          (Field . ,(all-the-icons-octicon "tag" :height 0.85 :v-adjust 0 :face 'all-the-icons-lblue))
+          (Variable . ,(all-the-icons-octicon "tag" :height 0.85 :v-adjust 0 :face 'all-the-icons-lblue))
+          (Class . ,(all-the-icons-material "settings_input_component" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
+          (Interface . ,(all-the-icons-material "share" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
+          (Module . ,(all-the-icons-material "view_module" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
+          (Property . ,(all-the-icons-faicon "wrench" :height 0.8 :v-adjust -0.02))
+          (Unit . ,(all-the-icons-material "settings_system_daydream" :height 0.8 :v-adjust -0.15))
+          (Value . ,(all-the-icons-material "format_align_right" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
+          (Enum . ,(all-the-icons-material "storage" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
+          (Keyword . ,(all-the-icons-material "filter_center_focus" :height 0.8 :v-adjust -0.15))
+          (Snippet . ,(all-the-icons-material "format_align_center" :height 0.8 :v-adjust -0.15))
+          (Color . ,(all-the-icons-material "palette" :height 0.8 :v-adjust -0.15))
+          (File . ,(all-the-icons-faicon "file-o" :height 0.8 :v-adjust -0.02))
+          (Reference . ,(all-the-icons-material "collections_bookmark" :height 0.8 :v-adjust -0.15))
+          (Folder . ,(all-the-icons-faicon "folder-open" :height 0.8 :v-adjust -0.02))
+          (EnumMember . ,(all-the-icons-material "format_align_right" :height 0.8 :v-adjust -0.15))
+          (Constant . ,(all-the-icons-faicon "square-o" :height 0.8 :v-adjust -0.1))
+          (Struct . ,(all-the-icons-material "settings_input_component" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
+          (Event . ,(all-the-icons-octicon "zap" :height 0.8 :v-adjust 0 :face 'all-the-icons-orange))
+          (Operator . ,(all-the-icons-material "control_point" :height 0.8 :v-adjust -0.15))
+          (TypeParameter . ,(all-the-icons-faicon "arrows" :height 0.8 :v-adjust -0.02))
+          (Template . ,(all-the-icons-material "format_align_left" :height 0.8 :v-adjust -0.15)))
+        company-box-icons-alist 'company-box-icons-all-the-icons))
 
 (use-package python
   :config
@@ -560,7 +560,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq lsp-python-ms-auto-install-server t)
   :config
   (setq lsp-python-ms-executable
-      "~/.emacs.d/site-elisp/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
+        "~/.emacs.d/site-elisp/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
 
 (use-package conda
   :hook
@@ -681,7 +681,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                   (pdf-tools-install))) ;; use PDF-tools
   ;; automatically insert '\(...\)' in Latex files by pressing $
   (LaTeX-mode . (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
-                     (cons "\\(" "\\)"))))
+                                (cons "\\(" "\\)"))))
   (TeX-after-TeX-LaTeX-command-finished . TeX-revert-document-buffer))
 
 (use-package auctex-latexmk
@@ -711,17 +711,18 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package org
   :ensure org-plus-contrib
   :pin org
-  :init
   :hook
   (after-save . my/tangle-emacs-config)
-  (org-mode . visual-line-mode)
-  (org-mode . flyspell-mode)
-  (org-mode . (lambda () (setq-local company-idle-delay 0.4)))
-  (org-mode . turn-on-org-cdlatex)
-  (org-mode . (lambda () (diminish 'org-cdlatex-mode)))
-  ;; (org-mode . variable-pitch-mode) ;; beautifying
-  (org-mode . visual-line-mode) ;; beautifying
+  (org-mode . (lambda ()
+                (setq-local company-idle-delay 0.4) ;; company idle delay
+                ;; (visual-line-mode) ;; visual line
+                (flyspell-mode) ;; turn on flyspell
+                (turn-on-org-cdlatex) ;; turn on cdlatex
+                (diminish 'org-cdlatex-mode) ;; remove from modeline
+                ;; (variable-pitch-mode -1)
+                ))
   :config
+  ;; Org settings
   (setq org-directory "~/Documents/Org") ;; Set default org directory
   (setq org-default-notes-file (concat org-directory "/tasks.org")) ;; Set default org capture file
   ;; Org agenda
@@ -753,13 +754,11 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
      (latex . t)
      (shell . t)
      (emacs-lisp . t)))
-  ;; Syntax highlight in #+BEGIN_SRC blocks
-  (setq org-src-fontify-natively t)
-  ;; cycle C-e and C-a
-  (setq org-special-ctrl-a/e t)
-  (setq org-src-window-setup 'current-window)
-  ;; do not indent after sections
-  (setq org-adapt-indentation nil)
+
+  (setq org-src-fontify-natively t) ;; Syntax highlight in #+BEGIN_SRC blocks
+  (setq org-special-ctrl-a/e t) ;; cycle C-e and C-a
+  (setq org-src-window-setup 'current-window) ;; use same window
+  (setq org-adapt-indentation nil) ;; do not indent after sections
   ;; ;; edit block inserts
   (setq org-structure-template-alist
         '(("a" . "export ascii\n")
@@ -776,7 +775,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ;; Configure latex exports
   (setq org-latex-logfiles-extensions (quote ("lof" "lot" "xdv" "synctex.gz" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
   (setq org-latex-remove-logfiles t)
-   ;; https://so.nwalsh.com/2020/01/05-latex
+  ;; https://so.nwalsh.com/2020/01/05-latex
   (setq org-latex-compiler "xelatex")
   (setq org-latex-pdf-process
         (list (concat "latexmk -"
@@ -814,8 +813,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
           ("" "mathtools" t)
           ))
   (setq org-latex-classes
-  '(("article"
-  " \\RequirePackage{fix-cm}
+        '(("article"
+           " \\RequirePackage{fix-cm}
   \\PassOptionsToPackage{svgnames}{xcolor}
   \\documentclass[11pt]{article}
   \\usepackage{fontspec}
@@ -890,25 +889,25 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
     citecolor=DarkRed,colorlinks=true}
   [PACKAGES]
   [EXTRA]"
-  ("\\section{%s}" . "\\section*{%s}")
-  ("\\subsection{%s}" . "\\subsection*{%s}")
-  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-  ("\\paragraph{%s}" . "\\paragraph*{%s}")
-  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+           ("\\paragraph{%s}" . "\\paragraph*{%s}")
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
   
-  ("report" "\\documentclass[11pt]{report}"
-  ("\\part{%s}" . "\\part*{%s}")
-  ("\\chapter{%s}" . "\\chapter*{%s}")
-  ("\\section{%s}" . "\\section*{%s}")
-  ("\\subsection{%s}" . "\\subsection*{%s}")
-  ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+          ("report" "\\documentclass[11pt]{report}"
+           ("\\part{%s}" . "\\part*{%s}")
+           ("\\chapter{%s}" . "\\chapter*{%s}")
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
   
-  ("book" "\\documentclass[11pt]{book}"
-  ("\\part{%s}" . "\\part*{%s}")
-  ("\\chapter{%s}" . "\\chapter*{%s}")
-  ("\\section{%s}" . "\\section*{%s}")
-  ("\\subsection{%s}" . "\\subsection*{%s}")
-  ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+          ("book" "\\documentclass[11pt]{book}"
+           ("\\part{%s}" . "\\part*{%s}")
+           ("\\chapter{%s}" . "\\chapter*{%s}")
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
   (setq org-ellipsis " ▾")
   (setq org-hide-emphasis-markers t) ;; hide emphasis markers *...*, /.../, etc
   ;; proportional fonts, in different sizes, for the headlines.
@@ -935,25 +934,26 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
      `(org-level-1 ((t (,@headline ,@variable-tuple :foreground "DarkOrange2" :height 1.75))))
      `(org-document-title ((t (,@headline ,@variable-tuple :height 2.0 :underline nil))))))
   
-  (custom-theme-set-faces
-   'user
-   '(variable-pitch ((t (:family "ETBembo" :height 180 :weight thin))))
-   '(fixed-pitch ((t ( :family "Fira Code Retina" :height 160)))))
+  ;; (custom-theme-set-faces
+  ;;  'user
+  ;;  '(variable-pitch ((t (:family "ETBembo" :height 180))))
+  ;;  '(fixed-pitch ((t ( :family "Fira Code Retina" :height 160)))))
   
-  (custom-theme-set-faces
-   'user
-   '(org-block ((t (:inherit fixed-pitch))))
-   '(org-code ((t (:inherit (shadow fixed-pitch)))))
-   '(org-document-info ((t (:foreground "dark orange"))))
-   '(org-document-info-keyword ((t (:inherit (shadow fixed-pitch)))))
-   '(org-indent ((t (:inherit (org-hide fixed-pitch)))))
-   '(org-link ((t (:foreground "royal blue" :underline t))))
-   '(org-meta-line ((t (:inherit (font-lock-comment-face fixed-pitch)))))
-   '(org-property-value ((t (:inherit fixed-pitch))) t)
-   '(org-special-keyword ((t (:inherit (font-lock-comment-face fixed-pitch)))))
-   '(org-table ((t (:inherit fixed-pitch :foreground "#83a598"))))
-   '(org-tag ((t (:inherit (shadow fixed-pitch) :weight bold :height 0.8))))
-   '(org-verbatim ((t (:inherit (shadow fixed-pitch)))))))
+  ;; (custom-theme-set-faces
+  ;;  'user
+  ;;  '(org-block ((t (:inherit fixed-pitch))))
+  ;;  '(org-code ((t (:inherit (shadow fixed-pitch)))))
+  ;;  '(org-document-info ((t (:foreground "dark orange"))))
+  ;;  '(org-document-info-keyword ((t (:inherit (shadow fixed-pitch)))))
+  ;;  '(org-indent ((t (:inherit (org-hide fixed-pitch)))))
+  ;;  '(org-link ((t (:foreground "royal blue" :underline t))))
+  ;;  '(org-meta-line ((t (:inherit (font-lock-comment-face fixed-pitch)))))
+  ;;  '(org-property-value ((t (:inherit fixed-pitch))) t)
+  ;;  '(org-special-keyword ((t (:inherit (font-lock-comment-face fixed-pitch)))))
+  ;;  '(org-table ((t (:inherit fixed-pitch :foreground "#83a598"))))
+  ;;  '(org-tag ((t (:inherit (shadow fixed-pitch) :weight bold :height 0.8))))
+  ;;  '(org-verbatim ((t (:inherit (shadow fixed-pitch))))))
+  )
 
 (use-package org-download)
 
@@ -963,8 +963,18 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (org-mode . toc-org-enable))
 
 (use-package org-bullets
+  :after org
   :hook
-  (org-mode . (lambda () (org-bullets-mode t))))
+  (org-mode . org-bullets-mode))
+
+(defun my/org-mode-visual-fill ()
+  (setq visual-fill-column-width 100
+        visual-fill-column-center-text t)
+  (visual-fill-column-mode 1))
+
+(use-package visual-fill-column
+  :disabled
+  :hook (org-mode . my/org-mode-visual-fill))
 
 (use-package ox-twbs)
 
