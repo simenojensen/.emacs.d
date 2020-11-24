@@ -291,6 +291,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ;; add functionality for counsel-yank-pop
   :after counsel
   :config
+  ;; Counsel-yank-pop
   (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
     (if (equal major-mode 'vterm-mode)
       (let ((inhibit-read-only t)
@@ -299,8 +300,18 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                    (lambda (str) (vterm-send-string str t))))
           (apply orig-fun args)))
     (apply orig-fun args)))
-
-  (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action))
+  (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+  ;; show vterm in bottom side
+  ;; (setq vterm-toggle-fullscreen-p nil)
+  ;; (add-to-list 'display-buffer-alist
+  ;;              '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+  ;;                (display-buffer-reuse-window display-buffer-in-side-window)
+  ;;                (side . bottom)
+  ;;                (dedicated . t) ;dedicated is supported in emacs27
+  ;;                (reusable-frames . visible)
+  ;;                (window-height . 0.3)))
+  ;; end comment
+  )
 
 (use-package magit
   :bind
@@ -682,7 +693,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :init
   (company-auctex-init))
 
-(use-package cdlatex)
+(use-package cdlatex
+  :diminish org-cdlatex-mode)
 
 (use-package pdf-tools
   :config
@@ -706,6 +718,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (org-mode . flyspell-mode)
   (org-mode . (lambda () (setq-local company-idle-delay 0.4)))
   (org-mode . turn-on-org-cdlatex)
+  (org-mode . (lambda () (diminish 'org-cdlatex-mode)))
   ;; (org-mode . variable-pitch-mode) ;; beautifying
   (org-mode . visual-line-mode) ;; beautifying
   :config
@@ -987,6 +1000,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq org-ref-bibliography-notes "/Users/simenojensen/Documents/Org/Bibliography/notes.org") ;; bibtex notes file
   (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")) ;; bibtex file
   (setq org-ref-pdf-directory "/Users/simenojensen/Documents/Org/Bibliography")) ;; bibliography pdf folder
+
+(use-package flyspell
+  :diminish)
 
 (defun my/get-file-content-as-string (filePath)
   "Return filePath's content as string."

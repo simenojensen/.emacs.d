@@ -625,6 +625,7 @@ Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based
     ;; add functionality for counsel-yank-pop
     :after counsel
     :config
+    ;; Counsel-yank-pop
     (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
       (if (equal major-mode 'vterm-mode)
         (let ((inhibit-read-only t)
@@ -633,8 +634,18 @@ Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based
                      (lambda (str) (vterm-send-string str t))))
             (apply orig-fun args)))
       (apply orig-fun args)))
-
-    (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action))
+    (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+    ;; show vterm in bottom side
+    ;; (setq vterm-toggle-fullscreen-p nil)
+    ;; (add-to-list 'display-buffer-alist
+    ;;              '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+    ;;                (display-buffer-reuse-window display-buffer-in-side-window)
+    ;;                (side . bottom)
+    ;;                (dedicated . t) ;dedicated is supported in emacs27
+    ;;                (reusable-frames . visible)
+    ;;                (window-height . 0.3)))
+    ;; end comment
+    )
 #+end_src
 
 * General Programming
@@ -1264,7 +1275,8 @@ Install Latex.
 [[https://github.com/cdominik/cdlatex][More Information]]
 
 #+begin_src emacs-lisp
-  (use-package cdlatex)
+  (use-package cdlatex
+    :diminish org-cdlatex-mode)
 #+end_src
 
 ** =pdftools=
@@ -1311,6 +1323,7 @@ Install org-mode from the org package repository.
     (org-mode . flyspell-mode)
     (org-mode . (lambda () (setq-local company-idle-delay 0.4)))
     (org-mode . turn-on-org-cdlatex)
+    (org-mode . (lambda () (diminish 'org-cdlatex-mode)))
     ;; (org-mode . variable-pitch-mode) ;; beautifying
     (org-mode . visual-line-mode) ;; beautifying
     :config
@@ -1670,6 +1683,12 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
     (setq org-ref-pdf-directory "/Users/simenojensen/Documents/Org/Bibliography")) ;; bibliography pdf folder
 #+end_src
 
+* Writing
+** =flyspell=
+#+begin_src emacs-lisp
+  (use-package flyspell
+    :diminish)
+#+end_src
 * Elisp Functions
 
 ** Read content of file
