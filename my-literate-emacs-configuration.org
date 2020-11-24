@@ -982,6 +982,13 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 #+end_src
 
 * Python
+Some python settings
+#+begin_src emacs-lisp
+  (use-package python
+    :config
+    (setq python-indent-guess-indent-offset-verbose nil))
+#+end_src
+
 ** LSP Python MS
 
 =lsp-mode= client leveraging the Microsoft's [[https://github.com/Microsoft/python-language-server][python-language-server]].
@@ -1011,10 +1018,12 @@ Usage:
 
 #+begin_src emacs-lisp
   (use-package conda
+    :hook
+    (python-mode . (lambda () (conda-env-activate "py3")))
     :config
     (conda-env-initialize-interactive-shells) ;; interactive shell support
-    (conda-env-initialize-eshell)             ;; eshell support
-    (conda-env-autoactivate-mode t)           ;; autoactivate
+    ;; (conda-env-initialize-eshell)             ;; eshell support
+    ;; (conda-env-autoactivate-mode t)           ;; autoactivate
     (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
     (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
 #+end_src

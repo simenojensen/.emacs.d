@@ -539,6 +539,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
             (Template . ,(all-the-icons-material "format_align_left" :height 0.8 :v-adjust -0.15)))
           company-box-icons-alist 'company-box-icons-all-the-icons))
 
+(use-package python
+  :config
+  (setq python-indent-guess-indent-offset-verbose nil))
+
 (use-package lsp-python-ms
   :diminish
   :init
@@ -548,10 +552,12 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
       "~/.emacs.d/site-elisp/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
 
 (use-package conda
+  :hook
+  (python-mode . (lambda () (conda-env-activate "py3")))
   :config
   (conda-env-initialize-interactive-shells) ;; interactive shell support
-  (conda-env-initialize-eshell)             ;; eshell support
-  (conda-env-autoactivate-mode t)           ;; autoactivate
+  ;; (conda-env-initialize-eshell)             ;; eshell support
+  ;; (conda-env-autoactivate-mode t)           ;; autoactivate
   (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
   (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
 
