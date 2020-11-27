@@ -1014,7 +1014,6 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 Some python settings. Setup jupyter keybindings.
 
 #+begin_src emacs-lisp
-
   (defun my/jupyter-load-file ()
     "Send current buffer to jupyter kernel by default"
     (interactive)
