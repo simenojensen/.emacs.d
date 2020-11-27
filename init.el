@@ -76,9 +76,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (auto-compile-on-load-mode)
   (auto-compile-on-save-mode))
 
-(use-package bind-key)
+(require 'bind-key)
 
-(use-package diminish)
+(require 'diminish)
 
 (use-package try)
 
@@ -89,7 +89,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                                      (abbreviate-file-name (buffer-file-name)) "%b")))
 (set-language-environment "UTF-8")                                                      ;; Set enconding language
 (global-display-line-numbers-mode)                                                      ;; Display line numbers
-(dolist (mode '(vterm-mode-hook))                                                       ;; disable line number for some modes
+(dolist (mode '(vterm-mode-hook
+                jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 (setq column-number-mode t)                                                             ;; Display column numbers
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
@@ -184,11 +185,21 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
    ("C-s" . swiper-isearch))
   :config
   (ivy-mode 1)
-  (setq ivy-height 10)
+  (setq ivy-height 20)
   (setq ivy-initial-inputs-alist nil)
   (setq ivy-display-style 'fancy)
   (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
+
+(use-package ivy-posframe
+  :config
+  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display)))
+  (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-center)))
+  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-window-center)))
+  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-bottom-left)))
+  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-window-bottom-left)))
+  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-top-center)))
+  (ivy-posframe-mode 1))
 
 (use-package helpful
   :custom
@@ -550,8 +561,18 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
           (Template . ,(all-the-icons-material "format_align_left" :height 0.8 :v-adjust -0.15)))
         company-box-icons-alist 'company-box-icons-all-the-icons))
 
+(defun my/jupyter-load-file ()
+  "Send current buffer to jupyter kernel by default"
+  (interactive)
+  (jupyter-load-file (buffer-file-name)))
+
 (use-package python
+  :hook
+  (python-mode . (lambda () ;; emulate python-shell-send-buffer
+                   (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
+                   (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)))
   :config
+  ;; silence indentation guesses
   (setq python-indent-guess-indent-offset-verbose nil))
 
 (use-package lsp-python-ms
@@ -561,6 +582,13 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :config
   (setq lsp-python-ms-executable
         "~/.emacs.d/site-elisp/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
+
+(use-package jupyter
+  :bind
+  (:map python-mode-map
+        ("C-c C-p" . jupyter-run-repl))
+  :init
+  (setq jupyter-repl-echo-eval-p t))
 
 (use-package conda
   :hook
