@@ -1813,6 +1813,6 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
 - [[https://github.com/hpdeifel/synosaurus][synosaurus]]
 - [[https://github.com/org-roam/org-roam][org-roam]]
   - [[https://rgoswami.me/posts/org-note-workflow/][org-mode notes workflow]]
-- [[https://github.com/marsmining/ox-twbs][twitter-bootstrap]]
+
 - =org2blog= to wordspress
 - =org-publish=
