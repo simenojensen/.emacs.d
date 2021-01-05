@@ -78,7 +78,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (require 'bind-key)
 
-(require 'diminish)
+(use-package diminish)
 
 (use-package try)
 
@@ -334,54 +334,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
   (setq projectile-completion-system 'ivy)
   (projectile-mode +1))
-
-(use-package treemacs
-  :custom
-  (treemacs-collapse-dirs 3)
-  (treemacs-deferred-git-apply-delay 0.5)
-  (treemacs-display-in-side-window t)
-  (treemacs-file-event-delay 5000)
-  (treemacs-file-follow-delay 0.2)
-  (treemacs-follow-after-init t)
-  (treemacs-follow-recenter-distance 0.1)
-  (treemacs-git-command-pipe "")
-  (treemacs-goto-tag-strategy 'refetch-index)
-  (treemacs-indentation 2)
-  (treemacs-indentation-string " ")
-  (treemacs-is-never-other-window nil)
-  (treemacs-max-git-entries 5000)
-  (treemacs-no-png-images nil)
-  (treemacs-no-delete-other-windows t)
-  (treemacs-project-follow-cleanup nil)
-  (treemacs-persist-file (expand-file-name ".cache/treemacs-persist" user-emacs-directory))
-  (treemacs-recenter-after-file-follow nil)
-  (treemacs-recenter-after-tag-follow nil)
-  (treemacs-show-cursor nil)
-  (treemacs-show-hidden-files t)
-  (treemacs-silent-filewatch nil)
-  (treemacs-silent-refresh nil)
-  (treemacs-sorting 'alphabetic-desc)
-  (treemacs-space-between-root-nodes t)
-  (treemacs-tag-follow-cleanup t)
-  (treemacs-tag-follow-delay 1.5)
-  (treemacs-width 50)
-  :config
-  :bind
-  (("M-0" . treemacs-select-window)
-   (:map treemacs-mode-map ("C-p" . treemacs-previous-line))
-   (:map treemacs-mode-map ("C-n" . treemacs-next-line))))
-
-(use-package treemacs-evil
-  :after treemacs evil)
-
-(use-package treemacs-projectile
-  :after treemacs projectile)
-
-(use-package treemacs-icons-dired
-  :after treemacs dired
-  :disabled
-  :config
-  (treemacs-icons-dired-mode))
 
 (use-package dumb-jump
   :bind
@@ -911,7 +863,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   \\makeatother
   [DEFAULT-PACKAGES]
   \\let\\oldtextbf\\textbf
-  \\renewcommand{\\textbf}[1]{\\textcolor{black}{\\oldtextbf{#1}}}
+  \\renewcommand{\\textbf}[1]{\\textcolor{red}{\\oldtextbf{#1}}}
   \\renewcommand{\\baselinestretch}{1.0}
   \\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
     citecolor=DarkRed,colorlinks=true}
@@ -983,7 +935,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ;;  '(org-verbatim ((t (:inherit (shadow fixed-pitch))))))
   )
 
-(use-package org-download)
+(use-package org-download
+  :custom
+  (org-download-display-inline-images nil))
 
 (use-package toc-org
   :after org
