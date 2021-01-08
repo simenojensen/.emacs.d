@@ -88,6 +88,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
                                      (abbreviate-file-name (buffer-file-name)) "%b")))
 (set-language-environment "UTF-8")                                                      ;; Set enconding language
+(set-default-coding-systems 'utf-8)                                                     ;; Set enconding language
+(prefer-coding-system 'utf-8)                                                           ;; Set enconding language
+(set-terminal-coding-system 'utf-8)                                                     ;; Set enconding language
+(set-keyboard-coding-system 'utf-8)                                                     ;; Set enconding language
 (global-display-line-numbers-mode)                                                      ;; Display line numbers
 (dolist (mode '(vterm-mode-hook
                 jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
@@ -646,6 +650,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq-default TeX-master nil) ;; make AUCTeX aware of multi-file document structure
   (setq TeX-view-program-selection '((output-pdf "pdf-tools")))
   (setq TeX-view-program-list '(("pdf-tools" "TeX-pdf-tools-sync-view")))
+  (setq LaTeX-electric-left-right-brace t)
+  (setq LaTeX-math-menu-unicode t)
   :hook
   (LaTeX-mode . (lambda ()
                   (rainbow-delimiters-mode)
@@ -659,6 +665,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                   (setq TeX-source-correlate-method 'synctex)
                   (setq TeX-source-correlate-start-server t)
                   (pdf-tools-install))) ;; use PDF-tools
+  (LaTeX-mode . LaTeX-math-mode) ;; use latex math mode by default
   ;; automatically insert '\(...\)' in Latex files by pressing $
   (LaTeX-mode . (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
                                 (cons "\\(" "\\)"))))
@@ -1007,6 +1014,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   "Opens the my-literate-emacs-configuration.org file."
   (interactive)
   (find-file "~/.emacs.d/my-literate-emacs-configuration.org"))
+
+(defun my/org-startup ()
+  (interactive)
+  (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil date:nil\n"))
 
 (use-package google-this
   :diminish
