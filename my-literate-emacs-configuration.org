@@ -1780,7 +1780,7 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
 #+begin_src emacs-lisp
   (defun my/org-startup ()
     (interactive)
-    (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil date:nil\n"))
+    (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil\n"))
 #+end_src
 
 * Internet

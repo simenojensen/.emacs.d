@@ -1017,7 +1017,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (defun my/org-startup ()
   (interactive)
-  (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil date:nil\n"))
+  (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil\n"))
 
 (use-package google-this
   :diminish
