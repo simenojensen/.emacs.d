@@ -16,3 +16,6 @@
 [submodule "site-elisp/texlab"]
 	path = site-elisp/texlab
 	url = https://github.com/latex-lsp/texlab.git
+[submodule "site-elisp/java-one-click-run"]
+	path = site-elisp/java-one-click-run
+	url = https://github.com/MatthewZMD/java-one-click-run.git
