@@ -195,16 +195,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
 
-(use-package ivy-posframe
-  :config
-  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display)))
-  (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-center)))
-  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-window-center)))
-  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-bottom-left)))
-  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-window-bottom-left)))
-  ;; (setq ivy-posframe-display-functions-alist '((t . ivy-posframe-display-at-frame-top-center)))
-  (ivy-posframe-mode 1))
-
 (use-package helpful
   :custom
   (counsel-describe-function-function #'helpful-callable)
@@ -316,6 +306,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
             (apply orig-fun args)))
       (apply orig-fun args)))
   (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+  (setq vterm-always-compile-module t)
+
   ;; show vterm in bottom side
   ;; (setq vterm-toggle-fullscreen-p nil)
   ;; (add-to-list 'display-buffer-alist
@@ -560,6 +552,96 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :config
   (setq py-autopep8-options '("--max-line-length=80")))
 
+(use-package lsp-java
+  :hook
+  (java-mode . lsp))
+
+(defun my/java-one-click-run ()
+  "Go to previous window after running"
+  (interactive)
+  (java-one-click-run)
+  (select-window (previous-window)))
+
+(use-package java-one-click-run
+  :load-path "~/.emacs.d/site-elisp/java-one-click-run/"
+  :init (use-package shell-here)
+  :hook
+  (java-mode . (lambda () ;; compile and run java program with C-c C-c
+                 (unbind-key "C-c C-C" lsp-mode-map)
+                 (bind-key "C-c C-c" 'my/java-one-click-run java-mode-map))))
+
+(use-package markdown-mode
+  :commands (markdown-mode gfm-mode)
+  :hook
+  (markdown-mode . (lambda ()
+                     (remove-hook 'before-save-hook 'delete-trailing-whitespace t)))
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init (setq markdown-command "multimarkdown"))
+
+(use-package grip-mode
+  ;; :init
+  ;; (progn
+  ;;   (require 'auth-source)
+  ;;   (let ((credential (auth-source-user-and-password "api.github.com")))
+  ;;     (setq grip-github-user (car credential)
+  ;;           grip-github-password (cadr credential))))
+  :bind (:map markdown-mode-command-map
+              ("g" . grip-mode)))
+
+(use-package rjsx-mode
+  :mode
+  (("\\.js\\'" . rjsx-mode)
+   ("\\.tsx\\'" . rjsx-mode)
+   ("\\.ts\\'" . rjsx-mode)))
+
+(defun my/setup-tide-mode()
+  "Setup function for tide"
+  (interactive)
+  (tide-setup)
+  (flycheck-mode +1)
+  (setq flycheck-check-syntax-automatically '(save mode-enabled))
+  (tide-hl-identifier-mode +1))
+
+(use-package tide
+  :after
+  (rjsx-mode)
+  :hook
+  (rjsx-mode . my/setup-tide-mode))
+
+(use-package prettier-js
+  :after
+  (rjsx-mode)
+  :hook
+  (rjsx-mode . prettier-js-mode))
+
+(use-package css-mode
+  :hook
+  (css-mode . lsp))
+
+(use-package mhtml-mode
+  :hook
+  (mhtml-mode . (lambda()
+                  (lsp)
+                  (unbind-key "C-c C-v" mhtml-mode-map)
+                  (bind-key "C-c C-v" 'my/browse-url-of-buffer-with-chrome))))
+
+(use-package json-mode
+  :mode "\\.json\\'"
+  :hook
+  (json-mode . lsp))
+
+(use-package yaml-mode
+  :mode
+  ("\\.ya?ml\\'"))
+
+(use-package csv-mode
+  :mode "\\.[Cc][Ss][Vv]\\'"
+  ;; :init (setq csv-separators '("," ";" "|" " "))
+  :config
+  (setq csv-separators '(",")))
+
 (use-package all-the-icons)
 
 (use-package all-the-icons-ivy-rich
@@ -586,16 +668,21 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :custom-face
   (cursor ((t (:background "DarkRed"))))
   :config
-  (setq doom-themes-treemacs-theme "doom-colors") ; use the colorful treemacs theme
-  (doom-themes-treemacs-config)
+  (load-theme 'doom-gruvbox t)
+
   (doom-themes-visual-bell-config)  ;; flashing mode-line on errors
+
+  ;; (setq doom-themes-treemacs-theme "doom-colors") ; use the colorful treemacs theme
+  ;; (doom-themes-treemacs-config)
+
   (doom-themes-org-config)          ;; Corrects (and improves) org-mode's native fontification.
+  )
+
   ;; (load-theme 'doom-city-lights t))
   ;; (load-theme 'doom-molokai t)
   ;; (load-theme 'doom-sourcerer t)
   ;; (load-theme 'doom-tomorrow-night t)
   ;; (load-theme 'doom-gruvbox t)
-  (load-theme 'doom-gruvbox t))
 
 (use-package doom-modeline
   :init
@@ -707,6 +794,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                 (turn-on-org-cdlatex) ;; turn on cdlatex
                 (diminish 'org-cdlatex-mode) ;; remove from modeline
                 ;; (variable-pitch-mode -1)
+                (bind-key "<s-return>" 'org-table-insert-row orgtbl-mode-map)
                 ))
   :config
   ;; Org settings
@@ -1018,6 +1106,12 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (defun my/org-startup ()
   (interactive)
   (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil\n"))
+
+(defun my/browse-url-of-buffer-with-chrome ()
+  "Same as `browse-url-of-buffer` but using chrome"
+  (interactive)
+  ;; (shell-command (concat "open -a 'Google Chrome.app' file://" buffer-file-name)))
+ (shell-command (concat "open -a 'Google Chrome.app' " buffer-file-name)))
 
 (use-package google-this
   :diminish
