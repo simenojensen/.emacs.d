@@ -945,6 +945,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     (setq company-tooltip-align-annotations t)
     (setq company-require-match nil)
     (setq company-show-numbers t)
+    (setq company-dabbrev-downcase nil) ;; case insensitive for dabbrev backend
     (global-company-mode 1)
     ;; Don't use company in debugger mode
     (setq company-global-modes '(not gud-mode)))
@@ -1951,8 +1952,20 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
    (shell-command (concat "open -a 'Google Chrome.app' " buffer-file-name)))
 #+end_src
 
-* Internet
-** =google-this=
+* Tools
+** Wireshark
+*** =pcap-mode=
+[[https://github.com/orgcandman/pcap-mode][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package pcap-mode
+    :mode
+    ("\\.pcapng\\'" . pcap-mode)
+    :load-path (lambda () (expand-file-name "site-elisp/pcap-mode" user-emacs-directory)))
+#+end_src
+
+** Internet
+*** =google-this=
 
 [[http://pragmaticemacs.com/emacs/google-search-from-inside-emacs/][More Information]]
 
@@ -1963,7 +1976,7 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
     (google-this-mode t))
 #+end_src
 
-** =engine-mode=
+*** =engine-mode=
 
 #+begin_src emacs-lisp
   (use-package engine-mode

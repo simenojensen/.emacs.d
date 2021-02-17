@@ -445,6 +445,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq company-tooltip-align-annotations t)
   (setq company-require-match nil)
   (setq company-show-numbers t)
+  (setq company-dabbrev-downcase nil) ;; case insensitive for dabbrev backend
   (global-company-mode 1)
   ;; Don't use company in debugger mode
   (setq company-global-modes '(not gud-mode)))
@@ -1112,6 +1113,11 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (interactive)
   ;; (shell-command (concat "open -a 'Google Chrome.app' file://" buffer-file-name)))
  (shell-command (concat "open -a 'Google Chrome.app' " buffer-file-name)))
+
+(use-package pcap-mode
+  :mode
+  ("\\.pcapng\\'" . pcap-mode)
+  :load-path (lambda () (expand-file-name "site-elisp/pcap-mode" user-emacs-directory)))
 
 (use-package google-this
   :diminish
