@@ -154,6 +154,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (bind-key "s-<right>" 'enlarge-window-horizontally)
 (bind-key "s-<down>" 'shrink-window)
 (bind-key "s-<up>" 'enlarge-window)
+(unbind-key "C-v" global-map) ;; disable annoying scroll window
 
 (bind-key "C-x C-l" 'toggle-truncate-lines)
 
@@ -295,7 +296,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package vterm
   ;; add functionality for counsel-yank-pop
   :after counsel
-  :config
+  :init
   ;; Counsel-yank-pop
   (defun vterm-counsel-yank-pop-action (orig-fun &rest args)
     (if (equal major-mode 'vterm-mode)
@@ -305,19 +306,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
                      (lambda (str) (vterm-send-string str t))))
             (apply orig-fun args)))
       (apply orig-fun args)))
-  (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
-  (setq vterm-always-compile-module t)
 
-  ;; show vterm in bottom side
-  ;; (setq vterm-toggle-fullscreen-p nil)
-  ;; (add-to-list 'display-buffer-alist
-  ;;              '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
-  ;;                (display-buffer-reuse-window display-buffer-in-side-window)
-  ;;                (side . bottom)
-  ;;                (dedicated . t) ;dedicated is supported in emacs27
-  ;;                (reusable-frames . visible)
-  ;;                (window-height . 0.3)))
-  ;; end comment
+  (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
+  (setq vterm-max-scrollback 10000)
   )
 
 (use-package magit
@@ -360,9 +351,14 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :hook
   (prog-mode . flycheck-mode))
 
+(use-package expand-region
+  :bind ("C-=" . er/expand-region))
+
 (use-package lsp-mode
   :hook ((python-mode . lsp)
          (lsp-mode . lsp-enable-which-key-integration))
+  :init
+  (setq lsp-sqls-server "~/.go/bin/sqls")
   :config
   ;; debug info
   (setq lsp-print-io t)
@@ -590,6 +586,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   ;;           grip-github-password (cadr credential))))
   :bind (:map markdown-mode-command-map
               ("g" . grip-mode)))
+
+
 
 (use-package rjsx-mode
   :mode
@@ -828,8 +826,16 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
    'org-babel-load-languages
    '((python . t)
      (latex . t)
+     (sql . t)
      (shell . t)
      (emacs-lisp . t)))
+  ;; Set org emphasis alist - remove strikethroug
+  (setq org-emphasis-alist '(("*" bold)
+                             ("/" italic)
+                             ("_" underline)
+                             ("=" org-verbatim verbatim)
+                             ("~" org-code verbatim)
+                             ("+" (:strike-through nil))))
 
   (setq org-src-fontify-natively t) ;; Syntax highlight in #+BEGIN_SRC blocks
   (setq org-special-ctrl-a/e t) ;; cycle C-e and C-a
@@ -846,7 +852,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
           ("l" . "src latex\n")
           ("q" . "quote\n")
           ("p" . "src python\n")
-          ("s" . "src")
+          ("s" . "src sql")
           ("v" . "verse\n")))
   ;; Configure latex exports
   (setq org-latex-logfiles-extensions (quote ("lof" "lot" "xdv" "synctex.gz" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
@@ -860,6 +866,10 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq org-export-in-background t) ;; export async
   ;; Configure Org to use lstlisting for source environments.
   (setq org-latex-listings t)
+  ;; Captions below
+  (setq org-latex-caption-above nil)
+  ;; org ref labels
+  (setq org-latex-prefer-user-labels t)
   ;; Use predefine latex template for orgmode export to latex
   ;; https://so.nwalsh.com/2020/01/05-latex
   (setq org-latex-default-packages-alist
@@ -873,7 +883,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
           ;; images/figures
           ("" "graphicx" t)
           ("" "grffile" t)
-          ("" "wrapfig" nil)
+          ("" "wrapfig" t)
+          ("" "float" t)
           ("" "rotating" nil)
           ;; tables
           ("" "array" t)
@@ -1091,7 +1102,15 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq org-ref-pdf-directory "/Users/simenojensen/Documents/Org/Bibliography")) ;; bibliography pdf folder
 
 (use-package flyspell
-  :diminish)
+  :config
+  (setenv
+   "DICPATH"
+   (concat (getenv "HOME") "/Library/Spelling"))
+  (setenv "DICTIONARY" "en_US")
+  ;; Tell ispell-mode to use hunspell.
+  (setq ispell-program-name "hunspell")
+  (setq-default ispell-hunspell-dict-paths-alist
+                '(("en_US" "~/Library/Spelling/en_US.aff"))))
 
 (defun my/get-file-content-as-string (filePath)
   "Return filePath's content as string."

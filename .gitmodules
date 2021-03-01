@@ -22,3 +22,6 @@
 [submodule "site-elisp/pcap-mode"]
 	path = site-elisp/pcap-mode
 	url = https://github.com/orgcandman/pcap-mode.git
+[submodule "site-elisp/lsp-mssql"]
+	path = site-elisp/lsp-mssql
+	url = https://github.com/emacs-lsp/lsp-mssql.git

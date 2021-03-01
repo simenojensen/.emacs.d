@@ -23,3 +23,5 @@
 /eshell/
 /my-literate-emacs-configuration.html
 /nil
+/.dap-breakpoints
+/async-bytecomp.log
