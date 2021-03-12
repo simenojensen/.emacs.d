@@ -25,3 +25,5 @@
 /nil
 /.dap-breakpoints
 /async-bytecomp.log
+/eclipse.jdt.ls/
+/workspace/

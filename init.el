@@ -85,6 +85,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (setq user-full-name "Simen Omholt-Jensen")
 (setq user-mail-address "simen@omholt-jensen.com")
 
+(add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))                       ;; Fancy titlebar for MacOS
+(add-to-list 'default-frame-alist '(ns-appearance . dark))                              ;; Fancy titlebar for MacOS
+(setq ns-use-proxy-icon  nil)                                                           ;; Fancy titlebar for MacOS
 (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
                                      (abbreviate-file-name (buffer-file-name)) "%b")))
 (set-language-environment "UTF-8")                                                      ;; Set enconding language
@@ -96,7 +99,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (dolist (mode '(vterm-mode-hook
                 jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
-(setq column-number-mode t)                                                             ;; Display column numbers
+(setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
+(setq-default column-number-mode t)                                                             ;; Display column numbers
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
 (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
 (set-fringe-mode 10)                                                                    ;; Give some breathing room
@@ -787,10 +791,12 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :hook
   (after-save . my/tangle-emacs-config)
   (org-mode . (lambda ()
-                (setq-local company-idle-delay 0.4) ;; company idle delay
+                (setq-local company-idle-delay 0.2) ;; company idle delay
                 ;; (visual-line-mode) ;; visual line
                 (flyspell-mode) ;; turn on flyspell
                 (turn-on-org-cdlatex) ;; turn on cdlatex
+                (display-fill-column-indicator-mode)
+                (auto-fill-mode)
                 (diminish 'org-cdlatex-mode) ;; remove from modeline
                 ;; (variable-pitch-mode -1)
                 (bind-key "<s-return>" 'org-table-insert-row orgtbl-mode-map)
@@ -958,7 +964,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   \\usepackage[a4paper,top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
   \\usepackage{parskip}
   \\setlength\\parindent{0pt}
-  \\setlength\\parskip{0pt}
+  \\setlength\\parskip{1em}
   \\makeatletter
   \\renewcommand{\\maketitle}{%
   \\begingroup\\parindent0pt
@@ -970,7 +976,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   \\makeatother
   [DEFAULT-PACKAGES]
   \\let\\oldtextbf\\textbf
-  \\renewcommand{\\textbf}[1]{\\textcolor{red}{\\oldtextbf{#1}}}
+  \\renewcommand{\\textbf}[1]{\\textcolor{black}{\\oldtextbf{#1}}}
   \\renewcommand{\\baselinestretch}{1.0}
   \\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
     citecolor=DarkRed,colorlinks=true}
