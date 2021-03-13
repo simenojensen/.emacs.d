@@ -809,6 +809,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq org-todo-keywords
         '((sequence "TODO"  "|" "DONE" "CANCELED")))
   (setq org-agenda-files '("~/Documents/Org/"))
+  (setq org-agenda-window-setup 'current-window)
   ;; org capture
   (setq org-capture-templates
         '(("a" "Assignment" entry
