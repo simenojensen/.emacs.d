@@ -25,3 +25,9 @@
 [submodule "site-elisp/lsp-mssql"]
 	path = site-elisp/lsp-mssql
 	url = https://github.com/emacs-lsp/lsp-mssql.git
+[submodule "site-elisp/py-cmd-buffer.el"]
+	path = site-elisp/py-cmd-buffer.el
+	url = https://github.com/humitos/py-cmd-buffer.el.git
+[submodule "site-elisp/buftra.el"]
+	path = site-elisp/buftra.el
+	url = https://github.com/humitos/buftra.el.git

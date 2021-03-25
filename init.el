@@ -96,6 +96,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (set-terminal-coding-system 'utf-8)                                                     ;; Set enconding language
 (set-keyboard-coding-system 'utf-8)                                                     ;; Set enconding language
 (global-display-line-numbers-mode)                                                      ;; Display line numbers
+(setq-default read-process-output-max (* 1024 1024))                                    ;; Increase the amount of data which Emacs reads from the process
 (dolist (mode '(vterm-mode-hook
                 jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
@@ -352,6 +353,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (use-package flycheck
   :diminish
+  :init
+  (global-flycheck-mode)
   :hook
   (prog-mode . flycheck-mode))
 
@@ -359,34 +362,18 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :bind ("C-=" . er/expand-region))
 
 (use-package lsp-mode
-  :hook ((python-mode . lsp)
-         (lsp-mode . lsp-enable-which-key-integration))
   :init
   (setq lsp-sqls-server "~/.go/bin/sqls")
-  :config
-  ;; debug info
-  (setq lsp-print-io t)
-  (setq lsp-print-performance t)
-  ;; general
+  (setq lsp-prefer-capf t)
   (setq lsp-keymap-prefix "s-l")                         ;; set keymap
-  (setq lsp-prefer-capf t)                               ;; use company-capf - recommended over company-lsp
-  (setq lsp-keep-workspace-alive nil)                    ;; close workspace when no files
-  (setq lsp-enable-snippet t)                            ;; enable snippet completion
-  (setq lsp-auto-guess-root nil)                         ;; set project files manually
-  (setq lsp-restart 'auto-restart)                       ;; restart if server exits
-  (setq lsp-document-sync-method nil)                    ;; use default method recommended by server. 'incremental 'full
-  (setq lsp-response-timeout 10)                         ;; default timeout val
-  (setq lsp-auto-configure t)                            ;; let lsp-mode autoconfigure company etc
-  (setq lsp-enable-completion-at-point t)                ;; enable completion-at-point
-  (setq lsp-diagnostic-package :flycheck)                ;; use flycheck for syntax highlighting
-  (setq lsp-enable-indentation t)                        ;; indent regions based on lsp
-  (setq lsp-signature-auto-activate nil)                 ;; don't display documentation in minibuffer
-  (setq read-process-output-max (* 1024 1024))           ;; 1mb
-  (setq lsp-idle-delay 0.5))                             ;; lsp refresh rate
+  :hook
+  (lsp-mode . lsp-enable-which-key-integration)
+  :commands lsp
+  :config
+  (setq lsp-log-io nil) ;; if set to true can cause performance hit
+  )
 
 (use-package lsp-ui
-  :after lsp-mode
-  :diminish
   :commands lsp-ui-mode
   :bind
   ;; lsp-ui-peek
@@ -396,25 +383,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
          ;; lsp-ui-doc
          ("M-i" . lsp-ui-doc-focus-frame))
    ("s-i" . my/toggle-lsp-ui-doc))
-  :config
-  ;; lsp-ui-sideline
-  (setq lsp-ui-sideline-enable t)
-  (setq lsp-ui-sideline-ignore-duplicate t)
-  (setq lsp-ui-sideline-show-diagnostics t)
-  (setq lsp-ui-sideline-show-hover nil)
-  (setq lsp-ui-sideline-show-code-actions nil)
-  (setq lsp-ui-sideline-show-symbol nil)
-  (setq lsp-ui-sideline-delay 0.5)
-  ;; lsp-ui-doc
-  (setq lsp-ui-doc-enable nil)
-  (setq lsp-ui-doc-header t)
-  (setq lsp-ui-doc-include-signature t)
-  (setq lsp-ui-doc-position 'at-point)
-  (setq lsp-ui-doc-delay 0)
-  (setq lsp-ui-doc-max-height 100)
-  (setq lsp-ui-doc-max-width 400)
-  (setq lsp-ui-doc-use-childframe t)
-  (setq lsp-ui-doc-use-webkit nil)
   :preface
   (defun my/toggle-lsp-ui-doc ()
     (interactive)
@@ -438,10 +406,11 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
          ("C-n" . company-select-next)
          ("C-p" . company-select-previous)))
   :config
-  (setq company-minimum-prefix-length 3)
-  (setq company-idle-delay 0.2)
-  (setq company-echo-delay 0.2)
-  (setq company-tooltip-idle-delay 0.2)
+  (push 'company-lsp company-backends)
+  (setq company-minimum-prefix-length 1)
+  (setq company-idle-delay 0.0)
+  (setq company-echo-delay 0.0)
+  (setq company-tooltip-idle-delay 0.0)
   (setq company-tooltip-align-annotations t)
   (setq company-require-match nil)
   (setq company-show-numbers t)
@@ -518,6 +487,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package python
   :hook
   (python-mode . (lambda () ;; emulate python-shell-send-buffer
+                   (display-fill-column-indicator-mode) ;; display column
                    (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
                    (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)))
   :config
@@ -553,6 +523,15 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :config
   (setq py-autopep8-options '("--max-line-length=80")))
 
+(use-package buftra
+  :load-path (lambda () (expand-file-name "site-elisp/buftra.el" user-emacs-directory)))
+
+(use-package py-pyment
+  :load-path (lambda () (expand-file-name "site-elisp/py-cmd-buffer.el" user-emacs-directory))
+  :config
+  (setq py-pyment-options '("--output=numpydoc")))
+;; /usr/local/Caskroom/miniconda/base/bin/pyment
+
 (use-package lsp-java
   :hook
   (java-mode . lsp))
@@ -575,7 +554,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :commands (markdown-mode gfm-mode)
   :hook
   (markdown-mode . (lambda ()
-                     (remove-hook 'before-save-hook 'delete-trailing-whitespace t)))
+                     (remove-hook 'before-save-hook 'delete-trailing-whitespace t)
+                     (display-fill-column-indicator-mode)
+                     (auto-fill-mode)))
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
@@ -912,6 +893,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   \\PassOptionsToPackage{svgnames}{xcolor}
   \\documentclass[11pt]{article}
   \\usepackage{fontspec}
+  \\usepackage{booktabs}
   \\usepackage{enumitem}
   \\usepackage[nottoc]{tocbibind}
   \\setlist{nosep,after=\\vspace{4pt}}
@@ -979,6 +961,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   \\let\\oldtextbf\\textbf
   \\renewcommand{\\textbf}[1]{\\textcolor{black}{\\oldtextbf{#1}}}
   \\renewcommand{\\baselinestretch}{1.0}
+  \\renewcommand{\\labelenumii}{\\theenumii}
+  \\renewcommand{\\theenumii}{\\theenumi.\\arabic{enumii}.}
   \\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
     citecolor=DarkRed,colorlinks=true}
   [PACKAGES]
@@ -1118,6 +1102,39 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq ispell-program-name "hunspell")
   (setq-default ispell-hunspell-dict-paths-alist
                 '(("en_US" "~/Library/Spelling/en_US.aff"))))
+
+(defun my/save-word-to-personal-dictionary ()
+  "Save word to personal dictionary"
+  (interactive)
+  (let ((current-location (point))
+        (word (flyspell-get-word)))
+    (when (consp word)
+      (flyspell-do-correct 'save nil (car word) current-location (cadr word) (caddr word) current-location))))
+
+;; Remap
+(unbind-key "C-c $" flyspell-mode-map)
+(bind-key "C-c $" 'my/save-word-to-personal-dictionary flyspell-mode-map)
+
+;; Norsk tastatur
+(bind-key "C-ø" 'flyspell-auto-correct-previous-word flyspell-mode-map)
+
+(use-package synosaurus
+  :init
+  (synosaurus-mode)
+  :hook
+  (text-mode . synosaurus-mode)
+  :config
+  (setq synosaurus-choose-method 'ido))
+
+(use-package guess-language
+  :disabled
+  :hook
+  (text-mode . guess-language-mode)
+  :config
+  (setq guess-language-langcodes '((en . ("en_US" "English"))
+                                   (no . ("nb_NO" "Norwegian"))))
+  (setq guess-language-languages '(en no))
+  (setq guess-language-min-paragraph-length 45))
 
 (defun my/get-file-content-as-string (filePath)
   "Return filePath's content as string."
