@@ -321,6 +321,90 @@ Configurations for smooth scrolling
   (setq-default confirm-kill-processes nil)    ;; do not confirm when killing processes before killing Emacs
 #+end_src
 
+* OS Specific Settings
+
+Detect which OS Emacs is being run on, and configure keybindings accordingly.
+
+#+begin_src emacs-lisp :noweb tangle
+  (cond ((eq system-type 'darwin)
+         <<macOS>>
+         )
+        ((eq system-type 'windows-nt)
+         <<Windows>>
+         )
+        ((eq system-type 'gnu/linux)
+         <<Linux>>
+         ))
+#+end_src
+
+** macOS
+
+By setting the ~M~ to ~⌘~, ~A~ to ~^~ (left option) and ~S~ to ~^~ (right option), we can
+emulate some of the macOS keyboard configurations.
+
+#+begin_src emacs-lisp :tangle no :noweb-ref macOS
+  (customize-set-variable 'mac-command-modifier 'meta)
+  (customize-set-variable 'mac-option-modifier 'alt)
+  (customize-set-variable 'mac-right-command-modifier 'super)
+#+end_src
+
+Next, we are binding ~M-=~ to increase the font size, and ~M--~ to decrease the font
+size.
+
+#+begin_src emacs-lisp :tangle no :noweb-ref macOS
+  (bind-key "M-=" 'text-scale-increase)
+  (bind-key "M--" 'text-scale-decrease)
+#+end_src
+
+Use ~M-`~ to switch focus between frames
+
+#+begin_src emacs-lisp
+  (bind-key "M-`" 'other-frame)
+#+end_src
+Make sure the =$PATH= is loaded from the default shell.
+
+[[https://github.com/purcell/exec-path-from-shell][More Information]]
+
+#+begin_src emacs-lisp :tangle no :noweb-ref macOS
+  (use-package exec-path-from-shell
+    :defer nil
+    :config
+    (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
+    (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
+    (if (string-equal system-type "darwin")
+        (exec-path-from-shell-initialize)))
+#+end_src
+
+Gnupg keyring update
+
+[[https://metaredux.com/posts/2019/12/09/dealing-with-expired-elpa-gpg-keys.html][More Information]]
+
+#+begin_src emacs-lisp :tangle no :noweb-ref macOS
+  (setq package-check-signature nil)
+  (use-package gnu-elpa-keyring-update)
+  (setq package-check-signature 'allow-unsigned)
+
+  (if (not (file-directory-p "~/.emacs.d/elpa/gnupg"))
+      (progn (shell-command "mkdir ~/.emacs.d/elpa/gnupg")
+             (shell-command "gpg --homedir ~/.emacs.d/elpa/gnupg --receive-keys 066DAFCB81E42C40")))
+#+end_src
+
+** Windows
+
+Not implemented
+
+#+begin_src emacs-lisp :tangle no :noweb-ref Windows
+
+#+end_src
+
+** Linux
+
+Not implemented
+
+#+begin_src emacs-lisp :tangle no :noweb-ref Linux
+
+#+end_src
+
 * Keybindings
 ** which-key
 
@@ -573,74 +657,6 @@ Built-in =winner-mode= for remembering previous window actions.
   (winner-mode 1)
 #+end_src
 
-* OS Specific Settings
-
-Detect which OS Emacs is being run on, and configure keybindings accordingly.
-
-#+begin_src emacs-lisp :noweb tangle
-  (cond ((eq system-type 'darwin)
-         <<macOS>>
-         )
-        ((eq system-type 'windows-nt)
-         <<Windows>>
-         )
-        ((eq system-type 'gnu/linux)
-         <<Linux>>
-         ))
-#+end_src
-
-** macOS
-
-By setting the ~M~ to ~⌘~, ~A~ to ~^~ (left option)  and ~S~ to ~^~ (right option), we can emulate some of the macOS keyboard configurations.
-
-#+begin_src emacs-lisp :tangle no :noweb-ref macOS
-  (customize-set-variable 'mac-command-modifier 'meta)
-  (customize-set-variable 'mac-option-modifier 'alt)
-  (customize-set-variable 'mac-right-command-modifier 'super)
-#+end_src
-
-Next, we are binding ~M-=~ to increase the font size, and ~M--~ to decrease the font size.
-
-#+begin_src emacs-lisp :tangle no :noweb-ref macOS
-  (bind-key "M-=" 'text-scale-increase)
-  (bind-key "M--" 'text-scale-decrease)
-#+end_src
-
-Use ~M-`~ to switch focus between frames
-
-#+begin_src emacs-lisp
-  (bind-key "M-`" 'other-frame)
-#+end_src
-Lastly, we make sure the =$PATH= is loaded from the default shell.
-
-[[https://github.com/purcell/exec-path-from-shell][More Information]]
-
-#+begin_src emacs-lisp :tangle no :noweb-ref macOS
-  (use-package exec-path-from-shell
-    :defer nil
-    :config
-    (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
-    (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
-    (if (string-equal system-type "darwin")
-        (exec-path-from-shell-initialize)))
-#+end_src
-
-** Windows
-
-Not implemented
-
-#+begin_src emacs-lisp :tangle no :noweb-ref Windows
-
-#+end_src
-
-** Linux
-
-Not implemented
-
-#+begin_src emacs-lisp :tangle no :noweb-ref Linux
-
-#+end_src
-
 * Console
 ** =vterm=
 Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based on libvterm, a C library. As a result of using compiled code (instead of elisp), emacs-libvterm is fully capable, fast, and it can seamlessly handle large outputs.
@@ -667,7 +683,7 @@ Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based
     (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
     (setq vterm-max-scrollback 10000))
 
-  (use-package multi-vterm)
+  ;; (use-package multi-vterm)
 #+end_src
 
 * General Programming
@@ -1415,7 +1431,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 =dashboard= is an extensible emacs startup screen showing you what's most important.
 [[https://github.com/emacs-dashboard/emacs-dashboard][More Information]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   ;; Dependency
   (use-package page-break-lines)
 
@@ -1663,7 +1679,7 @@ Install org-mode from the org package repository.
         '(("article"
            " \\RequirePackage{fix-cm}
   \\PassOptionsToPackage{svgnames}{xcolor}
-  \\documentclass[10pt]{article}
+  \\documentclass[11pt]{article}
   \\usepackage{fontspec}
   \\usepackage{booktabs}
   \\usepackage{ragged2e}

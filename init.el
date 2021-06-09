@@ -148,6 +148,36 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (setq-default confirm-kill-emacs nil)        ;; Do not confirm when killing Emacs
 (setq-default confirm-kill-processes nil)    ;; do not confirm when killing processes before killing Emacs
 
+(cond ((eq system-type 'darwin)
+       (customize-set-variable 'mac-command-modifier 'meta)
+       (customize-set-variable 'mac-option-modifier 'alt)
+       (customize-set-variable 'mac-right-command-modifier 'super)
+       (bind-key "M-=" 'text-scale-increase)
+       (bind-key "M--" 'text-scale-decrease)
+       (use-package exec-path-from-shell
+         :defer nil
+         :config
+         (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
+         (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
+         (if (string-equal system-type "darwin")
+             (exec-path-from-shell-initialize)))
+       (setq package-check-signature nil)
+       (use-package gnu-elpa-keyring-update)
+       (setq package-check-signature 'allow-unsigned)
+       
+       (if (not (file-directory-p "~/.emacs.d/elpa/gnupg"))
+           (progn (shell-command "mkdir ~/.emacs.d/elpa/gnupg")
+                  (shell-command "gpg --homedir ~/.emacs.d/elpa/gnupg --receive-keys 066DAFCB81E42C40")))
+       )
+      ((eq system-type 'windows-nt)
+       
+       )
+      ((eq system-type 'gnu/linux)
+       
+       ))
+
+(bind-key "M-`" 'other-frame)
+
 (use-package which-key
   :diminish which-key-mode
   :config
@@ -275,29 +305,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (winner-mode 1)
 
-(cond ((eq system-type 'darwin)
-       (customize-set-variable 'mac-command-modifier 'meta)
-       (customize-set-variable 'mac-option-modifier 'alt)
-       (customize-set-variable 'mac-right-command-modifier 'super)
-       (bind-key "M-=" 'text-scale-increase)
-       (bind-key "M--" 'text-scale-decrease)
-       (use-package exec-path-from-shell
-         :defer nil
-         :config
-         (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
-         (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
-         (if (string-equal system-type "darwin")
-             (exec-path-from-shell-initialize)))
-       )
-      ((eq system-type 'windows-nt)
-       
-       )
-      ((eq system-type 'gnu/linux)
-       
-       ))
-
-(bind-key "M-`" 'other-frame)
-
 (use-package vterm
   ;; add functionality for counsel-yank-pop
   :after counsel
@@ -315,7 +322,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
   (setq vterm-max-scrollback 10000))
 
-(use-package multi-vterm)
+;; (use-package multi-vterm)
 
 (use-package magit
   :bind
@@ -643,15 +650,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq dimmer-fraction 0.5)
   (dimmer-mode t))
 
-;; Dependency
-(use-package page-break-lines)
-
-(use-package dashboard
-  :disabled
-  :config
-  (setq show-week-agenda-p t)
-  (dashboard-setup-startup-hook))
-
 (use-package tex-site
   :ensure auctex
   :mode ("\\.tex\\'" . latex-mode)
@@ -831,7 +829,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
         '(("article"
            " \\RequirePackage{fix-cm}
   \\PassOptionsToPackage{svgnames}{xcolor}
-  \\documentclass[10pt]{article}
+  \\documentclass[11pt]{article}
   \\usepackage{fontspec}
   \\usepackage{booktabs}
   \\usepackage{ragged2e}
