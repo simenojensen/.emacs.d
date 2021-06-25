@@ -16,8 +16,7 @@
 
 (defvar better-gc-cons-threshold 100000000 ; 100mb
   "The default value to use for `gc-cons-threshold'.
-
-If you experience freezing, decrease this.  If you experience stuttering, increase this.")
+   If you experience freezing, decrease this.  If you experience stuttering, increase this.")
 
 (add-hook 'emacs-startup-hook
           (lambda ()
@@ -43,31 +42,23 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
             (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup-hook)
             (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit-hook)))
 
-(require 'package)
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
 
-(setq-default package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-                                 ("melpa" . "https://melpa.org/packages/")
-                                 ("org" . "https://orgmode.org/elpa/")))
-
-(package-initialize)
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
 
 (setq-default package-enable-at-startup nil)
-
-(when (not (package-installed-p 'use-package))
-  (package-refresh-contents)
-  (package-install 'use-package))
-(eval-when-compile
-  (require 'use-package))
-
-(require 'use-package-ensure)
-(setq use-package-always-ensure t)
-
-(use-package auto-package-update
-  :config
-  (setq-default auto-package-update-interval 7) ;; in days
-  (setq-default auto-package-update-delete-old-versions t)
-  (setq-default auto-package-update-hide-results t)
-  (auto-package-update-maybe))
 
 (setq-default load-prefer-newer t)
 
@@ -76,7 +67,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (auto-compile-on-load-mode)
   (auto-compile-on-save-mode))
 
-(require 'bind-key)
+(use-package bind-key)
 
 (use-package diminish)
 
@@ -154,20 +145,13 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
        (customize-set-variable 'mac-right-command-modifier 'super)
        (bind-key "M-=" 'text-scale-increase)
        (bind-key "M--" 'text-scale-decrease)
+       (bind-key "M-`" 'other-frame)
        (use-package exec-path-from-shell
-         :defer nil
          :config
          (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
          (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
          (if (string-equal system-type "darwin")
              (exec-path-from-shell-initialize)))
-       (setq package-check-signature nil)
-       (use-package gnu-elpa-keyring-update)
-       (setq package-check-signature 'allow-unsigned)
-       
-       (if (not (file-directory-p "~/.emacs.d/elpa/gnupg"))
-           (progn (shell-command "mkdir ~/.emacs.d/elpa/gnupg")
-                  (shell-command "gpg --homedir ~/.emacs.d/elpa/gnupg --receive-keys 066DAFCB81E42C40")))
        )
       ((eq system-type 'windows-nt)
        
@@ -175,8 +159,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
       ((eq system-type 'gnu/linux)
        
        ))
-
-(bind-key "M-`" 'other-frame)
 
 (use-package which-key
   :diminish which-key-mode
@@ -208,9 +190,9 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package ivy
   :diminish
   :init
-  (use-package amx :defer t)
+  (use-package amx)
   (use-package counsel :diminish :config (counsel-mode 1))
-  (use-package swiper :defer t)
+  (use-package swiper)
   (ivy-mode 1)
   :bind
   (("C-x C-f" . counsel-find-file)
@@ -250,12 +232,13 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq undo-tree-visualizer-timestamps t))
 
 (use-package color-rg
-  :load-path (lambda () (expand-file-name "site-elisp/color-rg" user-emacs-directory))
+  :straight
+  (color-rg :type git :host github :repo "manateelazycat/color-rg")
   :bind
   ("C-M-s" . color-rg-search-input))
 
 (use-package dired
-  :ensure nil
+  :straight nil
   :bind
   (("C-x C-j" . dired-jump)
    ("C-x j" . dired-jump-other-window))
@@ -335,6 +318,89 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (setq projectile-completion-system 'ivy)
   (projectile-mode +1))
 
+(use-package treemacs
+  :defer t
+  :init
+  (with-eval-after-load 'winum
+    (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
+  :config
+  (progn
+    (setq treemacs-collapse-dirs                 (if treemacs-python-executable 3 0)
+          treemacs-deferred-git-apply-delay      0.5
+          treemacs-directory-name-transformer    #'identity
+          treemacs-display-in-side-window        t
+          treemacs-eldoc-display                 t
+          treemacs-file-event-delay              5000
+          treemacs-file-extension-regex          treemacs-last-period-regex-value
+          treemacs-file-follow-delay             0.2
+          treemacs-file-name-transformer         #'identity
+          treemacs-follow-after-init             t
+          treemacs-expand-after-init             t
+          treemacs-git-command-pipe              ""
+          treemacs-goto-tag-strategy             'refetch-index
+          treemacs-indentation                   2
+          treemacs-indentation-string            " "
+          treemacs-is-never-other-window         nil
+          treemacs-max-git-entries               5000
+          treemacs-missing-project-action        'ask
+          treemacs-move-forward-on-expand        nil
+          treemacs-no-png-images                 nil
+          treemacs-no-delete-other-windows       t
+          treemacs-project-follow-cleanup        nil
+          treemacs-persist-file                  (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+          treemacs-position                      'left
+          treemacs-read-string-input             'from-child-frame
+          treemacs-recenter-distance             0.1
+          treemacs-recenter-after-file-follow    nil
+          treemacs-recenter-after-tag-follow     nil
+          treemacs-recenter-after-project-jump   'always
+          treemacs-recenter-after-project-expand 'on-distance
+          treemacs-litter-directories            '("/node_modules" "/.venv" "/.cask")
+          treemacs-show-cursor                   nil
+          treemacs-show-hidden-files             t
+          treemacs-silent-filewatch              nil
+          treemacs-silent-refresh                nil
+          treemacs-sorting                       'alphabetic-asc
+          treemacs-space-between-root-nodes      t
+          treemacs-tag-follow-cleanup            t
+          treemacs-tag-follow-delay              1.5
+          treemacs-user-mode-line-format         nil
+          treemacs-user-header-line-format       nil
+          treemacs-width                         35
+          treemacs-workspace-switch-cleanup      nil)
+
+    ;; The default width and height of the icons is 22 pixels. If you are
+    ;; using a Hi-DPI display, uncomment this to double the icon size.
+    ;;(treemacs-resize-icons 44)
+
+    (treemacs-follow-mode t)
+    (treemacs-filewatch-mode t)
+    (treemacs-fringe-indicator-mode 'always)
+    (pcase (cons (not (null (executable-find "git")))
+                 (not (null treemacs-python-executable)))
+      (`(t . t)
+       (treemacs-git-mode 'deferred))
+      (`(t . _)
+       (treemacs-git-mode 'simple))))
+  :bind
+  (:map global-map
+        ("M-0"       . treemacs-select-window)
+        ("C-x t 1"   . treemacs-delete-other-windows)
+        ("C-x t t"   . treemacs)
+        ("C-x t B"   . treemacs-bookmark)
+        ("C-x t C-t" . treemacs-find-file)
+        ("C-x t M-t" . treemacs-find-tag)))
+
+(use-package treemacs-projectile
+  :after (treemacs projectile))
+
+(use-package treemacs-icons-dired
+  :after (treemacs dired)
+  :config (treemacs-icons-dired-mode))
+
+(use-package treemacs-magit
+  :after (treemacs magit))
+
 (use-package dumb-jump
   :bind
   (:map prog-mode-map
@@ -369,16 +435,26 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package expand-region
   :bind ("C-=" . er/expand-region))
 
+(use-package lsp-python-ms
+ :init
+ ;; for executable of language server, if it's not symlinked on your PATH
+ (setq lsp-python-ms-executable
+  "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
+
 (use-package lsp-mode
   :init
-  (setq lsp-sqls-server "~/.go/bin/sqls")
-  (setq lsp-prefer-capf t)
-  (setq lsp-keymap-prefix "s-l")                         ;; set keymap
-  :hook
-  (lsp-mode . lsp-enable-which-key-integration)
+  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+  (setq lsp-keymap-prefix "C-c l")
+  :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+         (html-mode . lsp-deferred)
+         (json-mode . lsp-deferred)
+         (python-mode . lsp-deferred)
+         ;; if you want which-key integration
+         (lsp-mode . lsp-enable-which-key-integration))
   :commands lsp
   :config
-  (setq lsp-log-io nil) ;; if set to true can cause performance hit
+  (setq lsp-idle-delay 0.500)
+  (setq lsp-log-io nil) ; if set to true can cause a performance hit
   )
 
 (use-package lsp-ui
@@ -398,9 +474,14 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
         (progn
           (lsp-ui-doc-mode -1)
           (lsp-ui-doc--hide-frame))
-      (lsp-ui-doc-mode 1)))
-  :hook
-  (lsp-mode . lsp-ui-mode))
+      (lsp-ui-doc-mode 1))))
+
+(use-package lsp-treemacs
+  :commands lsp-treemacs-errors-list
+  :config
+  (lsp-treemacs-sync-mode 1))
+
+(use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
 
 (use-package company
   :diminish company-mode
@@ -414,7 +495,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
          ("C-n" . company-select-next)
          ("C-p" . company-select-previous)))
   :config
-  ;; (push 'company-lsp company-backends)
   (setq company-minimum-prefix-length 1)
   (setq company-idle-delay 0.0)
   (setq company-echo-delay 0.0)
@@ -426,6 +506,79 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (global-company-mode 1)
   ;; Don't use company in debugger mode
   (setq company-global-modes '(not gud-mode)))
+
+(use-package company-tabnine
+  :defer 1
+  :custom
+  (company-tabnine-max-num-results 9)
+  :init
+  (defun company-tabnine-toggle (&optional enable)
+    "Enable/Disable TabNine. If ENABLE is non-nil, definitely enable it."
+    (interactive)
+    (if (or enable (not (memq 'company-tabnine company-backends)))
+        (progn
+          (add-hook 'lsp-after-open-hook #'lsp-after-open-tabnine)
+          (add-to-list 'company-backends #'company-tabnine)
+          (when (bound-and-true-p lsp-mode) (lsp-after-open-tabnine))
+          (message "TabNine enabled."))
+      (setq company-backends (delete 'company-tabnine company-backends))
+      (setq company-backends (delete '(company-capf :with company-tabnine :separate) company-backends))
+      (remove-hook 'lsp-after-open-hook #'lsp-after-open-tabnine)
+      (company-tabnine-kill-process)
+      (message "TabNine disabled.")))
+  (defun company//sort-by-tabnine (candidates)
+    "Integrate company-tabnine with lsp-mode"
+    (if (or (functionp company-backend)
+            (not (and (listp company-backend) (memq 'company-tabnine company-backends))))
+        candidates
+      (let ((candidates-table (make-hash-table :test #'equal))
+            candidates-lsp
+            candidates-tabnine)
+        (dolist (candidate candidates)
+          (if (eq (get-text-property 0 'company-backend candidate)
+                  'company-tabnine)
+              (unless (gethash candidate candidates-table)
+                (push candidate candidates-tabnine))
+            (push candidate candidates-lsp)
+            (puthash candidate t candidates-table)))
+        (setq candidates-lsp (nreverse candidates-lsp))
+        (setq candidates-tabnine (nreverse candidates-tabnine))
+        (nconc (seq-take candidates-tabnine 3)
+               (seq-take candidates-lsp 6)))))
+  (defun lsp-after-open-tabnine ()
+    "Hook to attach to `lsp-after-open'."
+    (setq-local company-tabnine-max-num-results 3)
+    (add-to-list 'company-transformers 'company//sort-by-tabnine t)
+    (add-to-list 'company-backends '(company-capf :with company-tabnine :separate)))
+  :hook
+  (kill-emacs . company-tabnine-kill-process)
+  :config
+  (company-tabnine-toggle t))
+
+(use-package smartparens
+  :init
+  (progn
+    (smartparens-global-mode 1)
+    (show-smartparens-global-mode 1))
+  :config
+  (progn
+    (setq smartparens-strict-mode t)
+    (setq sp-show-pair-from-inside nil)
+    (sp-local-pair 'emacs-lisp-mode "`" nil :when '(sp-in-string-p))))
+
+(use-package conda
+  :hook
+  (python-mode . (lambda () (conda-env-activate "py3")))
+  :config
+  (conda-env-initialize-interactive-shells) ;; interactive shell support
+  ;; (conda-env-initialize-eshell)             ;; eshell support
+  ;; (conda-env-autoactivate-mode t)           ;; autoactivate
+  (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
+  (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
+
+(use-package py-autopep8
+  :config
+  (setq py-autopep8-options '("--max-line-length=80")))
 
 (defun my/jupyter-load-file ()
   "Send current buffer to jupyter kernel by default"
@@ -449,55 +602,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :init
   (setq jupyter-repl-echo-eval-p t))
 
-(use-package lsp-python-ms
-  :diminish
-  :init
-  (setq lsp-python-ms-auto-install-server t)
-  :config
-  (setq lsp-python-ms-executable
-        "~/.emacs.d/site-elisp/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
-
-(use-package conda
-  :hook
-  (python-mode . (lambda () (conda-env-activate "py3")))
-  :config
-  (conda-env-initialize-interactive-shells) ;; interactive shell support
-  ;; (conda-env-initialize-eshell)             ;; eshell support
-  ;; (conda-env-autoactivate-mode t)           ;; autoactivate
-  (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
-  (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
-
-(use-package py-autopep8
-  :config
-  (setq py-autopep8-options '("--max-line-length=80")))
-
-(use-package buftra
-  :load-path (lambda () (expand-file-name "site-elisp/buftra.el" user-emacs-directory)))
-
-(use-package py-pyment
-  :load-path (lambda () (expand-file-name "site-elisp/py-cmd-buffer.el" user-emacs-directory))
-  :config
-  (setq py-pyment-options '("--output=numpydoc")))
-;; /usr/local/Caskroom/miniconda/base/bin/pyment
-
-(use-package lsp-java
-  :hook
-  (java-mode . lsp))
-
-(defun my/java-one-click-run ()
-  "Go to previous window after running"
-  (interactive)
-  (java-one-click-run)
-  (select-window (previous-window)))
-
-(use-package java-one-click-run
-  :load-path "~/.emacs.d/site-elisp/java-one-click-run/"
-  :init (use-package shell-here)
-  :hook
-  (java-mode . (lambda () ;; compile and run java program with C-c C-c
-                 (unbind-key "C-c C-C" lsp-mode-map)
-                 (bind-key "C-c C-c" 'my/java-one-click-run java-mode-map))))
-
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
   :hook
@@ -509,18 +613,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :init (setq markdown-command "multimarkdown"))
-
-(use-package grip-mode
-  ;; :init
-  ;; (progn
-  ;;   (require 'auth-source)
-  ;;   (let ((credential (auth-source-user-and-password "api.github.com")))
-  ;;     (setq grip-github-user (car credential)
-  ;;           grip-github-password (cadr credential))))
-  :bind (:map markdown-mode-command-map
-              ("g" . grip-mode)))
-
-
 
 (use-package rjsx-mode
   :mode
@@ -551,13 +643,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 (use-package css-mode
   :hook
   (css-mode . lsp))
-
-(use-package mhtml-mode
-  :hook
-  (mhtml-mode . (lambda()
-                  (lsp)
-                  (unbind-key "C-c C-v" mhtml-mode-map)
-                  (bind-key "C-c C-v" 'my/browse-url-of-buffer-with-chrome))))
 
 (use-package json-mode
   :mode "\\.json\\'"
@@ -651,7 +736,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (dimmer-mode t))
 
 (use-package tex-site
-  :ensure auctex
+  :straight auctex
   :mode ("\\.tex\\'" . latex-mode)
   :config
   ;; Enable document parsing to get support for Latex packages
@@ -695,7 +780,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
 (use-package pdf-tools
   :config
-  (setq-default pdf-view-display-size 'fit-page)
+  (setq pdf-view-display-size 'fit-page)
+  (setq pdf-view-use-unicode-ligther nil)
   (setq pdf-annot-activate-created-annotations t)
   (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
   (pdf-tools-install :no-query))
@@ -706,8 +792,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (add-hook 'pdf-view-mode-hook 'pdf-view-restore-mode))
 
 (use-package org
-  :ensure org-plus-contrib
-  :pin org
+  :straight org-contrib
   :hook
   (after-save . my/tangle-emacs-config)
   (org-mode . (lambda ()
@@ -752,9 +837,16 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
    'org-babel-load-languages
    '((python . t)
      (latex . t)
+     (jupyter . t)
      (sql . t)
      (shell . t)
      (emacs-lisp . t)))
+  ;; https://sqrtminusone.xyz/posts/2021-05-01-org-python/
+  ;; Overwrite python as jupyter-python block
+  (org-babel-jupyter-override-src-block "python")
+  (setq ob-async-no-async-languages-alist '("python" "jupyter-python"))
+  (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)
+  ;; https://sqrtminusone.xyz/posts/2021-05-01-org-python/
   ;; Set org emphasis alist - remove strikethroug
   (setq org-emphasis-alist '(("*" bold)
                              ("/" italic)
@@ -765,7 +857,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
 
   (setq org-src-fontify-natively t) ;; Syntax highlight in #+BEGIN_SRC blocks
   (setq org-special-ctrl-a/e t) ;; cycle C-e and C-a
-  (setq org-src-window-setup 'current-window) ;; use same window
+  ;; plain, current-window, split-window-below, other-window, other-frame
+  (setq org-src-window-setup 'plain)
   (setq org-adapt-indentation nil) ;; do not indent after sections
   ;; ;; edit block inserts
   (setq org-structure-template-alist
@@ -976,8 +1069,8 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   )
 
 (use-package org-download
-  :custom
-  (org-download-display-inline-images nil))
+  :config
+  (setq org-download-display-inline-images nil))
 
 (use-package toc-org
   :after org
@@ -989,22 +1082,7 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :hook
   (org-mode . org-bullets-mode))
 
-(defun my/org-mode-visual-fill ()
-  (setq visual-fill-column-width 100
-        visual-fill-column-center-text t)
-  (visual-fill-column-mode 1))
-
-(use-package visual-fill-column
-  :disabled
-  :hook (org-mode . my/org-mode-visual-fill))
-
 (use-package ox-twbs)
-
-(use-package ox-reveal
-  :ensure ox-reveal
-  :config
-  (setq org-reveal-root "/Users/simenojensen/.emacs.d/site-elisp/reveal.js/")
-  (setq org-reveal-mathjax t))
 
 (use-package htmlize)
 
@@ -1068,24 +1146,6 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   :config
   (setq synosaurus-choose-method 'ido))
 
-(use-package guess-language
-  :disabled
-  :hook
-  (text-mode . guess-language-mode)
-  :config
-  (setq guess-language-langcodes '((en . ("en_US" "English"))
-                                   (no . ("nb_NO" "Norwegian"))))
-  (setq guess-language-languages '(en no))
-  (setq guess-language-min-paragraph-length 45))
-
-(use-package captain
-  :hook
-  ((text-mode . (lambda ()
-                  (setq captain-predicate (lambda () t))))
-  (org-mode . (lambda ()
-                (setq captain-predicate
-                      (lambda () (not (org-in-src-block-p))))))))
-
 (defun my/get-file-content-as-string (filePath)
   "Return filePath's content as string."
   (with-temp-buffer
@@ -1097,20 +1157,29 @@ If you experience freezing, decrease this.  If you experience stuttering, increa
   (interactive)
   (find-file "~/.emacs.d/my-literate-emacs-configuration.org"))
 
+(defun my/jupyter-refresh-kernelspecs ()
+  "Refresh Jupyter kernelspecs"
+  (interactive)
+  (jupyter-available-kernelspecs t))
+
 (defun my/org-startup ()
   (interactive)
   (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil\n"))
+
+(defun my/org-notebook-startup ()
+  (interactive)
+  (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil\n#+STARTUP: overview\n")
+  (insert "#+PROPERTY: header-args:python :session notebook :kernel notebook :async yes :results output :exports both :eval never-export\n\n")
+  (insert "** Imports\n #+begin_src python\n")
+  (insert "  import numpy as np\n  import pandas as pd\n  import matplotlib.pyplot as plt\n")
+  (insert "  import matplotlib as mpl\n  mpl.rcParams['figure.facecolor']='w'\n")
+  (insert "  #+end_src\n\n"))
 
 (defun my/browse-url-of-buffer-with-chrome ()
   "Same as `browse-url-of-buffer` but using chrome"
   (interactive)
   ;; (shell-command (concat "open -a 'Google Chrome.app' file://" buffer-file-name)))
  (shell-command (concat "open -a 'Google Chrome.app' " buffer-file-name)))
-
-(use-package pcap-mode
-  :mode
-  ("\\.pcapng\\'" . pcap-mode)
-  :load-path (lambda () (expand-file-name "site-elisp/pcap-mode" user-emacs-directory)))
 
 (use-package google-this
   :diminish

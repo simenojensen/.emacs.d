@@ -1,15 +1,17 @@
 #+TITLE: My Literate Emacs Configuration
 #+AUTHOR: Simen Omholt-Jensen
 #+STARTUP:     hidestars overview
-#+PROPERTY:     header-args:emacs-lisp     :tangle "~/.emacs.d/init.el"    :results silent
+#+PROPERTIES: header-args:emacs-lisp :tangle "~/.emacs.d/init.el" :results silent
 
 [[https://github.com/simenojensen/.emacs.d/blob/master/my-literate-emacs-configuration.org][My Configs]]
-
 * Start up
 ** Lexical Binding
 
 #+begin_quote
-Until Emacs 24.1 (June 2012), Elisp only had dynamically scoped variables, a feature, mostly by accident, common to old lisp dialects. While dynamic scope has some selective uses, it’s widely regarded as a mistake for local variables, and virtually no other languages have adopted it.
+Until Emacs 24.1 (June 2012), Elisp only had dynamically scoped variables, a
+feature, mostly by accident, common to old lisp dialects. While dynamic scope
+has some selective uses, it’s widely regarded as a mistake for local variables,
+and virtually no other languages have adopted it.
 #+end_quote
 
 [[https://nullprogram.com/blog/2016/12/22/][More Information]]
@@ -17,6 +19,7 @@ Until Emacs 24.1 (June 2012), Elisp only had dynamically scoped variables, a fea
 #+begin_src emacs-lisp
   ;;; init.el --- -*- lexical-binding: t -*-
 #+end_src
+
 ** Avoid Garbage Collection at Startup
 
 #+begin_quote
@@ -63,8 +66,7 @@ A large =gc-cons-threshold= may cause freezing and stuttering during long-term i
 #+begin_src emacs-lisp
   (defvar better-gc-cons-threshold 100000000 ; 100mb
     "The default value to use for `gc-cons-threshold'.
-
-  If you experience freezing, decrease this.  If you experience stuttering, increase this.")
+     If you experience freezing, decrease this.  If you experience stuttering, increase this.")
 
   (add-hook 'emacs-startup-hook
             (lambda ()
@@ -96,97 +98,42 @@ Garbage Collect when Emacs is out of focus and avoid garbage collection when usi
 #+end_src
 
 * Package Management
-** =package.el=
+** =straight.el=
 
-By default, Emacs 24 or later comes with a built-in package management system (=package.el=). To add further functionality such as adding package repositories and tweaking package configurations, =package.el= needs to be loaded in the =init.el= file during startup.
-
-[[https://www.gnu.org/software/emacs/manual/html_mono/emacs.html#Package-Installation][More Information]]
+[[https://github.com/raxod502/straight.el#getting-started][More Information]]
 
 #+begin_src emacs-lisp
-  (require 'package)
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
 #+end_src
 
-** Package Repositories
-*** ELPA/MELPA
-
-By default, Emacs comes with the Emacs Lisp Package Archive (ELPA). As the packages need to be FSF-sanctioned, there aren't that many to choose from. By adding the Milkypostman's Emacs Lisp Package Archive ([[https://melpa.org/][MELPA]]), an enormous amount of packages become available. Remember to add ~https~ to urls.
+*** =use-package= integration
+[[https://github.com/raxod502/straight.el#getting-started][More Information]]
 
 #+begin_src emacs-lisp
-  (setq-default package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-                                   ("melpa" . "https://melpa.org/packages/")
-                                   ("org" . "https://orgmode.org/elpa/")))
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
 #+end_src
 
-*** Other Packages
 
-Other packages will be placed in =site/elisp= as ~git submodules~. They will be added to the load path in their =use-package= declaration.
+*** =package-enable-at-startup=
 
-**** Add Packages Manually from Git
-
-#+begin_src shell :tangle no
-  cd site-elisp/
-  git submodule add https://github.com/foo/bar.git
-#+end_src
-
-**** Update Manually Added Packages
-
-#+begin_src shell :tangle no
-  git submodule init
-  git submodule update
-#+end_src
-
-** Prepare Packages for Configuration
-
-- Run =package-initialize= to set up the load-paths and autoloads for installed packages.
-
-[[https://www.emacswiki.org/emacs/InstallingPackages][More Information]]
-
-#+begin_src emacs-lisp
-  (package-initialize)
-#+end_src
-
-- Set =package-enable-at-startup= to =nil= to prevent superfluous loading of packages.
+Set =package-enable-at-startup= to =nil= to prevent superfluous loading of packages.
 
 [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Package-Installation.html][More Information]]
 
 #+begin_src emacs-lisp
   (setq-default package-enable-at-startup nil)
-#+end_src
-
-** Bootstrap =use-package=
-
-- The =use-package= macro allows cleaner configuration of package loading and installation.
-
-[[https://github.com/jwiegley/use-package][More Information]]
-
-#+begin_src emacs-lisp
-  (when (not (package-installed-p 'use-package))
-    (package-refresh-contents)
-    (package-install 'use-package))
-  (eval-when-compile
-    (require 'use-package))
-#+end_src
-
-- By setting =use-package-always-ensure= to =t=, =use-package= will install packages that are not already installed.
-
-[[https://github.com/jwiegley/use-package#package-installation][More Information]]
-
-#+begin_src emacs-lisp
-  (require 'use-package-ensure)
-  (setq use-package-always-ensure t)
-#+end_src
-
-** Automatically Update Packages with =auto-package-update=.
-
-[[https://github.com/rranelli/auto-package-update.el][More Information]]
-
-#+begin_src emacs-lisp
-  (use-package auto-package-update
-    :config
-    (setq-default auto-package-update-interval 7) ;; in days
-    (setq-default auto-package-update-delete-old-versions t)
-    (setq-default auto-package-update-hide-results t)
-    (auto-package-update-maybe))
 #+end_src
 
 ** Prefer Newer =.el= Files Over Older =.elc= Files.
@@ -211,7 +158,7 @@ Other packages will be placed in =site/elisp= as ~git submodules~. They will be 
 To use with =use-package=.
 
 #+begin_src emacs-lisp
-  (require 'bind-key)
+  (use-package bind-key)
 #+end_src
 
 ** =diminish=
@@ -358,7 +305,7 @@ size.
 
 Use ~M-`~ to switch focus between frames
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no :noweb-ref macOS
   (bind-key "M-`" 'other-frame)
 #+end_src
 Make sure the =$PATH= is loaded from the default shell.
@@ -367,26 +314,11 @@ Make sure the =$PATH= is loaded from the default shell.
 
 #+begin_src emacs-lisp :tangle no :noweb-ref macOS
   (use-package exec-path-from-shell
-    :defer nil
     :config
     (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
     (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
     (if (string-equal system-type "darwin")
         (exec-path-from-shell-initialize)))
-#+end_src
-
-Gnupg keyring update
-
-[[https://metaredux.com/posts/2019/12/09/dealing-with-expired-elpa-gpg-keys.html][More Information]]
-
-#+begin_src emacs-lisp :tangle no :noweb-ref macOS
-  (setq package-check-signature nil)
-  (use-package gnu-elpa-keyring-update)
-  (setq package-check-signature 'allow-unsigned)
-
-  (if (not (file-directory-p "~/.emacs.d/elpa/gnupg"))
-      (progn (shell-command "mkdir ~/.emacs.d/elpa/gnupg")
-             (shell-command "gpg --homedir ~/.emacs.d/elpa/gnupg --receive-keys 066DAFCB81E42C40")))
 #+end_src
 
 ** Windows
@@ -481,9 +413,9 @@ The =which-key= package automatically displays potential command information as 
   (use-package ivy
     :diminish
     :init
-    (use-package amx :defer t)
+    (use-package amx)
     (use-package counsel :diminish :config (counsel-mode 1))
-    (use-package swiper :defer t)
+    (use-package swiper)
     (ivy-mode 1)
     :bind
     (("C-x C-f" . counsel-find-file)
@@ -562,7 +494,8 @@ Helpful is an alternative to the built-in Emacs help that provides much more con
 
 #+begin_src emacs-lisp
   (use-package color-rg
-    :load-path (lambda () (expand-file-name "site-elisp/color-rg" user-emacs-directory))
+    :straight
+    (color-rg :type git :host github :repo "manateelazycat/color-rg")
     :bind
     ("C-M-s" . color-rg-search-input))
 #+end_src
@@ -575,7 +508,7 @@ Helpful is an alternative to the built-in Emacs help that provides much more con
 
 #+begin_src emacs-lisp
   (use-package dired
-    :ensure nil
+    :straight nil
     :bind
     (("C-x C-j" . dired-jump)
      ("C-x j" . dired-jump-other-window))
@@ -720,65 +653,89 @@ Projectile is a project interaction library for Emacs.
 
 [[https://github.com/Alexander-Miller/treemacs][More Information]]
 
-#+begin_src emacs-lisp :tangle nil
+#+begin_src emacs-lisp
   (use-package treemacs
-    :custom
-    (treemacs-collapse-dirs 3)
-    (treemacs-deferred-git-apply-delay 0.5)
-    (treemacs-display-in-side-window t)
-    (treemacs-file-event-delay 5000)
-    (treemacs-file-follow-delay 0.2)
-    (treemacs-follow-after-init t)
-    (treemacs-follow-recenter-distance 0.1)
-    (treemacs-git-command-pipe "")
-    (treemacs-goto-tag-strategy 'refetch-index)
-    (treemacs-indentation 2)
-    (treemacs-indentation-string " ")
-    (treemacs-is-never-other-window nil)
-    (treemacs-max-git-entries 5000)
-    (treemacs-no-png-images nil)
-    (treemacs-no-delete-other-windows t)
-    (treemacs-project-follow-cleanup nil)
-    (treemacs-persist-file (expand-file-name ".cache/treemacs-persist" user-emacs-directory))
-    (treemacs-recenter-after-file-follow nil)
-    (treemacs-recenter-after-tag-follow nil)
-    (treemacs-show-cursor nil)
-    (treemacs-show-hidden-files t)
-    (treemacs-silent-filewatch nil)
-    (treemacs-silent-refresh nil)
-    (treemacs-sorting 'alphabetic-desc)
-    (treemacs-space-between-root-nodes t)
-    (treemacs-tag-follow-cleanup t)
-    (treemacs-tag-follow-delay 1.5)
-    (treemacs-width 50)
+    :defer t
+    :init
+    (with-eval-after-load 'winum
+      (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
     :config
+    (progn
+      (setq treemacs-collapse-dirs                 (if treemacs-python-executable 3 0)
+            treemacs-deferred-git-apply-delay      0.5
+            treemacs-directory-name-transformer    #'identity
+            treemacs-display-in-side-window        t
+            treemacs-eldoc-display                 t
+            treemacs-file-event-delay              5000
+            treemacs-file-extension-regex          treemacs-last-period-regex-value
+            treemacs-file-follow-delay             0.2
+            treemacs-file-name-transformer         #'identity
+            treemacs-follow-after-init             t
+            treemacs-expand-after-init             t
+            treemacs-git-command-pipe              ""
+            treemacs-goto-tag-strategy             'refetch-index
+            treemacs-indentation                   2
+            treemacs-indentation-string            " "
+            treemacs-is-never-other-window         nil
+            treemacs-max-git-entries               5000
+            treemacs-missing-project-action        'ask
+            treemacs-move-forward-on-expand        nil
+            treemacs-no-png-images                 nil
+            treemacs-no-delete-other-windows       t
+            treemacs-project-follow-cleanup        nil
+            treemacs-persist-file                  (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+            treemacs-position                      'left
+            treemacs-read-string-input             'from-child-frame
+            treemacs-recenter-distance             0.1
+            treemacs-recenter-after-file-follow    nil
+            treemacs-recenter-after-tag-follow     nil
+            treemacs-recenter-after-project-jump   'always
+            treemacs-recenter-after-project-expand 'on-distance
+            treemacs-litter-directories            '("/node_modules" "/.venv" "/.cask")
+            treemacs-show-cursor                   nil
+            treemacs-show-hidden-files             t
+            treemacs-silent-filewatch              nil
+            treemacs-silent-refresh                nil
+            treemacs-sorting                       'alphabetic-asc
+            treemacs-space-between-root-nodes      t
+            treemacs-tag-follow-cleanup            t
+            treemacs-tag-follow-delay              1.5
+            treemacs-user-mode-line-format         nil
+            treemacs-user-header-line-format       nil
+            treemacs-width                         35
+            treemacs-workspace-switch-cleanup      nil)
+
+      ;; The default width and height of the icons is 22 pixels. If you are
+      ;; using a Hi-DPI display, uncomment this to double the icon size.
+      ;;(treemacs-resize-icons 44)
+
+      (treemacs-follow-mode t)
+      (treemacs-filewatch-mode t)
+      (treemacs-fringe-indicator-mode 'always)
+      (pcase (cons (not (null (executable-find "git")))
+                   (not (null treemacs-python-executable)))
+        (`(t . t)
+         (treemacs-git-mode 'deferred))
+        (`(t . _)
+         (treemacs-git-mode 'simple))))
     :bind
-    (("M-0" . treemacs-select-window)
-     (:map treemacs-mode-map ("C-p" . treemacs-previous-line))
-     (:map treemacs-mode-map ("C-n" . treemacs-next-line))))
-#+end_src
+    (:map global-map
+          ("M-0"       . treemacs-select-window)
+          ("C-x t 1"   . treemacs-delete-other-windows)
+          ("C-x t t"   . treemacs)
+          ("C-x t B"   . treemacs-bookmark)
+          ("C-x t C-t" . treemacs-find-file)
+          ("C-x t M-t" . treemacs-find-tag)))
 
-*** Treemacs Magit
-
-#+begin_src emacs-lisp :tangle nil
-  (use-package treemacs-evil
-    :after treemacs evil)
-#+end_src
-
-*** Treemacs Projectile
-
-#+begin_src emacs-lisp :tangle nil
   (use-package treemacs-projectile
-    :after treemacs projectile)
-#+end_src
+    :after (treemacs projectile))
 
-*** Treemacs Icons Dired
-
-#+begin_src emacs-lisp :tangle nil
   (use-package treemacs-icons-dired
-    :after treemacs dired
-    :config
-    (treemacs-icons-dired-mode))
+    :after (treemacs dired)
+    :config (treemacs-icons-dired-mode))
+
+  (use-package treemacs-magit
+    :after (treemacs magit))
 #+end_src
 
 ** Dump Jump
@@ -863,56 +820,91 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     :bind ("C-=" . er/expand-region))
 #+end_src
 
-** =LSP=
-*** =lsp-mode=
+** LSP Python MS
+
+=lsp-mode= client leveraging the Microsoft's [[https://github.com/Microsoft/python-language-server][python-language-server]].
+
+[[https://emacs-lsp.github.io/lsp-python-ms/][Installation and More Information]]
+
+#+begin_src emacs-lisp
+  (use-package lsp-python-ms
+   :init
+   ;; for executable of language server, if it's not symlinked on your PATH
+   (setq lsp-python-ms-executable
+    "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
+#+end_src
+
+** =lsp-mode=
 
  LSP Mode - Language Server Protocol support for Emacs
  Language Server Protocol support with multiples languages support for Emacs
 
  [[https://emacs-lsp.github.io/lsp-mode/][More Information]]
 
- #+begin_src emacs-lisp
-   (use-package lsp-mode
-     :init
-     (setq lsp-sqls-server "~/.go/bin/sqls")
-     (setq lsp-prefer-capf t)
-     (setq lsp-keymap-prefix "s-l")                         ;; set keymap
-     :hook
-     (lsp-mode . lsp-enable-which-key-integration)
-     :commands lsp
-     :config
-     (setq lsp-log-io nil) ;; if set to true can cause performance hit
-     )
- #+end_src
+#+begin_src emacs-lisp
+  (use-package lsp-mode
+    :init
+    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+    (setq lsp-keymap-prefix "C-c l")
+    :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+           (html-mode . lsp-deferred)
+           (json-mode . lsp-deferred)
+           (python-mode . lsp-deferred)
+           ;; if you want which-key integration
+           (lsp-mode . lsp-enable-which-key-integration))
+    :commands lsp
+    :config
+    (setq lsp-idle-delay 0.500)
+    (setq lsp-log-io nil) ; if set to true can cause a performance hit
+    )
+#+end_src
 
-*** =lsp-ui=
+** =lsp-ui=
 
  UI integration's for lsp-mode
 
  [[https://emacs-lsp.github.io/lsp-ui/][More Information]]
 
- #+begin_src emacs-lisp
-   (use-package lsp-ui
-     :commands lsp-ui-mode
-     :bind
-     ;; lsp-ui-peek
-     ((:map lsp-ui-mode-map
-            ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
-            ([remap xref-find-references] . lsp-ui-peek-find-references)
-            ;; lsp-ui-doc
-            ("M-i" . lsp-ui-doc-focus-frame))
-      ("s-i" . my/toggle-lsp-ui-doc))
-     :preface
-     (defun my/toggle-lsp-ui-doc ()
-       (interactive)
-       (if lsp-ui-doc-mode
-           (progn
-             (lsp-ui-doc-mode -1)
-             (lsp-ui-doc--hide-frame))
-         (lsp-ui-doc-mode 1)))
-     :hook
-     (lsp-mode . lsp-ui-mode))
- #+end_src
+#+begin_src emacs-lisp
+  (use-package lsp-ui
+    :commands lsp-ui-mode
+    :bind
+    ;; lsp-ui-peek
+    ((:map lsp-ui-mode-map
+           ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
+           ([remap xref-find-references] . lsp-ui-peek-find-references)
+           ;; lsp-ui-doc
+           ("M-i" . lsp-ui-doc-focus-frame))
+     ("s-i" . my/toggle-lsp-ui-doc))
+    :preface
+    (defun my/toggle-lsp-ui-doc ()
+      (interactive)
+      (if lsp-ui-doc-mode
+          (progn
+            (lsp-ui-doc-mode -1)
+            (lsp-ui-doc--hide-frame))
+        (lsp-ui-doc-mode 1))))
+#+end_src
+
+** =lsp-treemacs=
+
+[[https://github.com/emacs-lsp/lsp-treemacs][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package lsp-treemacs
+    :commands lsp-treemacs-errors-list
+    :config
+    (lsp-treemacs-sync-mode 1))
+#+end_src
+
+
+** =lsp-ivy=
+
+[[https://github.com/emacs-lsp/lsp-ivy][More Informatino]]
+
+#+begin_src emacs-lisp
+  (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+#+end_src
 
 ** =company=
 *** =company-mode=
@@ -930,7 +922,6 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
            ("C-n" . company-select-next)
            ("C-p" . company-select-previous)))
     :config
-    ;; (push 'company-lsp company-backends)
     (setq company-minimum-prefix-length 1)
     (setq company-idle-delay 0.0)
     (setq company-echo-delay 0.0)
@@ -1009,64 +1000,74 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     ;;       company-box-icons-alist 'company-box-icons-all-the-icons))
 #+end_src
 ** =company-tabnine=
-[[https://github.com/TommyX12/company-tabnine][More Information]]
+- [[https://github.com/TommyX12/company-tabnine][More Information]]
+- [[https://github.com/MatthewZMD/.emacs.d#company-tabnine][Config from MatthewZMD]]
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package company-tabnine
-    :config
-    (add-to-list 'company-backends #'company-tabnine))
-#+end_src
-
-* Python
-
-Some python settings. Setup jupyter keybindings.
-
-#+begin_src emacs-lisp
-  (defun my/jupyter-load-file ()
-    "Send current buffer to jupyter kernel by default"
-    (interactive)
-    (jupyter-load-file (buffer-file-name)))
-
-  (use-package python
+    :defer 1
+    :custom
+    (company-tabnine-max-num-results 9)
+    :init
+    (defun company-tabnine-toggle (&optional enable)
+      "Enable/Disable TabNine. If ENABLE is non-nil, definitely enable it."
+      (interactive)
+      (if (or enable (not (memq 'company-tabnine company-backends)))
+          (progn
+            (add-hook 'lsp-after-open-hook #'lsp-after-open-tabnine)
+            (add-to-list 'company-backends #'company-tabnine)
+            (when (bound-and-true-p lsp-mode) (lsp-after-open-tabnine))
+            (message "TabNine enabled."))
+        (setq company-backends (delete 'company-tabnine company-backends))
+        (setq company-backends (delete '(company-capf :with company-tabnine :separate) company-backends))
+        (remove-hook 'lsp-after-open-hook #'lsp-after-open-tabnine)
+        (company-tabnine-kill-process)
+        (message "TabNine disabled.")))
+    (defun company//sort-by-tabnine (candidates)
+      "Integrate company-tabnine with lsp-mode"
+      (if (or (functionp company-backend)
+              (not (and (listp company-backend) (memq 'company-tabnine company-backends))))
+          candidates
+        (let ((candidates-table (make-hash-table :test #'equal))
+              candidates-lsp
+              candidates-tabnine)
+          (dolist (candidate candidates)
+            (if (eq (get-text-property 0 'company-backend candidate)
+                    'company-tabnine)
+                (unless (gethash candidate candidates-table)
+                  (push candidate candidates-tabnine))
+              (push candidate candidates-lsp)
+              (puthash candidate t candidates-table)))
+          (setq candidates-lsp (nreverse candidates-lsp))
+          (setq candidates-tabnine (nreverse candidates-tabnine))
+          (nconc (seq-take candidates-tabnine 3)
+                 (seq-take candidates-lsp 6)))))
+    (defun lsp-after-open-tabnine ()
+      "Hook to attach to `lsp-after-open'."
+      (setq-local company-tabnine-max-num-results 3)
+      (add-to-list 'company-transformers 'company//sort-by-tabnine t)
+      (add-to-list 'company-backends '(company-capf :with company-tabnine :separate)))
     :hook
-    (python-mode . (lambda () ;; emulate python-shell-send-buffer
-                     (display-fill-column-indicator-mode) ;; display column
-                     (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
-                     (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)))
+    (kill-emacs . company-tabnine-kill-process)
     :config
-    ;; silence indentation guesses
-    (setq python-indent-guess-indent-offset-verbose nil))
+    (company-tabnine-toggle t))
 #+end_src
 
-** =emacs-jupyter=
-[[https://github.com/nnicandro/emacs-jupyter][More Information]]
+** =smartparens=
+[[https://github.com/Fuco1/smartparens][More Information]]
 
 #+begin_src emacs-lisp
-  (use-package jupyter
-    :bind
-    (:map python-mode-map
-          ("C-c C-p" . jupyter-run-repl))
+  (use-package smartparens
     :init
-    (setq jupyter-repl-echo-eval-p t))
-#+end_src
-
-** LSP Python MS
-
-=lsp-mode= client leveraging the Microsoft's [[https://github.com/Microsoft/python-language-server][python-language-server]].
-
-[[https://emacs-lsp.github.io/lsp-python-ms/][Installation and More Information]]
-
-
-#+begin_src emacs-lisp
-  (use-package lsp-python-ms
-    :diminish
-    :init
-    (setq lsp-python-ms-auto-install-server t)
+    (progn
+      (smartparens-global-mode 1)
+      (show-smartparens-global-mode 1))
     :config
-    (setq lsp-python-ms-executable
-          "~/.emacs.d/site-elisp/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
+    (progn
+      (setq smartparens-strict-mode t)
+      (setq sp-show-pair-from-inside nil)
+      (sp-local-pair 'emacs-lisp-mode "`" nil :when '(sp-in-string-p))))
 #+end_src
-
 ** =conda=
 
 This package lets you activate your conda environments. The setup works for miniconda installed by hombre.
@@ -1102,13 +1103,13 @@ Usage:
 
 ** =py-cmd-buffer.el=
 *** =buftra=
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package buftra
     :load-path (lambda () (expand-file-name "site-elisp/buftra.el" user-emacs-directory)))
 #+end_src
 
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package py-pyment
     :load-path (lambda () (expand-file-name "site-elisp/py-cmd-buffer.el" user-emacs-directory))
     :config
@@ -1116,12 +1117,45 @@ Usage:
   ;; /usr/local/Caskroom/miniconda/base/bin/pyment
 #+end_src
 
+* Python
+
+Some python settings. Setup jupyter keybindings.
+
+#+begin_src emacs-lisp
+  (defun my/jupyter-load-file ()
+    "Send current buffer to jupyter kernel by default"
+    (interactive)
+    (jupyter-load-file (buffer-file-name)))
+
+  (use-package python
+    :hook
+    (python-mode . (lambda () ;; emulate python-shell-send-buffer
+                     (display-fill-column-indicator-mode) ;; display column
+                     (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
+                     (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)))
+    :config
+    ;; silence indentation guesses
+    (setq python-indent-guess-indent-offset-verbose nil))
+#+end_src
+
+** =emacs-jupyter=
+[[https://github.com/nnicandro/emacs-jupyter][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package jupyter
+    :bind
+    (:map python-mode-map
+          ("C-c C-p" . jupyter-run-repl))
+    :init
+    (setq jupyter-repl-echo-eval-p t))
+#+end_src
+
 * Java
 ** =lsp-java=
 =lsp-mode= for =java=
 [[https://emacs-lsp.github.io/lsp-java/][More Information]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package lsp-java
     :hook
     (java-mode . lsp))
@@ -1129,7 +1163,7 @@ Usage:
 
 ** =java-one-click-run=
 [[https://github.com/MatthewZMD/java-one-click-run][More Information]]
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (defun my/java-one-click-run ()
     "Go to previous window after running"
     (interactive)
@@ -1164,7 +1198,7 @@ Usage:
 
 ** =grip=
 [[https://github.com/seagle0128/grip-mode][More Information]]
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package grip-mode
     ;; :init
     ;; (progn
@@ -1178,10 +1212,21 @@ Usage:
 #+end_src
 
 * SQL
-[[https://github.com/emacs-lsp/lsp-mssql][More Information]]
+** =pgformatter=
+[[https://arjanvandergaag.nl/blog/using-emacs-as-a-database-client.html][More Information]]
 
-#+begin_src emacs-lisp
+*Prerequisite*
+#+begin_src shell :tangle no
+  brew install pgformatter
+#+end_src
 
+#+begin_src emacs-lisp :tangle no
+  (use-package sqlformat
+    :commands (sqlformat sqlformat-buffer sqlformat-region)
+    :hook (sql-mode . sqlformat-on-save-mode)
+    :init
+    (setq sqlformat-command 'pgformatter
+          sqlformat-args '("-s2" "-g" "-u1")))
 #+end_src
 
 * Web Development
@@ -1237,7 +1282,7 @@ Usage:
 
 *Install:*
 - ~M-x lsp-install-server html-ls~
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package mhtml-mode
     :hook
     (mhtml-mode . (lambda()
@@ -1449,7 +1494,7 @@ Install Latex.
 
 #+begin_src emacs-lisp
   (use-package tex-site
-    :ensure auctex
+    :straight auctex
     :mode ("\\.tex\\'" . latex-mode)
     :config
     ;; Enable document parsing to get support for Latex packages
@@ -1521,7 +1566,8 @@ Install Latex.
 #+begin_src emacs-lisp
   (use-package pdf-tools
     :config
-    (setq-default pdf-view-display-size 'fit-page)
+    (setq pdf-view-display-size 'fit-page)
+    (setq pdf-view-use-unicode-ligther nil)
     (setq pdf-annot-activate-created-annotations t)
     (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
     (pdf-tools-install :no-query))
@@ -1548,8 +1594,7 @@ Install org-mode from the org package repository.
 
 #+begin_src emacs-lisp :noweb tangle
   (use-package org
-    :ensure org-plus-contrib
-    :pin org
+    :straight org-contrib
     :hook
     (after-save . my/tangle-emacs-config)
     (org-mode . (lambda ()
@@ -1594,9 +1639,16 @@ Install org-mode from the org package repository.
      'org-babel-load-languages
      '((python . t)
        (latex . t)
+       (jupyter . t)
        (sql . t)
        (shell . t)
        (emacs-lisp . t)))
+    ;; https://sqrtminusone.xyz/posts/2021-05-01-org-python/
+    ;; Overwrite python as jupyter-python block
+    (org-babel-jupyter-override-src-block "python")
+    (setq ob-async-no-async-languages-alist '("python" "jupyter-python"))
+    (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)
+    ;; https://sqrtminusone.xyz/posts/2021-05-01-org-python/
     ;; Set org emphasis alist - remove strikethroug
     (setq org-emphasis-alist '(("*" bold)
                                ("/" italic)
@@ -1607,7 +1659,8 @@ Install org-mode from the org package repository.
 
     (setq org-src-fontify-natively t) ;; Syntax highlight in #+BEGIN_SRC blocks
     (setq org-special-ctrl-a/e t) ;; cycle C-e and C-a
-    (setq org-src-window-setup 'current-window) ;; use same window
+    ;; plain, current-window, split-window-below, other-window, other-frame
+    (setq org-src-window-setup 'plain)
     (setq org-adapt-indentation nil) ;; do not indent after sections
     ;; ;; edit block inserts
     (setq org-structure-template-alist
@@ -1839,8 +1892,8 @@ Install org-mode from the org package repository.
 
 #+begin_src emacs-lisp
   (use-package org-download
-    :custom
-    (org-download-display-inline-images nil))
+    :config
+    (setq org-download-display-inline-images nil))
 #+end_src
 
 ** =toc-org=
@@ -1871,7 +1924,7 @@ Install the =toc-org= package to automatically generate an updated table of cont
 =visual-fill-column-mode= is a small Emacs minor mode that mimics the effect of =fill-column= in =visual-line-mode=.
 [[https://github.com/joostkremers/visual-fill-column][More Information]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (defun my/org-mode-visual-fill ()
     (setq visual-fill-column-width 100
           visual-fill-column-center-text t)
@@ -1889,13 +1942,14 @@ Export org-mode docs as HTML compatible with Twitter Bootstrap.
 #+begin_src emacs-lisp
   (use-package ox-twbs)
 #+end_src
-** =reveal.js=
+** =reveal
+.js=
 
 Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, install [[https://github.com/hexmode/ox-reveal][=ox-reveal=]] and [[https://github.com/hniksic/emacs-htmlize][=htmlize=]].
 
 [[https://github.com/hexmode/ox-reveal][More Information]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package ox-reveal
     :ensure ox-reveal
     :config
@@ -2008,7 +2062,7 @@ Synosaurus is a thesaurus fontend for Emacs with pluggable backends.
 typing. Automatically switches the spell checker and typo-mode if present.
 [[https://github.com/tmalsburg/guess-language.el][More Information]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package guess-language
     :disabled
     :hook
@@ -2019,18 +2073,6 @@ typing. Automatically switches the spell checker and typo-mode if present.
     (setq guess-language-languages '(en no))
     (setq guess-language-min-paragraph-length 45))
 #+end_src
-
-** =captain=
-[[https://elpa.gnu.org/packages/captain.html][More Information]]
-#+begin_src emacs-lisp
-  (use-package captain
-    :hook
-    ((text-mode . (lambda ()
-                    (setq captain-predicate (lambda () t))))
-    (org-mode . (lambda ()
-                  (setq captain-predicate
-                        (lambda () (not (org-in-src-block-p))))))))
-  #+end_src
 
 * Elisp Functions
 ** Read content of file
@@ -2052,12 +2094,34 @@ typing. Automatically switches the spell checker and typo-mode if present.
     (find-file "~/.emacs.d/my-literate-emacs-configuration.org"))
 #+end_src
 
+** Switching jupyter kernel in conda environment
+
+[[https://sqrtminusone.xyz/posts/2021-05-01-org-python/][More Information]]
+
+#+begin_src emacs-lisp
+  (defun my/jupyter-refresh-kernelspecs ()
+    "Refresh Jupyter kernelspecs"
+    (interactive)
+    (jupyter-available-kernelspecs t))
+#+end_src
+
 ** Insert Org Startup Template
 
 #+begin_src emacs-lisp
   (defun my/org-startup ()
     (interactive)
     (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil\n"))
+#+end_src
+
+#+begin_src emacs-lisp
+  (defun my/org-notebook-startup ()
+    (interactive)
+    (insert "#+TITLE: \n#+AUTHOR: Simen Omholt-Jensen\n#+OPTIONS: toc:nil\n#+STARTUP: overview\n")
+    (insert "#+PROPERTY: header-args:python :session notebook :kernel notebook :async yes :results output :exports both :eval never-export\n\n")
+    (insert "** Imports\n #+begin_src python\n")
+    (insert "  import numpy as np\n  import pandas as pd\n  import matplotlib.pyplot as plt\n")
+    (insert "  import matplotlib as mpl\n  mpl.rcParams['figure.facecolor']='w'\n")
+    (insert "  #+end_src\n\n"))
 #+end_src
 
 ** Open HTML buffer in Chrome
@@ -2074,7 +2138,7 @@ typing. Automatically switches the spell checker and typo-mode if present.
 *** =pcap-mode=
 [[https://github.com/orgcandman/pcap-mode][More Information]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package pcap-mode
     :mode
     ("\\.pcapng\\'" . pcap-mode)
