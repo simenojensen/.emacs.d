@@ -1,9 +1,10 @@
 #+TITLE: My Literate Emacs Configuration
 #+AUTHOR: Simen Omholt-Jensen
 #+STARTUP:     hidestars overview
-#+PROPERTIES: header-args:emacs-lisp :tangle "~/.emacs.d/init.el" :results silent
+#+PROPERTIES: header-args:emacs-lisp :tangle "~/.emacs.d/init.el"
 
 [[https://github.com/simenojensen/.emacs.d/blob/master/my-literate-emacs-configuration.org][My Configs]]
+
 * Start up
 ** Lexical Binding
 
@@ -23,7 +24,8 @@ and virtually no other languages have adopted it.
 ** Avoid Garbage Collection at Startup
 
 #+begin_quote
-The GC can easily double startup time, so we suppress it at startup by turning up =gc-cons-threshold= (and perhaps =gc-cons-percentage=) temporarily:
+The GC can easily double startup time, so we suppress it at startup by turning
+up =gc-cons-threshold= (and perhaps =gc-cons-percentage=) temporarily:
 #+end_quote
 
 [[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how-does-doom-start-up-so-quickly][More Information]]
@@ -35,7 +37,8 @@ The GC can easily double startup time, so we suppress it at startup by turning u
 
 ** Benchmarking
 
-First, declare a hook which will benchmark the startup process. It reports how long the it took to start up, and how many garbage collections were performed.
+First, declare a hook which will benchmark the startup process. It reports how
+long the it took to start up, and how many garbage collections were performed.
 
 [[https://blog.d46.us/advanced-emacs-startup/][More Information]]
 
@@ -51,7 +54,8 @@ First, declare a hook which will benchmark the startup process. It reports how l
 
 ** Unset =file-name-handler-alist=
 
-Every file opened and loaded by Emacs will run through this list to check for a proper handler for the file, but during startup, it won’t need any of them.
+Every file opened and loaded by Emacs will run through this list to check for a
+proper handler for the file, but during startup, it won’t need any of them.
 
 #+begin_src emacs-lisp
   (defvar file-name-handler-alist-original file-name-handler-alist)
@@ -61,7 +65,9 @@ Every file opened and loaded by Emacs will run through this list to check for a 
 * Garbage Collection
 ** Set =gc-cons-threshold= Smaller for Interactive Use
 
-A large =gc-cons-threshold= may cause freezing and stuttering during long-term interactive use. If you experience freezing, decrease this amount, if you increase stuttering, increase this amount.
+A large =gc-cons-threshold= may cause freezing and stuttering during long-term
+interactive use. If you experience freezing, decrease this amount, if you
+increase stuttering, increase this amount.
 
 #+begin_src emacs-lisp
   (defvar better-gc-cons-threshold 100000000 ; 100mb
@@ -75,7 +81,8 @@ A large =gc-cons-threshold= may cause freezing and stuttering during long-term i
               (makunbound 'file-name-handler-alist-original)))
 #+end_src
 
-Garbage Collect when Emacs is out of focus and avoid garbage collection when using minibuffer.
+Garbage Collect when Emacs is out of focus and avoid garbage collection when
+using minibuffer.
 
 #+begin_src emacs-lisp
   (add-hook 'emacs-startup-hook
@@ -121,12 +128,11 @@ Garbage Collect when Emacs is out of focus and avoid garbage collection when usi
 [[https://github.com/raxod502/straight.el#getting-started][More Information]]
 
 #+begin_src emacs-lisp
-(straight-use-package 'use-package)
-(setq straight-use-package-by-default t)
+  (straight-use-package 'use-package)
+  (setq straight-use-package-by-default t)
 #+end_src
 
-
-*** =package-enable-at-startup=
+** =package-enable-at-startup=
 
 Set =package-enable-at-startup= to =nil= to prevent superfluous loading of packages.
 
@@ -194,7 +200,7 @@ The =try= package let's you try new packages without installed them. On the next
   (add-to-list 'default-frame-alist '(ns-appearance . dark))                              ;; Fancy titlebar for MacOS
   (setq ns-use-proxy-icon  nil)                                                           ;; Fancy titlebar for MacOS
   (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
-                                       (abbreviate-file-name (buffer-file-name)) "%b")))
+				       (abbreviate-file-name (buffer-file-name)) "%b")))
   (set-language-environment "UTF-8")                                                      ;; Set enconding language
   (set-default-coding-systems 'utf-8)                                                     ;; Set enconding language
   (prefer-coding-system 'utf-8)                                                           ;; Set enconding language
@@ -203,10 +209,14 @@ The =try= package let's you try new packages without installed them. On the next
   (global-display-line-numbers-mode)                                                      ;; Display line numbers
   (setq-default read-process-output-max (* 1024 1024))                                    ;; Increase the amount of data which Emacs reads from the process
   (dolist (mode '(vterm-mode-hook
-                  jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
+		  jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
   (setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
-  (setq-default column-number-mode t)                                                             ;; Display column numbers
+  (setq-default column-number-mode t)                                                     ;; Display column numbers
+  (dolist (mode '(org-mode-hook                                                           ;; Disable line numbers for some modes
+		  term-mode-hook
+		  eshell-mode-hook))
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
   (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
   (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
   (set-fringe-mode 10)                                                                    ;; Give some breathing room
@@ -228,7 +238,8 @@ The =try= package let's you try new packages without installed them. On the next
   (desktop-save-mode 1)                                                                   ;; save desktop
   (setq history-delete-duplicates t)                                                      ;; delete duplicate history
   (setq revert-without-query '(".*"))                                                     ;; do not ask when reverting buffer
-  (setq-default cursor-type '(bar . 4))                                                         ;; use bar for cursort
+  (setq-default cursor-type '(bar . 4))                                                   ;; use bar for cursort
+  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)                                 ;; Cancel on escape
 #+end_src
 
 ** Smooth Scrolling
@@ -424,6 +435,8 @@ The =which-key= package automatically displays potential command information as 
      ("C-h l" . counsel-find-library)
      ("C-h i" . counsel-info-lookup-symbol)
      ("C-h u" . counsel-unicode-char)
+     ("C-c k" . counsel-rg)
+     ("C-x l" . counsel-locate)
      ("M-x" . counsel-M-x)
      ("M-v" . counsel-yank-pop)
      ("C-x C-b" . counsel-switch-buffer)
@@ -436,6 +449,9 @@ The =which-key= package automatically displays potential command information as 
     (setq ivy-use-virtual-buffers t)
     (setq ivy-count-format "(%d/%d) "))
 #+end_src
+
+#+RESULTS:
+: swiper-isearch
 
 ** =ivy-posframe=
 ivy-posframe is a ivy extension, which let ivy use posframe to show its candidate menu.
@@ -460,15 +476,18 @@ Helpful is an alternative to the built-in Emacs help that provides much more con
 
 #+begin_src emacs-lisp
   (use-package helpful
-    :custom
-    (counsel-describe-function-function #'helpful-callable)
-    (counsel-describe-variable-function #'helpful-variable)
     :bind
-    ([remap describe-function] . counsel-describe-function)
+    ([remap describe-function] . helpful-function)
     ([remap describe-command] . helpful-command)
-    ([remap describe-variable] . counsel-describe-variable)
-    ([remap describe-key] . helpful-key))
+    ([remap describe-variable] . helpful-variable)
+    ([remap describe-key] . helpful-key)
+    :config
+    (setq counsel-describe-function-function #'helpful-callable)
+    (setq counsel-describe-variable-function #'helpful-variable))
 #+end_src
+
+#+RESULTS:
+: helpful-key
 
 ** =undo-tree=
 

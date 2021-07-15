@@ -80,7 +80,7 @@
 (add-to-list 'default-frame-alist '(ns-appearance . dark))                              ;; Fancy titlebar for MacOS
 (setq ns-use-proxy-icon  nil)                                                           ;; Fancy titlebar for MacOS
 (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
-                                     (abbreviate-file-name (buffer-file-name)) "%b")))
+				     (abbreviate-file-name (buffer-file-name)) "%b")))
 (set-language-environment "UTF-8")                                                      ;; Set enconding language
 (set-default-coding-systems 'utf-8)                                                     ;; Set enconding language
 (prefer-coding-system 'utf-8)                                                           ;; Set enconding language
@@ -89,10 +89,14 @@
 (global-display-line-numbers-mode)                                                      ;; Display line numbers
 (setq-default read-process-output-max (* 1024 1024))                                    ;; Increase the amount of data which Emacs reads from the process
 (dolist (mode '(vterm-mode-hook
-                jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
+		jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 (setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
-(setq-default column-number-mode t)                                                             ;; Display column numbers
+(setq-default column-number-mode t)                                                     ;; Display column numbers
+(dolist (mode '(org-mode-hook                                                           ;; Disable line numbers for some modes
+		term-mode-hook
+		eshell-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
 (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
 (set-fringe-mode 10)                                                                    ;; Give some breathing room
@@ -114,7 +118,8 @@
 (desktop-save-mode 1)                                                                   ;; save desktop
 (setq history-delete-duplicates t)                                                      ;; delete duplicate history
 (setq revert-without-query '(".*"))                                                     ;; do not ask when reverting buffer
-(setq-default cursor-type '(bar . 4))                                                         ;; use bar for cursort
+(setq-default cursor-type '(bar . 4))                                                   ;; use bar for cursort
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)                                 ;; Cancel on escape
 
 ;; Vertical Scroll
 (setq scroll-step 1)
@@ -201,6 +206,8 @@
    ("C-h l" . counsel-find-library)
    ("C-h i" . counsel-info-lookup-symbol)
    ("C-h u" . counsel-unicode-char)
+   ("C-c k" . counsel-rg)
+   ("C-x l" . counsel-locate)
    ("M-x" . counsel-M-x)
    ("M-v" . counsel-yank-pop)
    ("C-x C-b" . counsel-switch-buffer)
@@ -214,14 +221,14 @@
   (setq ivy-count-format "(%d/%d) "))
 
 (use-package helpful
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
   :bind
-  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-function] . helpful-function)
   ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
-  ([remap describe-key] . helpful-key))
+  ([remap describe-variable] . helpful-variable)
+  ([remap describe-key] . helpful-key)
+  :config
+  (setq counsel-describe-function-function #'helpful-callable)
+  (setq counsel-describe-variable-function #'helpful-variable))
 
 (use-package undo-tree
   :diminish undo-tree-mode
