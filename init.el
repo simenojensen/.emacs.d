@@ -159,10 +159,10 @@
              (exec-path-from-shell-initialize)))
        )
       ((eq system-type 'windows-nt)
-       
+
        )
       ((eq system-type 'gnu/linux)
-       
+
        ))
 
 (use-package which-key
@@ -217,7 +217,7 @@
   (setq ivy-height 20)
   (setq ivy-initial-inputs-alist nil)
   (setq ivy-display-style 'fancy)
-  (setq ivy-use-virtual-buffers t)
+  ;; (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
 
 (use-package helpful
@@ -881,12 +881,12 @@
           ("s" . "src sql")
           ("v" . "verse\n")))
   ;; Configure latex exports
-  (setq org-latex-logfiles-extensions (quote ("lof" "lot" "xdv" "synctex.gz" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
+  (setq org-latex-logfiles-extensions (quote ("lof" "lot" "xdv" "synctex.gz" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle" "ilg" "nlo" "nls")))
   (setq org-latex-remove-logfiles t)
   ;; https://so.nwalsh.com/2020/01/05-latex
   (setq org-latex-compiler "xelatex")
   (setq org-latex-pdf-process
-        (list (concat "latexmk -"
+        (list (concat "latexmk -shell-escape -"
                       org-latex-compiler
                       " -recorder -synctex=1 -bibtex-cond %b")))
   (setq org-export-in-background t) ;; export async
@@ -924,12 +924,14 @@
           ("" "amsthm" t)
           ("" "relsize" t)
           ("" "mathtools" t)
+          ;; formatting
+          ("" "verbatim" t)
           ))
   (setq org-latex-classes
         '(("article"
            " \\RequirePackage{fix-cm}
   \\PassOptionsToPackage{svgnames}{xcolor}
-  \\documentclass[11pt]{article}
+  \\documentclass[8pt]{article}
   \\usepackage{fontspec}
   \\usepackage{booktabs}
   \\usepackage{ragged2e}
@@ -1014,14 +1016,14 @@
            ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
            ("\\paragraph{%s}" . "\\paragraph*{%s}")
            ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-  
+
           ("report" "\\documentclass[11pt]{report}"
            ("\\part{%s}" . "\\part*{%s}")
            ("\\chapter{%s}" . "\\chapter*{%s}")
            ("\\section{%s}" . "\\section*{%s}")
            ("\\subsection{%s}" . "\\subsection*{%s}")
            ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-  
+
           ("book" "\\documentclass[11pt]{book}"
            ("\\part{%s}" . "\\part*{%s}")
            ("\\chapter{%s}" . "\\chapter*{%s}")
@@ -1041,7 +1043,7 @@
                 (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
          (base-font-color     (face-foreground 'default nil 'default))
          (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
-  
+
     (custom-theme-set-faces
      'user
      `(org-level-8 ((t (,@headline ,@variable-tuple))))
@@ -1053,12 +1055,12 @@
      `(org-level-2 ((t (,@headline ,@variable-tuple :foreground "green3" :height 1.5))))
      `(org-level-1 ((t (,@headline ,@variable-tuple :foreground "DarkOrange2" :height 1.75))))
      `(org-document-title ((t (,@headline ,@variable-tuple :height 2.0 :underline nil))))))
-  
+
   ;; (custom-theme-set-faces
   ;;  'user
   ;;  '(variable-pitch ((t (:family "ETBembo" :height 180))))
   ;;  '(fixed-pitch ((t ( :family "Fira Code Retina" :height 160)))))
-  
+
   ;; (custom-theme-set-faces
   ;;  'user
   ;;  '(org-block ((t (:inherit fixed-pitch))))
@@ -1115,6 +1117,7 @@
 (use-package org-ref
   :after org
   :config
+  (use-package ox-bibtex)
   (setq org-ref-bibliography-notes "/Users/simenojensen/Documents/Org/Bibliography/notes.org") ;; bibtex notes file
   (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")) ;; bibtex file
   (setq org-ref-pdf-directory "/Users/simenojensen/Documents/Org/Bibliography")) ;; bibliography pdf folder
@@ -1188,6 +1191,22 @@
   ;; (shell-command (concat "open -a 'Google Chrome.app' file://" buffer-file-name)))
  (shell-command (concat "open -a 'Google Chrome.app' " buffer-file-name)))
 
+(defun window-split-toggle ()
+  "Toggle between horizontal and vertical split with two windows."
+  (interactive)
+  (if (> (length (window-list)) 2)
+      (error "Can't toggle with more than 2 windows!")
+    (let ((func (if (window-full-height-p)
+                    #'split-window-vertically
+                  #'split-window-horizontally)))
+      (delete-other-windows)
+      (funcall func)
+      (save-selected-window
+        (other-window 1)
+        (switch-to-buffer (other-buffer))))))
+
+(bind-key "C-x C-t" 'window-split-toggle)
+
 (use-package google-this
   :diminish
   :config
@@ -1209,3 +1228,4 @@
     :keybinding "y"))
 
 
+(put 'narrow-to-region 'disabled nil)

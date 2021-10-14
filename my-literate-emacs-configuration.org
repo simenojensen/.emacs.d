@@ -446,12 +446,9 @@ The =which-key= package automatically displays potential command information as 
     (setq ivy-height 20)
     (setq ivy-initial-inputs-alist nil)
     (setq ivy-display-style 'fancy)
-    (setq ivy-use-virtual-buffers t)
+    ;; (setq ivy-use-virtual-buffers t)
     (setq ivy-count-format "(%d/%d) "))
 #+end_src
-
-#+RESULTS:
-: swiper-isearch
 
 ** =ivy-posframe=
 ivy-posframe is a ivy extension, which let ivy use posframe to show its candidate menu.
@@ -485,9 +482,6 @@ Helpful is an alternative to the built-in Emacs help that provides much more con
     (setq counsel-describe-function-function #'helpful-callable)
     (setq counsel-describe-variable-function #'helpful-variable))
 #+end_src
-
-#+RESULTS:
-: helpful-key
 
 ** =undo-tree=
 
@@ -1695,12 +1689,12 @@ Install org-mode from the org package repository.
             ("s" . "src sql")
             ("v" . "verse\n")))
     ;; Configure latex exports
-    (setq org-latex-logfiles-extensions (quote ("lof" "lot" "xdv" "synctex.gz" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle")))
+    (setq org-latex-logfiles-extensions (quote ("lof" "lot" "xdv" "synctex.gz" "tex" "aux" "idx" "log" "out" "toc" "nav" "snm" "vrb" "dvi" "fdb_latexmk" "blg" "brf" "fls" "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle" "ilg" "nlo" "nls")))
     (setq org-latex-remove-logfiles t)
     ;; https://so.nwalsh.com/2020/01/05-latex
     (setq org-latex-compiler "xelatex")
     (setq org-latex-pdf-process
-          (list (concat "latexmk -"
+          (list (concat "latexmk -shell-escape -"
                         org-latex-compiler
                         " -recorder -synctex=1 -bibtex-cond %b")))
     (setq org-export-in-background t) ;; export async
@@ -1746,12 +1740,14 @@ Install org-mode from the org package repository.
           ("" "amsthm" t)
           ("" "relsize" t)
           ("" "mathtools" t)
+          ;; formatting
+          ("" "verbatim" t)
           ))
   (setq org-latex-classes
         '(("article"
            " \\RequirePackage{fix-cm}
   \\PassOptionsToPackage{svgnames}{xcolor}
-  \\documentclass[11pt]{article}
+  \\documentclass[8pt]{article}
   \\usepackage{fontspec}
   \\usepackage{booktabs}
   \\usepackage{ragged2e}
@@ -2027,6 +2023,7 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
   (use-package org-ref
     :after org
     :config
+    (use-package ox-bibtex)
     (setq org-ref-bibliography-notes "/Users/simenojensen/Documents/Org/Bibliography/notes.org") ;; bibtex notes file
     (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")) ;; bibtex file
     (setq org-ref-pdf-directory "/Users/simenojensen/Documents/Org/Bibliography")) ;; bibliography pdf folder
@@ -2150,6 +2147,26 @@ typing. Automatically switches the spell checker and typo-mode if present.
     (interactive)
     ;; (shell-command (concat "open -a 'Google Chrome.app' file://" buffer-file-name)))
    (shell-command (concat "open -a 'Google Chrome.app' " buffer-file-name)))
+#+end_src
+
+** transpose windows
+[[https://emacs.stackexchange.com/questions/5371/how-to-change-emacs-windows-from-vertical-split-to-horizontal-split][More Information]]
+#+begin_src emacs-lisp
+  (defun window-split-toggle ()
+    "Toggle between horizontal and vertical split with two windows."
+    (interactive)
+    (if (> (length (window-list)) 2)
+        (error "Can't toggle with more than 2 windows!")
+      (let ((func (if (window-full-height-p)
+                      #'split-window-vertically
+                    #'split-window-horizontally)))
+        (delete-other-windows)
+        (funcall func)
+        (save-selected-window
+          (other-window 1)
+          (switch-to-buffer (other-buffer))))))
+
+  (bind-key "C-x C-t" 'window-split-toggle)
 #+end_src
 
 * Tools
