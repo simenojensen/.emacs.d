@@ -159,10 +159,10 @@
              (exec-path-from-shell-initialize)))
        )
       ((eq system-type 'windows-nt)
-
+       
        )
       ((eq system-type 'gnu/linux)
-
+       
        ))
 
 (use-package which-key
@@ -443,10 +443,20 @@
   :bind ("C-=" . er/expand-region))
 
 (use-package lsp-python-ms
- :init
- ;; for executable of language server, if it's not symlinked on your PATH
- (setq lsp-python-ms-executable
-  "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
+  :disabled
+  :hook (python-mode . (lambda ()
+                         (require 'lsp-python-ms)
+                         (lsp-deferred)))
+  :init
+  (setq lsp-python-ms-auto-install-server t)
+  ;; for executable of language server, if it's not symlinked on your PATH
+  (setq lsp-python-ms-executable
+        "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
+
+(use-package lsp-pyright
+  :hook (python-mode . (lambda ()
+                         (require 'lsp-pyright)
+                         (lsp-deferred))))
 
 (use-package lsp-mode
   :init
@@ -843,6 +853,7 @@
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((python . t)
+     (js . t)
      (latex . t)
      (jupyter . t)
      (sql . t)
@@ -1016,14 +1027,14 @@
            ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
            ("\\paragraph{%s}" . "\\paragraph*{%s}")
            ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-
+  
           ("report" "\\documentclass[11pt]{report}"
            ("\\part{%s}" . "\\part*{%s}")
            ("\\chapter{%s}" . "\\chapter*{%s}")
            ("\\section{%s}" . "\\section*{%s}")
            ("\\subsection{%s}" . "\\subsection*{%s}")
            ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-
+  
           ("book" "\\documentclass[11pt]{book}"
            ("\\part{%s}" . "\\part*{%s}")
            ("\\chapter{%s}" . "\\chapter*{%s}")
@@ -1043,7 +1054,7 @@
                 (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
          (base-font-color     (face-foreground 'default nil 'default))
          (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
-
+  
     (custom-theme-set-faces
      'user
      `(org-level-8 ((t (,@headline ,@variable-tuple))))
@@ -1055,12 +1066,12 @@
      `(org-level-2 ((t (,@headline ,@variable-tuple :foreground "green3" :height 1.5))))
      `(org-level-1 ((t (,@headline ,@variable-tuple :foreground "DarkOrange2" :height 1.75))))
      `(org-document-title ((t (,@headline ,@variable-tuple :height 2.0 :underline nil))))))
-
+  
   ;; (custom-theme-set-faces
   ;;  'user
   ;;  '(variable-pitch ((t (:family "ETBembo" :height 180))))
   ;;  '(fixed-pitch ((t ( :family "Fira Code Retina" :height 160)))))
-
+  
   ;; (custom-theme-set-faces
   ;;  'user
   ;;  '(org-block ((t (:inherit fixed-pitch))))
@@ -1227,5 +1238,6 @@
     "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
     :keybinding "y"))
 
+(use-package wgrep)
 
-(put 'narrow-to-region 'disabled nil)
+

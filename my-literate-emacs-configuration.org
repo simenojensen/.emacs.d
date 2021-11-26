@@ -841,10 +841,20 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 #+begin_src emacs-lisp
   (use-package lsp-python-ms
-   :init
-   ;; for executable of language server, if it's not symlinked on your PATH
-   (setq lsp-python-ms-executable
-    "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
+    :disabled
+    :hook (python-mode . (lambda ()
+                           (require 'lsp-python-ms)
+                           (lsp-deferred)))
+    :init
+    (setq lsp-python-ms-auto-install-server t)
+    ;; for executable of language server, if it's not symlinked on your PATH
+    (setq lsp-python-ms-executable
+          "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
+
+  (use-package lsp-pyright
+    :hook (python-mode . (lambda ()
+                           (require 'lsp-pyright)
+                           (lsp-deferred))))
 #+end_src
 
 ** =lsp-mode=
@@ -1651,6 +1661,7 @@ Install org-mode from the org package repository.
     (org-babel-do-load-languages
      'org-babel-load-languages
      '((python . t)
+       (js . t)
        (latex . t)
        (jupyter . t)
        (sql . t)
@@ -2210,6 +2221,12 @@ typing. Automatically switches the spell checker and typo-mode if present.
     (defengine youtube
       "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
       :keybinding "y"))
+#+end_src
+
+* =wgrep=
+
+#+begin_src emacs-lisp
+  (use-package wgrep)
 #+end_src
 
 * Experimental
