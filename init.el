@@ -80,7 +80,7 @@
 (add-to-list 'default-frame-alist '(ns-appearance . dark))                              ;; Fancy titlebar for MacOS
 (setq ns-use-proxy-icon  nil)                                                           ;; Fancy titlebar for MacOS
 (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
-				     (abbreviate-file-name (buffer-file-name)) "%b")))
+                                     (abbreviate-file-name (buffer-file-name)) "%b")))
 (set-language-environment "UTF-8")                                                      ;; Set enconding language
 (set-default-coding-systems 'utf-8)                                                     ;; Set enconding language
 (prefer-coding-system 'utf-8)                                                           ;; Set enconding language
@@ -89,13 +89,13 @@
 (global-display-line-numbers-mode)                                                      ;; Display line numbers
 (setq-default read-process-output-max (* 1024 1024))                                    ;; Increase the amount of data which Emacs reads from the process
 (dolist (mode '(vterm-mode-hook
-		jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
+                jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 (setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
 (setq-default column-number-mode t)                                                     ;; Display column numbers
 (dolist (mode '(org-mode-hook                                                           ;; Disable line numbers for some modes
-		term-mode-hook
-		eshell-mode-hook))
+                term-mode-hook
+                eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
 (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
@@ -154,7 +154,7 @@
        (use-package exec-path-from-shell
          :config
          (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
-         (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
+         (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH" "GOPATH"))
          (if (string-equal system-type "darwin")
              (exec-path-from-shell-initialize)))
        )
@@ -185,6 +185,7 @@
 (bind-key "M-g" 'goto-line)
 
 (bind-key "C-x b" 'ibuffer-other-window)
+(bind-key "C-x C-b" 'switch-to-buffer)
 
 (use-package crux
   :bind
@@ -210,13 +211,13 @@
    ("C-x l" . counsel-locate)
    ("M-x" . counsel-M-x)
    ("M-v" . counsel-yank-pop)
-   ("C-x C-b" . counsel-switch-buffer)
    ("C-s" . swiper-isearch))
   :config
   (ivy-mode 1)
   (setq ivy-height 20)
   (setq ivy-initial-inputs-alist nil)
   (setq ivy-display-style 'fancy)
+  (setq counsel-switch-buffer-preview-virtual-buffers nil)
   ;; (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
 
@@ -319,6 +320,7 @@
   ("C-x g" . magit-status))
 
 (use-package projectile
+  ;; :disabled
   :diminish
   :config
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
@@ -399,6 +401,7 @@
         ("C-x t M-t" . treemacs-find-tag)))
 
 (use-package treemacs-projectile
+  ;; :disabled
   :after (treemacs projectile))
 
 (use-package treemacs-icons-dired
@@ -433,6 +436,7 @@
   (yas-global-mode 1))
 
 (use-package flycheck
+  ;; :disabled
   :diminish
   :init
   (global-flycheck-mode)
@@ -454,11 +458,13 @@
         "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
 
 (use-package lsp-pyright
+  ;; :disabled
   :hook (python-mode . (lambda ()
                          (require 'lsp-pyright)
                          (lsp-deferred))))
 
 (use-package lsp-mode
+  ;; :disabled
   :init
   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
   (setq lsp-keymap-prefix "C-c l")
@@ -466,6 +472,7 @@
          (html-mode . lsp-deferred)
          (json-mode . lsp-deferred)
          (python-mode . lsp-deferred)
+         (c++-mode . lsp-deferred)
          ;; if you want which-key integration
          (lsp-mode . lsp-enable-which-key-integration))
   :commands lsp
@@ -475,6 +482,7 @@
   )
 
 (use-package lsp-ui
+  ;; :disabled
   :commands lsp-ui-mode
   :bind
   ;; lsp-ui-peek
@@ -494,11 +502,14 @@
       (lsp-ui-doc-mode 1))))
 
 (use-package lsp-treemacs
+  ;; :disabled
   :commands lsp-treemacs-errors-list
   :config
   (lsp-treemacs-sync-mode 1))
 
-(use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+(use-package lsp-ivy
+  ;; :disabled
+  :commands lsp-ivy-workspace-symbol)
 
 (use-package company
   :diminish company-mode
@@ -513,8 +524,8 @@
          ("C-p" . company-select-previous)))
   :config
   (setq company-minimum-prefix-length 1)
-  (setq company-idle-delay 0.0)
-  (setq company-echo-delay 0.0)
+  (setq company-idle-delay 0.2)
+  (setq company-echo-delay 0.2)
   ;; (setq company-tooltip-idle-delay 0.0)
   ;; (setq company-tooltip-align-annotations t)
   (setq company-require-match nil)
@@ -523,54 +534,6 @@
   (global-company-mode 1)
   ;; Don't use company in debugger mode
   (setq company-global-modes '(not gud-mode)))
-
-(use-package company-tabnine
-  :defer 1
-  :custom
-  (company-tabnine-max-num-results 9)
-  :init
-  (defun company-tabnine-toggle (&optional enable)
-    "Enable/Disable TabNine. If ENABLE is non-nil, definitely enable it."
-    (interactive)
-    (if (or enable (not (memq 'company-tabnine company-backends)))
-        (progn
-          (add-hook 'lsp-after-open-hook #'lsp-after-open-tabnine)
-          (add-to-list 'company-backends #'company-tabnine)
-          (when (bound-and-true-p lsp-mode) (lsp-after-open-tabnine))
-          (message "TabNine enabled."))
-      (setq company-backends (delete 'company-tabnine company-backends))
-      (setq company-backends (delete '(company-capf :with company-tabnine :separate) company-backends))
-      (remove-hook 'lsp-after-open-hook #'lsp-after-open-tabnine)
-      (company-tabnine-kill-process)
-      (message "TabNine disabled.")))
-  (defun company//sort-by-tabnine (candidates)
-    "Integrate company-tabnine with lsp-mode"
-    (if (or (functionp company-backend)
-            (not (and (listp company-backend) (memq 'company-tabnine company-backends))))
-        candidates
-      (let ((candidates-table (make-hash-table :test #'equal))
-            candidates-lsp
-            candidates-tabnine)
-        (dolist (candidate candidates)
-          (if (eq (get-text-property 0 'company-backend candidate)
-                  'company-tabnine)
-              (unless (gethash candidate candidates-table)
-                (push candidate candidates-tabnine))
-            (push candidate candidates-lsp)
-            (puthash candidate t candidates-table)))
-        (setq candidates-lsp (nreverse candidates-lsp))
-        (setq candidates-tabnine (nreverse candidates-tabnine))
-        (nconc (seq-take candidates-tabnine 3)
-               (seq-take candidates-lsp 6)))))
-  (defun lsp-after-open-tabnine ()
-    "Hook to attach to `lsp-after-open'."
-    (setq-local company-tabnine-max-num-results 3)
-    (add-to-list 'company-transformers 'company//sort-by-tabnine t)
-    (add-to-list 'company-backends '(company-capf :with company-tabnine :separate)))
-  :hook
-  (kill-emacs . company-tabnine-kill-process)
-  :config
-  (company-tabnine-toggle t))
 
 (use-package smartparens
   :init
@@ -593,6 +556,13 @@
   (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
   (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
 
+(use-package numpydoc
+  :after python
+  :bind (:map python-mode-map
+              ("C-c C-n" . numpydoc-generate))
+  :config
+  (setq numpydoc-insert-examples-block nil))
+
 (use-package py-autopep8
   :config
   (setq py-autopep8-options '("--max-line-length=80")))
@@ -605,6 +575,7 @@
 (use-package python
   :hook
   (python-mode . (lambda () ;; emulate python-shell-send-buffer
+                   (setq indent-tabs-mode nil)
                    (display-fill-column-indicator-mode) ;; display column
                    (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
                    (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)))
@@ -618,6 +589,19 @@
         ("C-c C-p" . jupyter-run-repl))
   :init
   (setq jupyter-repl-echo-eval-p t))
+
+(use-package cython-mode)
+
+(use-package lsp-java
+  :hook
+  (java-mode . lsp))
+
+(use-package go-mode
+  :hook
+  (go-mode . (lambda()
+               (lsp-deferred)
+               (add-hook 'before-save-hook #'lsp-format-buffer t t)
+               (add-hook 'before-save-hook #'lsp-organize-imports t t))))
 
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
@@ -876,7 +860,7 @@
   (setq org-src-fontify-natively t) ;; Syntax highlight in #+BEGIN_SRC blocks
   (setq org-special-ctrl-a/e t) ;; cycle C-e and C-a
   ;; plain, current-window, split-window-below, other-window, other-frame
-  (setq org-src-window-setup 'plain)
+  (setq org-src-window-setup 'current_window)
   (setq org-adapt-indentation nil) ;; do not indent after sections
   ;; ;; edit block inserts
   (setq org-structure-template-alist
@@ -1132,6 +1116,8 @@
   (setq org-ref-bibliography-notes "/Users/simenojensen/Documents/Org/Bibliography/notes.org") ;; bibtex notes file
   (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")) ;; bibtex file
   (setq org-ref-pdf-directory "/Users/simenojensen/Documents/Org/Bibliography")) ;; bibliography pdf folder
+
+(use-package zotxt)
 
 (use-package flyspell
   :config

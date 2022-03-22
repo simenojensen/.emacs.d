@@ -5,6 +5,7 @@
 
 [[https://github.com/simenojensen/.emacs.d/blob/master/my-literate-emacs-configuration.org][My Configs]]
 
+
 * Start up
 ** Lexical Binding
 
@@ -193,6 +194,7 @@ The =try= package let's you try new packages without installed them. On the next
   (setq user-full-name "Simen Omholt-Jensen")
   (setq user-mail-address "simen@omholt-jensen.com")
 #+end_src
+
 ** Convenient Default Settings
 
 #+begin_src emacs-lisp
@@ -200,7 +202,7 @@ The =try= package let's you try new packages without installed them. On the next
   (add-to-list 'default-frame-alist '(ns-appearance . dark))                              ;; Fancy titlebar for MacOS
   (setq ns-use-proxy-icon  nil)                                                           ;; Fancy titlebar for MacOS
   (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
-				       (abbreviate-file-name (buffer-file-name)) "%b")))
+                                       (abbreviate-file-name (buffer-file-name)) "%b")))
   (set-language-environment "UTF-8")                                                      ;; Set enconding language
   (set-default-coding-systems 'utf-8)                                                     ;; Set enconding language
   (prefer-coding-system 'utf-8)                                                           ;; Set enconding language
@@ -209,13 +211,13 @@ The =try= package let's you try new packages without installed them. On the next
   (global-display-line-numbers-mode)                                                      ;; Display line numbers
   (setq-default read-process-output-max (* 1024 1024))                                    ;; Increase the amount of data which Emacs reads from the process
   (dolist (mode '(vterm-mode-hook
-		  jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
+                  jupyter-repl-mode-hook))                                                       ;; disable line number for some modes
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
   (setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
   (setq-default column-number-mode t)                                                     ;; Display column numbers
   (dolist (mode '(org-mode-hook                                                           ;; Disable line numbers for some modes
-		  term-mode-hook
-		  eshell-mode-hook))
+                  term-mode-hook
+                  eshell-mode-hook))
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
   (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
   (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
@@ -272,6 +274,7 @@ Configurations for smooth scrolling
   (setq-default ring-bell-function 'ignore)  ;; Disable bell function
 #+end_src
 
+
 ** Killing Emacs
 
 #+begin_src emacs-lisp
@@ -327,7 +330,7 @@ Make sure the =$PATH= is loaded from the default shell.
   (use-package exec-path-from-shell
     :config
     (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
-    (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH"))
+    (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH" "GOPATH"))
     (if (string-equal system-type "darwin")
         (exec-path-from-shell-initialize)))
 #+end_src
@@ -393,6 +396,7 @@ The =which-key= package automatically displays potential command information as 
 
 #+begin_src emacs-lisp
   (bind-key "C-x b" 'ibuffer-other-window)
+  (bind-key "C-x C-b" 'switch-to-buffer)
 #+end_src
 
 * Interface Enhancement
@@ -439,13 +443,13 @@ The =which-key= package automatically displays potential command information as 
      ("C-x l" . counsel-locate)
      ("M-x" . counsel-M-x)
      ("M-v" . counsel-yank-pop)
-     ("C-x C-b" . counsel-switch-buffer)
      ("C-s" . swiper-isearch))
     :config
     (ivy-mode 1)
     (setq ivy-height 20)
     (setq ivy-initial-inputs-alist nil)
     (setq ivy-display-style 'fancy)
+    (setq counsel-switch-buffer-preview-virtual-buffers nil)
     ;; (setq ivy-use-virtual-buffers t)
     (setq ivy-count-format "(%d/%d) "))
 #+end_src
@@ -653,6 +657,7 @@ Projectile is a project interaction library for Emacs.
 
 #+begin_src emacs-lisp
   (use-package projectile
+    ;; :disabled
     :diminish
     :config
     (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
@@ -741,6 +746,7 @@ Projectile is a project interaction library for Emacs.
           ("C-x t M-t" . treemacs-find-tag)))
 
   (use-package treemacs-projectile
+    ;; :disabled
     :after (treemacs projectile))
 
   (use-package treemacs-icons-dired
@@ -818,6 +824,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 #+begin_src emacs-lisp
   (use-package flycheck
+    ;; :disabled
     :diminish
     :init
     (global-flycheck-mode)
@@ -852,6 +859,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
           "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
 
   (use-package lsp-pyright
+    ;; :disabled
     :hook (python-mode . (lambda ()
                            (require 'lsp-pyright)
                            (lsp-deferred))))
@@ -866,6 +874,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 #+begin_src emacs-lisp
   (use-package lsp-mode
+    ;; :disabled
     :init
     ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
     (setq lsp-keymap-prefix "C-c l")
@@ -873,6 +882,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
            (html-mode . lsp-deferred)
            (json-mode . lsp-deferred)
            (python-mode . lsp-deferred)
+           (c++-mode . lsp-deferred)
            ;; if you want which-key integration
            (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp
@@ -890,6 +900,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 #+begin_src emacs-lisp
   (use-package lsp-ui
+    ;; :disabled
     :commands lsp-ui-mode
     :bind
     ;; lsp-ui-peek
@@ -915,18 +926,20 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 #+begin_src emacs-lisp
   (use-package lsp-treemacs
+    ;; :disabled
     :commands lsp-treemacs-errors-list
     :config
     (lsp-treemacs-sync-mode 1))
 #+end_src
-
 
 ** =lsp-ivy=
 
 [[https://github.com/emacs-lsp/lsp-ivy][More Informatino]]
 
 #+begin_src emacs-lisp
-  (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+  (use-package lsp-ivy
+    ;; :disabled
+    :commands lsp-ivy-workspace-symbol)
 #+end_src
 
 ** =company=
@@ -946,8 +959,8 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
            ("C-p" . company-select-previous)))
     :config
     (setq company-minimum-prefix-length 1)
-    (setq company-idle-delay 0.0)
-    (setq company-echo-delay 0.0)
+    (setq company-idle-delay 0.2)
+    (setq company-echo-delay 0.2)
     ;; (setq company-tooltip-idle-delay 0.0)
     ;; (setq company-tooltip-align-annotations t)
     (setq company-require-match nil)
@@ -962,6 +975,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 #+begin_src emacs-lisp :tangle no
   (use-package company-box
+    ;; :disabled
     :diminish
     :hook
     (company-mode . company-box-mode)
@@ -1022,11 +1036,12 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     ;;         (Template . ,(all-the-icons-material "format_align_left" :height 0.8 :v-adjust -0.15)))
     ;;       company-box-icons-alist 'company-box-icons-all-the-icons))
 #+end_src
+
 ** =company-tabnine=
 - [[https://github.com/TommyX12/company-tabnine][More Information]]
 - [[https://github.com/MatthewZMD/.emacs.d#company-tabnine][Config from MatthewZMD]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package company-tabnine
     :defer 1
     :custom
@@ -1091,6 +1106,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
       (setq sp-show-pair-from-inside nil)
       (sp-local-pair 'emacs-lisp-mode "`" nil :when '(sp-in-string-p))))
 #+end_src
+
 ** =conda=
 
 This package lets you activate your conda environments. The setup works for miniconda installed by hombre.
@@ -1111,6 +1127,17 @@ Usage:
     ;; (conda-env-autoactivate-mode t)           ;; autoactivate
     (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
     (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
+#+end_src
+
+** =numpydoc=
+[[https://github.com/douglasdavis/numpydoc.el][More Information]]
+#+begin_src emacs-lisp
+  (use-package numpydoc
+    :after python
+    :bind (:map python-mode-map
+                ("C-c C-n" . numpydoc-generate))
+    :config
+    (setq numpydoc-insert-examples-block nil))
 #+end_src
 
 ** =py-autopep8=
@@ -1153,6 +1180,7 @@ Some python settings. Setup jupyter keybindings.
   (use-package python
     :hook
     (python-mode . (lambda () ;; emulate python-shell-send-buffer
+                     (setq indent-tabs-mode nil)
                      (display-fill-column-indicator-mode) ;; display column
                      (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
                      (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)))
@@ -1173,12 +1201,17 @@ Some python settings. Setup jupyter keybindings.
     (setq jupyter-repl-echo-eval-p t))
 #+end_src
 
+** Cython
+#+begin_src emacs-lisp
+  (use-package cython-mode)
+#+end_src
+* CPP
 * Java
 ** =lsp-java=
 =lsp-mode= for =java=
 [[https://emacs-lsp.github.io/lsp-java/][More Information]]
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package lsp-java
     :hook
     (java-mode . lsp))
@@ -1201,6 +1234,16 @@ Some python settings. Setup jupyter keybindings.
                    (unbind-key "C-c C-C" lsp-mode-map)
                    (bind-key "C-c C-c" 'my/java-one-click-run java-mode-map))))
 #+end_src
+* Golang
+#+begin_src emacs-lisp
+  (use-package go-mode
+    :hook
+    (go-mode . (lambda()
+                 (lsp-deferred)
+                 (add-hook 'before-save-hook #'lsp-format-buffer t t)
+                 (add-hook 'before-save-hook #'lsp-organize-imports t t))))
+#+end_src
+
 * Markdown
 ** =markdown-mode=
 [[https://jblevins.org/projects/markdown-mode/][More Information]]
@@ -1684,7 +1727,7 @@ Install org-mode from the org package repository.
     (setq org-src-fontify-natively t) ;; Syntax highlight in #+BEGIN_SRC blocks
     (setq org-special-ctrl-a/e t) ;; cycle C-e and C-a
     ;; plain, current-window, split-window-below, other-window, other-frame
-    (setq org-src-window-setup 'plain)
+    (setq org-src-window-setup 'current_window)
     (setq org-adapt-indentation nil) ;; do not indent after sections
     ;; ;; edit block inserts
     (setq org-structure-template-alist
@@ -2038,6 +2081,13 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
     (setq org-ref-bibliography-notes "/Users/simenojensen/Documents/Org/Bibliography/notes.org") ;; bibtex notes file
     (setq org-ref-default-bibliography '("/Users/simenojensen/Documents/Org/Bibliography/library.bib")) ;; bibtex file
     (setq org-ref-pdf-directory "/Users/simenojensen/Documents/Org/Bibliography")) ;; bibliography pdf folder
+#+end_src
+
+** =zotxt=
+[[http://www.mkbehr.com/posts/a-research-workflow-with-zotero-and-org-mode/][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package zotxt)
 #+end_src
 
 * Writing
