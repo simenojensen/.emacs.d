@@ -188,6 +188,8 @@
 (bind-key "C-x b" 'ibuffer-other-window)
 (bind-key "C-x C-b" 'switch-to-buffer)
 
+(unbind-key "C-x f" global-map)
+
 (use-package crux
   :bind
   ("C-a" . crux-move-beginning-of-line)
@@ -203,6 +205,7 @@
   (ivy-mode 1)
   :bind
   (("C-x C-f" . counsel-find-file)
+   ("C-x f". counsel-fzf)
    ("C-h f" . counsel-describe-function)
    ("C-h v" . counsel-describe-variable)
    ("C-h l" . counsel-find-library)
@@ -297,8 +300,6 @@
      ((t (:inherit fixed-pitch :height 4.0 :foreground "firebrick3"))))))
 
 (winner-mode 1)
-
-(use-package fzf)
 
 (use-package vterm
   ;; add functionality for counsel-yank-pop
@@ -414,13 +415,15 @@
 (use-package treemacs-magit
   :after (treemacs magit))
 
-(use-package iedit
-  :bind
-  ("M-;" . iedit-mode))
-
 (use-package evil-nerd-commenter
   :bind
   ("C-;" . evilnc-comment-or-uncomment-lines))
+
+(use-package yasnippet
+  :diminish yas-minor-mode
+  :init (use-package yasnippet-snippets :after yasnippet)
+  :config
+  (yas-global-mode 1))
 
 (use-package flycheck
   :diminish
@@ -444,7 +447,9 @@
          (go-mode . lsp-deferred)
          (java-mode . lsp-deferred)
          ;; if you want which-key integration
-         (lsp-mode . lsp-enable-which-key-integration))
+         (lsp-mode . lsp-enable-which-key-integration)
+         (lsp-mode . (lambda ()
+                       (bind-key "M-;" 'lsp-rename lsp-mode-map))))
   :commands lsp
   :config
   (setq lsp-idle-delay 0.5)

@@ -2,6 +2,8 @@ auto-save-list/
 backups/
 straight/
 undo/
+.cache/
+.lsp-session-v1
 amx-items
 places
 .emacs.desktop*
