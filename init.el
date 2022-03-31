@@ -100,6 +100,7 @@
 (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
 (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
 (set-fringe-mode 10)                                                                    ;; Give some breathing room
+(set-default 'truncate-lines t)                                                         ;; default truncate lines
 (setq debug-on-error nil)                                                               ;; Receive more information errors
 (setq custom-file "~/.emacs.d/custom.el")
 (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
@@ -236,6 +237,7 @@
   :init
   (global-undo-tree-mode)
   :config
+  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
   (setq undo-tree-visualizer-diff t)
   (setq undo-tree-visualizer-timestamps t))
 
@@ -296,6 +298,8 @@
 
 (winner-mode 1)
 
+(use-package fzf)
+
 (use-package vterm
   ;; add functionality for counsel-yank-pop
   :after counsel
@@ -311,8 +315,9 @@
       (apply orig-fun args)))
 
   (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
-  (setq vterm-max-scrollback 10000))
-
+  (setq vterm-max-scrollback 10000)
+  (setq vterm-always-compile-module t)
+  )
 ;; (use-package multi-vterm)
 
 (use-package magit
@@ -320,7 +325,6 @@
   ("C-x g" . magit-status))
 
 (use-package projectile
-  ;; :disabled
   :diminish
   :config
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
@@ -401,7 +405,6 @@
         ("C-x t M-t" . treemacs-find-tag)))
 
 (use-package treemacs-projectile
-  ;; :disabled
   :after (treemacs projectile))
 
 (use-package treemacs-icons-dired
@@ -411,32 +414,15 @@
 (use-package treemacs-magit
   :after (treemacs magit))
 
-(use-package dumb-jump
-  :bind
-  (:map prog-mode-map
-        (("C-c C-o" . dumb-jump-go-other-window)
-         ("C-c C-j" . dumb-jump-go)
-         ("C-c C-i" . dumb-jump-go-prompt)))
-  :custom (dumb-jump-selector 'ivy))
-
 (use-package iedit
   :bind
   ("M-;" . iedit-mode))
-
-(use-package format-all)
 
 (use-package evil-nerd-commenter
   :bind
   ("C-;" . evilnc-comment-or-uncomment-lines))
 
-(use-package yasnippet
-  :diminish yas-minor-mode
-  :init (use-package yasnippet-snippets :after yasnippet)
-  :config
-  (yas-global-mode 1))
-
 (use-package flycheck
-  ;; :disabled
   :diminish
   :init
   (global-flycheck-mode)
@@ -446,25 +432,7 @@
 (use-package expand-region
   :bind ("C-=" . er/expand-region))
 
-(use-package lsp-python-ms
-  :disabled
-  :hook (python-mode . (lambda ()
-                         (require 'lsp-python-ms)
-                         (lsp-deferred)))
-  :init
-  (setq lsp-python-ms-auto-install-server t)
-  ;; for executable of language server, if it's not symlinked on your PATH
-  (setq lsp-python-ms-executable
-        "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
-
-(use-package lsp-pyright
-  ;; :disabled
-  :hook (python-mode . (lambda ()
-                         (require 'lsp-pyright)
-                         (lsp-deferred))))
-
 (use-package lsp-mode
-  ;; :disabled
   :init
   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
   (setq lsp-keymap-prefix "C-c l")
@@ -473,42 +441,75 @@
          (json-mode . lsp-deferred)
          (python-mode . lsp-deferred)
          (c++-mode . lsp-deferred)
+         (go-mode . lsp-deferred)
+         (java-mode . lsp-deferred)
          ;; if you want which-key integration
          (lsp-mode . lsp-enable-which-key-integration))
   :commands lsp
   :config
-  (setq lsp-idle-delay 0.500)
+  (setq lsp-idle-delay 0.5)
   (setq lsp-log-io nil) ; if set to true can cause a performance hit
+  ;; symbol highlighting
+  (setq lsp-enable-symbol-highlighting t)
+  ;; lenses
+  (setq lsp-lens-enable nil)
+  ;; headerline
+  (setq lsp-headerline-breadcrumb-enable t)
+  ;; modeline
+  (setq lsp-modeline-code-actions-enable nil)
+  (setq lsp-modeline-diagnostics-enable t)
+  ;; linter
+  (setq lsp-diagnostics-provider :auto) ;; prefer flycheck, fallback to flymake
+  ;; eldoc
+  (setq lsp-eldoc-enable-hover nil)
+  (setq lsp-eldoc-render-all t)
+  ;; signatures
+  (setq lsp-signature-auto-activate nil)
+  (setq lsp-signature-render-documentation nil)
+  ;; completion
+  (setq lsp-completion-provider :capf)
+  (setq lsp-completion-show-detail t)
+  (setq lsp-completion-show-kind t)
   )
 
 (use-package lsp-ui
-  ;; :disabled
   :commands lsp-ui-mode
   :bind
   ;; lsp-ui-peek
   ((:map lsp-ui-mode-map
          ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
          ([remap xref-find-references] . lsp-ui-peek-find-references)
+         ("C-c d" . lsp-ui-doc-show)
+         ))
+  :config
+  ;; show docs
+  (setq lsp-ui-doc-enable t)
+  (setq lsp-ui-doc-show-with-cursor nil)
+  (setq lsp-ui-doc-show-with-mouse t)
+  ;; sideline
+  (setq lsp-ui-sideline-enable t)
+  (setq lsp-ui-sideline-show-code-actions nil)
+  (setq lsp-ui-sideline-show-hover nil)
+  (setq lsp-ui-sideline-show-diagnostics t)
+  )
          ;; lsp-ui-doc
-         ("M-i" . lsp-ui-doc-focus-frame))
-   ("s-i" . my/toggle-lsp-ui-doc))
-  :preface
-  (defun my/toggle-lsp-ui-doc ()
-    (interactive)
-    (if lsp-ui-doc-mode
-        (progn
-          (lsp-ui-doc-mode -1)
-          (lsp-ui-doc--hide-frame))
-      (lsp-ui-doc-mode 1))))
+  ;;        ("M-i" . lsp-ui-doc-focus-frame))
+  ;;  ("s-i" . my/toggle-lsp-ui-doc))
+  ;; :preface
+  ;; (defun my/toggle-lsp-ui-doc ()
+  ;;   (interactive)
+  ;;   (if lsp-ui-doc-mode
+  ;;       (lsp
+  ;;         (progn-ui-doc-mode -1)
+  ;;         (lsp-ui-doc--hide-frame))
+  ;;     (lsp-ui-doc-mode 1))))
 
 (use-package lsp-treemacs
-  ;; :disabled
   :commands lsp-treemacs-errors-list
   :config
   (lsp-treemacs-sync-mode 1))
 
 (use-package lsp-ivy
-  ;; :disabled
   :commands lsp-ivy-workspace-symbol)
 
 (use-package company
@@ -524,8 +525,8 @@
          ("C-p" . company-select-previous)))
   :config
   (setq company-minimum-prefix-length 1)
-  (setq company-idle-delay 0.2)
-  (setq company-echo-delay 0.2)
+  (setq company-idle-delay 0)
+  (setq company-echo-delay 5)
   ;; (setq company-tooltip-idle-delay 0.0)
   ;; (setq company-tooltip-align-annotations t)
   (setq company-require-match nil)
@@ -534,6 +535,15 @@
   (global-company-mode 1)
   ;; Don't use company in debugger mode
   (setq company-global-modes '(not gud-mode)))
+
+(use-package company-box
+  :diminish
+  :hook
+  (company-mode . company-box-mode)
+  :config
+  (setq company-box-doc-enable t)
+  (setq company-box-doc-delay 0.2)
+  )
 
 (use-package smartparens
   :init
@@ -545,6 +555,25 @@
     (setq smartparens-strict-mode t)
     (setq sp-show-pair-from-inside nil)
     (sp-local-pair 'emacs-lisp-mode "`" nil :when '(sp-in-string-p))))
+
+(defun my/jupyter-load-file ()
+  "Send current buffer to jupyter kernel by default"
+  (interactive)
+  (jupyter-load-file (buffer-file-name)))
+
+(use-package python
+  :hook
+  (python-mode . (lambda () ;; emulate python-shell-send-buffer
+                   (setq indent-tabs-mode nil)
+                   (display-fill-column-indicator-mode) ;; display column
+                   (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
+                   (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)
+                   (add-hook 'before-save-hook #'lsp-format-buffer t t)))
+  :config
+  ;; silence indentation guesses
+  (setq python-indent-guess-indent-offset-verbose nil))
+
+(use-package lsp-pyright)
 
 (use-package conda
   :hook
@@ -563,43 +592,20 @@
   :config
   (setq numpydoc-insert-examples-block nil))
 
-(use-package py-autopep8
-  :config
-  (setq py-autopep8-options '("--max-line-length=80")))
-
-(defun my/jupyter-load-file ()
-  "Send current buffer to jupyter kernel by default"
-  (interactive)
-  (jupyter-load-file (buffer-file-name)))
-
-(use-package python
-  :hook
-  (python-mode . (lambda () ;; emulate python-shell-send-buffer
-                   (setq indent-tabs-mode nil)
-                   (display-fill-column-indicator-mode) ;; display column
-                   (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
-                   (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)))
-  :config
-  ;; silence indentation guesses
-  (setq python-indent-guess-indent-offset-verbose nil))
-
 (use-package jupyter
   :bind
   (:map python-mode-map
         ("C-c C-p" . jupyter-run-repl))
   :init
-  (setq jupyter-repl-echo-eval-p t))
+  (setq jupyter-repl-echo-eval-p t)) ;; show plots
 
 (use-package cython-mode)
 
-(use-package lsp-java
-  :hook
-  (java-mode . lsp))
+(use-package lsp-java)
 
 (use-package go-mode
   :hook
   (go-mode . (lambda()
-               (lsp-deferred)
                (add-hook 'before-save-hook #'lsp-format-buffer t t)
                (add-hook 'before-save-hook #'lsp-organize-imports t t))))
 
@@ -614,6 +620,12 @@
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :init (setq markdown-command "multimarkdown"))
+
+(use-package rtf-mode
+  :config
+  (add-to-list 'auto-mode-alist
+               '("\\.rtf$" . rtf-mode))
+  )
 
 (use-package rjsx-mode
   :mode

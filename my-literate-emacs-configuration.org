@@ -222,6 +222,7 @@ The =try= package let's you try new packages without installed them. On the next
   (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
   (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
   (set-fringe-mode 10)                                                                    ;; Give some breathing room
+  (set-default 'truncate-lines t)                                                         ;; default truncate lines
   (setq debug-on-error nil)                                                               ;; Receive more information errors
   (setq custom-file "~/.emacs.d/custom.el")
   (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
@@ -273,7 +274,6 @@ Configurations for smooth scrolling
   (blink-cursor-mode -1)                     ;; Disable blinking cursor
   (setq-default ring-bell-function 'ignore)  ;; Disable bell function
 #+end_src
-
 
 ** Killing Emacs
 
@@ -499,6 +499,7 @@ Helpful is an alternative to the built-in Emacs help that provides much more con
     :init
     (global-undo-tree-mode)
     :config
+    (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
     (setq undo-tree-visualizer-diff t)
     (setq undo-tree-visualizer-timestamps t))
 #+end_src
@@ -607,6 +608,10 @@ Built-in =winner-mode= for remembering previous window actions.
   (winner-mode 1)
 #+end_src
 
+** =fzf=
+#+begin_src emacs-lisp
+  (use-package fzf)
+#+end_src
 * Console
 ** =vterm=
 Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based on libvterm, a C library. As a result of using compiled code (instead of elisp), emacs-libvterm is fully capable, fast, and it can seamlessly handle large outputs.
@@ -631,13 +636,14 @@ Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based
         (apply orig-fun args)))
 
     (advice-add 'counsel-yank-pop-action :around #'vterm-counsel-yank-pop-action)
-    (setq vterm-max-scrollback 10000))
-
+    (setq vterm-max-scrollback 10000)
+    (setq vterm-always-compile-module t)
+    )
   ;; (use-package multi-vterm)
 #+end_src
 
 * General Programming
-** Magit
+** =magit=
 
 Magit is an interface to the version control system Git, implemented as an Emacs package. Magit aspires to be a complete Git porcelain.
 
@@ -649,7 +655,7 @@ Magit is an interface to the version control system Git, implemented as an Emacs
     ("C-x g" . magit-status))
 #+end_src
 
-** Projectile
+** =projectile=
 
 Projectile is a project interaction library for Emacs.
 
@@ -657,7 +663,6 @@ Projectile is a project interaction library for Emacs.
 
 #+begin_src emacs-lisp
   (use-package projectile
-    ;; :disabled
     :diminish
     :config
     (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
@@ -746,7 +751,6 @@ Projectile is a project interaction library for Emacs.
           ("C-x t M-t" . treemacs-find-tag)))
 
   (use-package treemacs-projectile
-    ;; :disabled
     :after (treemacs projectile))
 
   (use-package treemacs-icons-dired
@@ -755,22 +759,6 @@ Projectile is a project interaction library for Emacs.
 
   (use-package treemacs-magit
     :after (treemacs magit))
-#+end_src
-
-** Dump Jump
-
-An Emacs "jump to definition" package for 40+ languages
-
-[[https://github.com/jacktasia/dumb-jump][More Information]]
-
-#+begin_src emacs-lisp
-  (use-package dumb-jump
-    :bind
-    (:map prog-mode-map
-          (("C-c C-o" . dumb-jump-go-other-window)
-           ("C-c C-j" . dumb-jump-go)
-           ("C-c C-i" . dumb-jump-go-prompt)))
-    :custom (dumb-jump-selector 'ivy))
 #+end_src
 
 ** =iedit=
@@ -790,8 +778,12 @@ An Emacs "jump to definition" package for 40+ languages
 =format-all= let one auto-format source code in many languages using the same command.
 [[https://github.com/lassik/emacs-format-all-the-code][More Information]]
 
-#+begin_src emacs-lisp
-  (use-package format-all)
+#+begin_src emacs-lisp :tangle no
+  (use-package format-all
+    :hook
+    (prog-mode . format-all-mode)
+    (format-all-mode . format-all-ensure-formatter)
+    )
 #+end_src
 
 ** =evil-nerd-commenter=
@@ -808,7 +800,7 @@ An Emacs "jump to definition" package for 40+ languages
 
 ** =yasnippets=
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package yasnippet
     :diminish yas-minor-mode
     :init (use-package yasnippet-snippets :after yasnippet)
@@ -824,7 +816,6 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 #+begin_src emacs-lisp
   (use-package flycheck
-    ;; :disabled
     :diminish
     :init
     (global-flycheck-mode)
@@ -832,37 +823,12 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     (prog-mode . flycheck-mode))
 #+end_src
 
-** =Expand-region=
+** =expand-region=
 [[https://github.com/magnars/expand-region.el][More Information]]
 
 #+begin_src emacs-lisp
   (use-package expand-region
     :bind ("C-=" . er/expand-region))
-#+end_src
-
-** LSP Python MS
-
-=lsp-mode= client leveraging the Microsoft's [[https://github.com/Microsoft/python-language-server][python-language-server]].
-
-[[https://emacs-lsp.github.io/lsp-python-ms/][Installation and More Information]]
-
-#+begin_src emacs-lisp
-  (use-package lsp-python-ms
-    :disabled
-    :hook (python-mode . (lambda ()
-                           (require 'lsp-python-ms)
-                           (lsp-deferred)))
-    :init
-    (setq lsp-python-ms-auto-install-server t)
-    ;; for executable of language server, if it's not symlinked on your PATH
-    (setq lsp-python-ms-executable
-          "~/.emacs.d/python-language-server/output/bin/Release/osx-x64/publish/Microsoft.Python.LanguageServer"))
-
-  (use-package lsp-pyright
-    ;; :disabled
-    :hook (python-mode . (lambda ()
-                           (require 'lsp-pyright)
-                           (lsp-deferred))))
 #+end_src
 
 ** =lsp-mode=
@@ -874,7 +840,6 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 #+begin_src emacs-lisp
   (use-package lsp-mode
-    ;; :disabled
     :init
     ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
     (setq lsp-keymap-prefix "C-c l")
@@ -883,16 +848,39 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
            (json-mode . lsp-deferred)
            (python-mode . lsp-deferred)
            (c++-mode . lsp-deferred)
+           (go-mode . lsp-deferred)
+           (java-mode . lsp-deferred)
            ;; if you want which-key integration
            (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp
     :config
-    (setq lsp-idle-delay 0.500)
+    (setq lsp-idle-delay 0.5)
     (setq lsp-log-io nil) ; if set to true can cause a performance hit
+    ;; symbol highlighting
+    (setq lsp-enable-symbol-highlighting t)
+    ;; lenses
+    (setq lsp-lens-enable nil)
+    ;; headerline
+    (setq lsp-headerline-breadcrumb-enable t)
+    ;; modeline
+    (setq lsp-modeline-code-actions-enable nil)
+    (setq lsp-modeline-diagnostics-enable t)
+    ;; linter
+    (setq lsp-diagnostics-provider :auto) ;; prefer flycheck, fallback to flymake
+    ;; eldoc
+    (setq lsp-eldoc-enable-hover nil)
+    (setq lsp-eldoc-render-all t)
+    ;; signatures
+    (setq lsp-signature-auto-activate nil)
+    (setq lsp-signature-render-documentation nil)
+    ;; completion
+    (setq lsp-completion-provider :capf)
+    (setq lsp-completion-show-detail t)
+    (setq lsp-completion-show-kind t)
     )
 #+end_src
 
-** =lsp-ui=
+*** =lsp-ui=
 
  UI integration's for lsp-mode
 
@@ -900,45 +888,55 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 #+begin_src emacs-lisp
   (use-package lsp-ui
-    ;; :disabled
     :commands lsp-ui-mode
     :bind
     ;; lsp-ui-peek
     ((:map lsp-ui-mode-map
            ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
            ([remap xref-find-references] . lsp-ui-peek-find-references)
+           ("C-c d" . lsp-ui-doc-show)
+           ))
+    :config
+    ;; show docs
+    (setq lsp-ui-doc-enable t)
+    (setq lsp-ui-doc-show-with-cursor nil)
+    (setq lsp-ui-doc-show-with-mouse t)
+    ;; sideline
+    (setq lsp-ui-sideline-enable t)
+    (setq lsp-ui-sideline-show-code-actions nil)
+    (setq lsp-ui-sideline-show-hover nil)
+    (setq lsp-ui-sideline-show-diagnostics t)
+    )
            ;; lsp-ui-doc
-           ("M-i" . lsp-ui-doc-focus-frame))
-     ("s-i" . my/toggle-lsp-ui-doc))
-    :preface
-    (defun my/toggle-lsp-ui-doc ()
-      (interactive)
-      (if lsp-ui-doc-mode
-          (progn
-            (lsp-ui-doc-mode -1)
-            (lsp-ui-doc--hide-frame))
-        (lsp-ui-doc-mode 1))))
+    ;;        ("M-i" . lsp-ui-doc-focus-frame))
+    ;;  ("s-i" . my/toggle-lsp-ui-doc))
+    ;; :preface
+    ;; (defun my/toggle-lsp-ui-doc ()
+    ;;   (interactive)
+    ;;   (if lsp-ui-doc-mode
+    ;;       (lsp
+    ;;         (progn-ui-doc-mode -1)
+    ;;         (lsp-ui-doc--hide-frame))
+    ;;     (lsp-ui-doc-mode 1))))
 #+end_src
 
-** =lsp-treemacs=
+*** =lsp-treemacs=
 
 [[https://github.com/emacs-lsp/lsp-treemacs][More Information]]
 
 #+begin_src emacs-lisp
   (use-package lsp-treemacs
-    ;; :disabled
     :commands lsp-treemacs-errors-list
     :config
     (lsp-treemacs-sync-mode 1))
 #+end_src
 
-** =lsp-ivy=
+*** =lsp-ivy=
 
 [[https://github.com/emacs-lsp/lsp-ivy][More Informatino]]
 
 #+begin_src emacs-lisp
   (use-package lsp-ivy
-    ;; :disabled
     :commands lsp-ivy-workspace-symbol)
 #+end_src
 
@@ -959,8 +957,8 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
            ("C-p" . company-select-previous)))
     :config
     (setq company-minimum-prefix-length 1)
-    (setq company-idle-delay 0.2)
-    (setq company-echo-delay 0.2)
+    (setq company-idle-delay 0)
+    (setq company-echo-delay 5)
     ;; (setq company-tooltip-idle-delay 0.0)
     ;; (setq company-tooltip-align-annotations t)
     (setq company-require-match nil)
@@ -972,72 +970,32 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 #+end_src
 
 *** =company-box=
-
-#+begin_src emacs-lisp :tangle no
+[[https://github.com/sebastiencs/company-box#installation][More Information]]
+#+begin_src emacs-lisp
   (use-package company-box
-    ;; :disabled
     :diminish
     :hook
     (company-mode . company-box-mode)
-    ;; :defines company-box-icons-all-the-icons
-    :init (setq company-box-backends-colors nil
-                company-box-highlight-prefix t)
     :config
-    (setq company-box-doc-delay 0)
-    (setq company-box-enable-icon t)
-    (setq company-box-color-icons nil)
-    (setq company-box-max-candidates 10)
-    (setq company-box-show-single-candidate t)
+    (setq company-box-doc-enable t)
+    (setq company-box-doc-delay 0.2)
     )
-    ;; ;; all-the-icons-integration
-    ;; (with-no-warnings
-    ;;   ;; Prettify icons
-    ;;   (defun my-company-box-icons--elisp (candidate)
-    ;;     (when (derived-mode-p 'emacs-lisp-mode)
-    ;;       (let ((sym (intern candidate)))
-    ;;         (cond ((fboundp sym) 'Function)
-    ;;               ((featurep sym) 'Module)
-    ;;               ((facep sym) 'Color)
-    ;;               ((boundp sym) 'Variable)
-    ;;               ((symbolp sym) 'Text)
-    ;;               (t . nil)))))
-    ;;   (advice-add #'company-box-icons--elisp :override #'my-company-box-icons--elisp))
-
-    ;; (declare-function all-the-icons-faicon 'all-the-icons)
-    ;; (declare-function all-the-icons-material 'all-the-icons)
-    ;; (declare-function all-the-icons-octicon 'all-the-icons)
-    ;; (setq company-box-icons-all-the-icons
-    ;;       `((Unknown . ,(all-the-icons-material "find_in_page" :height 0.8 :v-adjust -0.15))
-    ;;         (Text . ,(all-the-icons-faicon "text-width" :height 0.8 :v-adjust -0.02))
-    ;;         (Method . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
-    ;;         (Function . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
-    ;;         (Constructor . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
-    ;;         (Field . ,(all-the-icons-octicon "tag" :height 0.85 :v-adjust 0 :face 'all-the-icons-lblue))
-    ;;         (Variable . ,(all-the-icons-octicon "tag" :height 0.85 :v-adjust 0 :face 'all-the-icons-lblue))
-    ;;         (Class . ,(all-the-icons-material "settings_input_component" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
-    ;;         (Interface . ,(all-the-icons-material "share" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
-    ;;         (Module . ,(all-the-icons-material "view_module" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
-    ;;         (Property . ,(all-the-icons-faicon "wrench" :height 0.8 :v-adjust -0.02))
-    ;;         (Unit . ,(all-the-icons-material "settings_system_daydream" :height 0.8 :v-adjust -0.15))
-    ;;         (Value . ,(all-the-icons-material "format_align_right" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
-    ;;         (Enum . ,(all-the-icons-material "storage" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
-    ;;         (Keyword . ,(all-the-icons-material "filter_center_focus" :height 0.8 :v-adjust -0.15))
-    ;;         (Snippet . ,(all-the-icons-material "format_align_center" :height 0.8 :v-adjust -0.15))
-    ;;         (Color . ,(all-the-icons-material "palette" :height 0.8 :v-adjust -0.15))
-    ;;         (File . ,(all-the-icons-faicon "file-o" :height 0.8 :v-adjust -0.02))
-    ;;         (Reference . ,(all-the-icons-material "collections_bookmark" :height 0.8 :v-adjust -0.15))
-    ;;         (Folder . ,(all-the-icons-faicon "folder-open" :height 0.8 :v-adjust -0.02))
-    ;;         (EnumMember . ,(all-the-icons-material "format_align_right" :height 0.8 :v-adjust -0.15))
-    ;;         (Constant . ,(all-the-icons-faicon "square-o" :height 0.8 :v-adjust -0.1))
-    ;;         (Struct . ,(all-the-icons-material "settings_input_component" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
-    ;;         (Event . ,(all-the-icons-octicon "zap" :height 0.8 :v-adjust 0 :face 'all-the-icons-orange))
-    ;;         (Operator . ,(all-the-icons-material "control_point" :height 0.8 :v-adjust -0.15))
-    ;;         (TypeParameter . ,(all-the-icons-faicon "arrows" :height 0.8 :v-adjust -0.02))
-    ;;         (Template . ,(all-the-icons-material "format_align_left" :height 0.8 :v-adjust -0.15)))
-    ;;       company-box-icons-alist 'company-box-icons-all-the-icons))
 #+end_src
 
-** =company-tabnine=
+*** =company-quickhelp=
+[[https://github.com/company-mode/company-quickhelp][More Information]]
+
+#+begin_src emacs-lisp :tangle no
+  (use-package pos-tip)
+
+  (use-package company-quickhelp
+    :after company
+    :config
+    (setq company-quickhelp-idle-delay 0.2)
+    (company-quickhelp-mode 1))
+#+end_src
+
+*** =company-tabnine=
 - [[https://github.com/TommyX12/company-tabnine][More Information]]
 - [[https://github.com/MatthewZMD/.emacs.d#company-tabnine][Config from MatthewZMD]]
 
@@ -1107,6 +1065,34 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
       (sp-local-pair 'emacs-lisp-mode "`" nil :when '(sp-in-string-p))))
 #+end_src
 
+* Python
+
+Some python settings. Setup jupyter keybindings.
+
+#+begin_src emacs-lisp
+  (defun my/jupyter-load-file ()
+    "Send current buffer to jupyter kernel by default"
+    (interactive)
+    (jupyter-load-file (buffer-file-name)))
+
+  (use-package python
+    :hook
+    (python-mode . (lambda () ;; emulate python-shell-send-buffer
+                     (setq indent-tabs-mode nil)
+                     (display-fill-column-indicator-mode) ;; display column
+                     (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
+                     (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)
+                     (add-hook 'before-save-hook #'lsp-format-buffer t t)))
+    :config
+    ;; silence indentation guesses
+    (setq python-indent-guess-indent-offset-verbose nil))
+#+end_src
+
+** =lsp-pyright=
+
+#+begin_src emacs-lisp
+  (use-package lsp-pyright)
+#+end_src
 ** =conda=
 
 This package lets you activate your conda environments. The setup works for miniconda installed by hombre.
@@ -1140,55 +1126,6 @@ Usage:
     (setq numpydoc-insert-examples-block nil))
 #+end_src
 
-** =py-autopep8=
-
-=py-autopep8= provides commands to tidy up the current buffer.
-[[https://github.com/paetzke/py-autopep8.el][More Information]]
-
-#+begin_src emacs-lisp
-  (use-package py-autopep8
-    :config
-    (setq py-autopep8-options '("--max-line-length=80")))
-#+end_src
-
-** =py-cmd-buffer.el=
-*** =buftra=
-#+begin_src emacs-lisp :tangle no
-  (use-package buftra
-    :load-path (lambda () (expand-file-name "site-elisp/buftra.el" user-emacs-directory)))
-#+end_src
-
-
-#+begin_src emacs-lisp :tangle no
-  (use-package py-pyment
-    :load-path (lambda () (expand-file-name "site-elisp/py-cmd-buffer.el" user-emacs-directory))
-    :config
-    (setq py-pyment-options '("--output=numpydoc")))
-  ;; /usr/local/Caskroom/miniconda/base/bin/pyment
-#+end_src
-
-* Python
-
-Some python settings. Setup jupyter keybindings.
-
-#+begin_src emacs-lisp
-  (defun my/jupyter-load-file ()
-    "Send current buffer to jupyter kernel by default"
-    (interactive)
-    (jupyter-load-file (buffer-file-name)))
-
-  (use-package python
-    :hook
-    (python-mode . (lambda () ;; emulate python-shell-send-buffer
-                     (setq indent-tabs-mode nil)
-                     (display-fill-column-indicator-mode) ;; display column
-                     (unbind-key "C-c C-l" jupyter-repl-interaction-mode-map)
-                     (bind-key "C-c C-c" 'my/jupyter-load-file jupyter-repl-interaction-mode-map)))
-    :config
-    ;; silence indentation guesses
-    (setq python-indent-guess-indent-offset-verbose nil))
-#+end_src
-
 ** =emacs-jupyter=
 [[https://github.com/nnicandro/emacs-jupyter][More Information]]
 
@@ -1198,13 +1135,14 @@ Some python settings. Setup jupyter keybindings.
     (:map python-mode-map
           ("C-c C-p" . jupyter-run-repl))
     :init
-    (setq jupyter-repl-echo-eval-p t))
+    (setq jupyter-repl-echo-eval-p t)) ;; show plots
 #+end_src
 
 ** Cython
 #+begin_src emacs-lisp
   (use-package cython-mode)
 #+end_src
+
 * CPP
 * Java
 ** =lsp-java=
@@ -1212,9 +1150,7 @@ Some python settings. Setup jupyter keybindings.
 [[https://emacs-lsp.github.io/lsp-java/][More Information]]
 
 #+begin_src emacs-lisp
-  (use-package lsp-java
-    :hook
-    (java-mode . lsp))
+  (use-package lsp-java)
 #+end_src
 
 ** =java-one-click-run=
@@ -1239,7 +1175,6 @@ Some python settings. Setup jupyter keybindings.
   (use-package go-mode
     :hook
     (go-mode . (lambda()
-                 (lsp-deferred)
                  (add-hook 'before-save-hook #'lsp-format-buffer t t)
                  (add-hook 'before-save-hook #'lsp-organize-imports t t))))
 #+end_src
@@ -1275,6 +1210,15 @@ Some python settings. Setup jupyter keybindings.
     :bind (:map markdown-mode-command-map
                 ("g" . grip-mode)))
 
+#+end_src
+
+* RTF
+#+begin_src emacs-lisp
+  (use-package rtf-mode
+    :config
+    (add-to-list 'auto-mode-alist
+                 '("\\.rtf$" . rtf-mode))
+    )
 #+end_src
 
 * SQL
@@ -1547,7 +1491,6 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
   (use-package page-break-lines)
 
   (use-package dashboard
-    :disabled
     :config
     (setq show-week-agenda-p t)
     (dashboard-setup-startup-hook))
@@ -2000,7 +1943,6 @@ Install the =toc-org= package to automatically generate an updated table of cont
     (visual-fill-column-mode 1))
 
   (use-package visual-fill-column
-    :disabled
     :hook (org-mode . my/org-mode-visual-fill))
 #+end_src
 
@@ -2141,7 +2083,6 @@ typing. Automatically switches the spell checker and typo-mode if present.
 
 #+begin_src emacs-lisp :tangle no
   (use-package guess-language
-    :disabled
     :hook
     (text-mode . guess-language-mode)
     :config
