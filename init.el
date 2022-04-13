@@ -784,11 +784,6 @@
                                 (cons "\\(" "\\)"))))
   (TeX-after-TeX-LaTeX-command-finished . TeX-revert-document-buffer))
 
-(use-package auctex-latexmk
-  :config
-  (auctex-latexmk-setup)
-  (setq auctex-latexmk-inherit-TeX-PDF-mode t))
-
 (use-package company-auctex
   :init
   (company-auctex-init))

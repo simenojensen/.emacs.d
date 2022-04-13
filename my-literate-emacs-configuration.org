@@ -1543,7 +1543,7 @@ Install Latex.
 =auctex-latexmk= adds LatexMk support to =AUCTeX=.
 [[https://github.com/tom-tan/auctex-latexmk][More Information]]
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package auctex-latexmk
     :config
     (auctex-latexmk-setup)
