@@ -2218,7 +2218,7 @@ typing. Automatically switches the spell checker and typo-mode if present.
       :keybinding "y"))
 #+end_src
 
-* =wgrep=
+** =wgrep=
 
 #+begin_src emacs-lisp
   (use-package wgrep)

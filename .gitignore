@@ -10,3 +10,4 @@ places
 projectile-bookmarks.eld
 .org-id-locations
 org-persist/
+/.dap-breakpoints
