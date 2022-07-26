@@ -556,7 +556,7 @@ Helpful is an alternative to the built-in Emacs help that provides much more con
     ;; Enable global auto-revert
     (global-auto-revert-mode t)
     ;; sort directory first
-    (setq insert-directory-program "gls" dired-use-ls-dired t)
+    (setq insert-directory-program "ls" dired-use-ls-dired t)
     (setq dired-listing-switches "-laXGh --group-directories-first")
     ;; Reuse same dired buffer, to prevent numerous buffers while navigating in dired
     (put 'dired-find-alternate-file 'disabled nil)
@@ -1674,7 +1674,7 @@ Install org-mode from the org package repository.
     (setq org-src-fontify-natively t) ;; Syntax highlight in #+BEGIN_SRC blocks
     (setq org-special-ctrl-a/e t) ;; cycle C-e and C-a
     ;; plain, current-window, split-window-below, other-window, other-frame
-    (setq org-src-window-setup 'current_window)
+    (setq org-src-window-setup 'current-window)
     (setq org-adapt-indentation nil) ;; do not indent after sections
     ;; ;; edit block inserts
     (setq org-structure-template-alist
@@ -1744,9 +1744,11 @@ Install org-mode from the org package repository.
           ;; formatting
           ("" "verbatim" t)
           ))
+
+  (require 'ox-latex)
   (setq org-latex-classes
         '(("article"
-           " \\RequirePackage{fix-cm}
+           "\\RequirePackage{fix-cm}
   \\PassOptionsToPackage{svgnames}{xcolor}
   \\documentclass[8pt]{article}
   \\usepackage{fontspec}
@@ -1957,8 +1959,7 @@ Export org-mode docs as HTML compatible with Twitter Bootstrap.
 #+begin_src emacs-lisp
   (use-package ox-twbs)
 #+end_src
-** =reveal
-.js=
+** =reveal.js=
 
 Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, install [[https://github.com/hexmode/ox-reveal][=ox-reveal=]] and [[https://github.com/hniksic/emacs-htmlize][=htmlize=]].
 
@@ -2065,6 +2066,7 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
   ;; Norsk tastatur
   (bind-key "C-ø" 'flyspell-auto-correct-previous-word flyspell-mode-map)
 #+end_src
+
 ** =synosaurus=
 
 Synosaurus is a thesaurus fontend for Emacs with pluggable backends.

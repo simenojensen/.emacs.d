@@ -275,7 +275,7 @@
   ;; Enable global auto-revert
   (global-auto-revert-mode t)
   ;; sort directory first
-  (setq insert-directory-program "gls" dired-use-ls-dired t)
+  (setq insert-directory-program "ls" dired-use-ls-dired t)
   (setq dired-listing-switches "-laXGh --group-directories-first")
   ;; Reuse same dired buffer, to prevent numerous buffers while navigating in dired
   (put 'dired-find-alternate-file 'disabled nil)
@@ -872,7 +872,7 @@
   (setq org-src-fontify-natively t) ;; Syntax highlight in #+BEGIN_SRC blocks
   (setq org-special-ctrl-a/e t) ;; cycle C-e and C-a
   ;; plain, current-window, split-window-below, other-window, other-frame
-  (setq org-src-window-setup 'current_window)
+  (setq org-src-window-setup 'current-window)
   (setq org-adapt-indentation nil) ;; do not indent after sections
   ;; ;; edit block inserts
   (setq org-structure-template-alist
@@ -934,9 +934,11 @@
           ;; formatting
           ("" "verbatim" t)
           ))
+  
+  (require 'ox-latex)
   (setq org-latex-classes
         '(("article"
-           " \\RequirePackage{fix-cm}
+           "\\RequirePackage{fix-cm}
   \\PassOptionsToPackage{svgnames}{xcolor}
   \\documentclass[8pt]{article}
   \\usepackage{fontspec}
