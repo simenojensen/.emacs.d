@@ -5,7 +5,6 @@
 
 [[https://github.com/simenojensen/.emacs.d/blob/master/my-literate-emacs-configuration.org][My Configs]]
 
-
 * Start up
 ** Lexical Binding
 
@@ -1826,8 +1825,6 @@ Install org-mode from the org package repository.
   \\renewcommand{\\baselinestretch}{1.0}
   \\renewcommand{\\labelenumii}{\\theenumii}
   \\renewcommand{\\theenumii}{\\theenumi.\\arabic{enumii}.}
-  \\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
-    citecolor=DarkRed,colorlinks=true}
   [PACKAGES]
   [EXTRA]"
            ("\\section{%s}" . "\\section*{%s}")
@@ -1836,8 +1833,24 @@ Install org-mode from the org package repository.
            ("\\paragraph{%s}" . "\\paragraph*{%s}")
            ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
 
-          ("report" "\\documentclass[11pt]{report}"
-           ("\\part{%s}" . "\\part*{%s}")
+          ("report"
+  "
+  \\documentclass[10pt]{report}
+  \\usepackage[english]{babel}
+  \\usepackage[utf8]{inputenc}
+  \\usepackage[a4paper,width=150mm,top=25mm,bottom=25mm]{geometry}
+  \\usepackage{appendix}
+  \\usepackage{import}
+  \\usepackage{fancyhdr}
+  \\pagestyle{fancy}
+  \\fancyhf{}
+  \\fancyfoot[C]{\\thepage}
+  \\renewcommand{\\footrulewidth}{0.1pt}
+  \\usepackage[nottoc]{tocbibind}
+  \\usepackage{biblatex}
+    [DEFAULT-PACKAGES]
+  \\hypersetup{hidelinks}
+  "
            ("\\chapter{%s}" . "\\chapter*{%s}")
            ("\\section{%s}" . "\\section*{%s}")
            ("\\subsection{%s}" . "\\subsection*{%s}")
@@ -2018,7 +2031,7 @@ Install reveal.js from [[https://github.com/hakimel/reveal.js/][here]]. Then, in
 =org-ref= - citations, cross-references, indexes, glossaries and bibtex utilities for org-mode
 [[https://github.com/jkitchin/org-ref][More Information]]
 
-[[https://nickgeorge.net/science/org_ref_setup/][Guide for setup]]
+[[https://nickgeorge.net/science/org-ref-setup/][Guide for setup]]
 
 #+begin_src emacs-lisp
   (use-package org-ref
@@ -2241,6 +2254,5 @@ typing. Automatically switches the spell checker and typo-mode if present.
 - [[https://github.com/hpdeifel/synosaurus][synosaurus]]
 - [[https://github.com/org-roam/org-roam][org-roam]]
   - [[https://rgoswami.me/posts/org-note-workflow/][org-mode notes workflow]]
-
 - =org2blog= to wordspress
 - =org-publish=

@@ -1016,8 +1016,6 @@
   \\renewcommand{\\baselinestretch}{1.0}
   \\renewcommand{\\labelenumii}{\\theenumii}
   \\renewcommand{\\theenumii}{\\theenumi.\\arabic{enumii}.}
-  \\hypersetup{linkcolor=Blue,urlcolor=DarkBlue,
-    citecolor=DarkRed,colorlinks=true}
   [PACKAGES]
   [EXTRA]"
            ("\\section{%s}" . "\\section*{%s}")
@@ -1026,8 +1024,24 @@
            ("\\paragraph{%s}" . "\\paragraph*{%s}")
            ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
   
-          ("report" "\\documentclass[11pt]{report}"
-           ("\\part{%s}" . "\\part*{%s}")
+          ("report"
+  "
+  \\documentclass[10pt]{report}
+  \\usepackage[english]{babel}
+  \\usepackage[utf8]{inputenc}
+  \\usepackage[a4paper,width=150mm,top=25mm,bottom=25mm]{geometry}
+  \\usepackage{appendix}
+  \\usepackage{import}
+  \\usepackage{fancyhdr}
+  \\pagestyle{fancy}
+  \\fancyhf{}
+  \\fancyfoot[C]{\\thepage}
+  \\renewcommand{\\footrulewidth}{0.1pt}
+  \\usepackage[nottoc]{tocbibind}
+  \\usepackage{biblatex}
+    [DEFAULT-PACKAGES]
+  \\hypersetup{hidelinks}
+  "
            ("\\chapter{%s}" . "\\chapter*{%s}")
            ("\\section{%s}" . "\\section*{%s}")
            ("\\subsection{%s}" . "\\subsection*{%s}")
