@@ -13,3 +13,4 @@ org-persist/
 /.dap-breakpoints
 /custom.el
 /elpa/
+/.pdf-view-restore
