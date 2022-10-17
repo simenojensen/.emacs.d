@@ -786,7 +786,7 @@ Projectile is a project interaction library for Emacs.
 =format-all= let one auto-format source code in many languages using the same command.
 [[https://github.com/lassik/emacs-format-all-the-code][More Information]]
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package format-all
     :hook
     (prog-mode . format-all-mode)
@@ -828,7 +828,10 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     :init
     (global-flycheck-mode)
     :hook
-    (prog-mode . flycheck-mode))
+    (prog-mode . flycheck-mode)
+    :config
+    (setq flycheck-checker-error-threshold 1000)
+    )
 #+end_src
 
 ** =expand-region=
@@ -892,7 +895,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
 *** =lsp-ui=
 
- UI integration's for lsp-mode
+ UI integrations for lsp-mode
 
  [[https://emacs-lsp.github.io/lsp-ui/][More Information]]
 
@@ -913,7 +916,7 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     (setq lsp-ui-doc-show-with-mouse t)
     ;; sideline
     (setq lsp-ui-sideline-enable t)
-    (setq lsp-ui-sideline-show-code-actions nil)
+    (setq lsp-ui-sideline-show-code-actions t)
     (setq lsp-ui-sideline-show-hover nil)
     (setq lsp-ui-sideline-show-diagnostics t)
     )
@@ -929,6 +932,9 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     ;;         (lsp-ui-doc--hide-frame))
     ;;     (lsp-ui-doc-mode 1))))
 #+end_src
+
+#+RESULTS:
+: lsp-ui-doc-show
 
 *** =lsp-treemacs=
 
@@ -1483,7 +1489,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 #+begin_src emacs-lisp
   (use-package dimmer
     :config
-    (setq dimmer-fraction 0.5)
+    (setq dimmer-fraction 0)
     (dimmer-mode t))
 #+end_src
 
@@ -1841,7 +1847,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     ;; Indentation
     (setq org-startup-indented nil)
     ;; prettify symbols
-    (setq org-pretty-entities t)
+    (setq org-pretty-entities nil)
     ;; images - set width
     (setq org-startup-with-inline-images t
           org-image-actual-width '(300))
@@ -1923,6 +1929,27 @@ typing. Automatically switches the spell checker and typo-mode if present.
     (setq langtool-default-language "en-US")
     (setq langtool-bin "/usr/local/bin/languagetool")
     )
+#+end_src
+
+** =lsp-grammarly=
+[[https://github.com/emacs-grammarly/lsp-grammarly][More Information]]
+#+begin_src emacs-lisp :tangle no
+  (use-package lsp-grammarly
+    :hook (org-mode . (lambda ()
+                        (require 'lsp-grammarly)
+                        (lsp))))
+#+end_src
+
+** =unfill-paragraph=
+#+begin_src emacs-lisp
+      ;;; Stefan Monnier <foo at acm.org>. It is the opposite of fill-paragraph
+      (defun unfill-paragraph (&optional region)
+        "Takes a multi-line paragraph and makes it into a single line of text."
+        (interactive (progn (barf-if-buffer-read-only) '(t)))
+        (let ((fill-column (point-max))
+              ;; This would override `fill-column' if it's an integer.
+              (emacs-lisp-docstring-fill-column t))
+          (fill-paragraph nil region)))
 #+end_src
 
 * Elisp Functions

@@ -424,6 +424,12 @@
 (use-package treemacs-magit
   :after (treemacs magit))
 
+(use-package format-all
+  :hook
+  (prog-mode . format-all-mode)
+  (format-all-mode . format-all-ensure-formatter)
+  )
+
 (use-package evil-nerd-commenter
   :bind
   ("C-;" . evilnc-comment-or-uncomment-lines))
@@ -439,7 +445,10 @@
   :init
   (global-flycheck-mode)
   :hook
-  (prog-mode . flycheck-mode))
+  (prog-mode . flycheck-mode)
+  :config
+  (setq flycheck-checker-error-threshold 1000)
+  )
 
 (use-package expand-region
   :bind ("C-=" . er/expand-region))
@@ -502,7 +511,7 @@
   (setq lsp-ui-doc-show-with-mouse t)
   ;; sideline
   (setq lsp-ui-sideline-enable t)
-  (setq lsp-ui-sideline-show-code-actions nil)
+  (setq lsp-ui-sideline-show-code-actions t)
   (setq lsp-ui-sideline-show-hover nil)
   (setq lsp-ui-sideline-show-diagnostics t)
   )
@@ -755,7 +764,7 @@
 
 (use-package dimmer
   :config
-  (setq dimmer-fraction 0.5)
+  (setq dimmer-fraction 0)
   (dimmer-mode t))
 
 ;; Tangle on config file
@@ -1095,7 +1104,7 @@
   ;; Indentation
   (setq org-startup-indented nil)
   ;; prettify symbols
-  (setq org-pretty-entities t)
+  (setq org-pretty-entities nil)
   ;; images - set width
   (setq org-startup-with-inline-images t
         org-image-actual-width '(300))
@@ -1141,6 +1150,15 @@
   (setq langtool-default-language "en-US")
   (setq langtool-bin "/usr/local/bin/languagetool")
   )
+
+;;; Stefan Monnier <foo at acm.org>. It is the opposite of fill-paragraph
+(defun unfill-paragraph (&optional region)
+  "Takes a multi-line paragraph and makes it into a single line of text."
+  (interactive (progn (barf-if-buffer-read-only) '(t)))
+  (let ((fill-column (point-max))
+        ;; This would override `fill-column' if it's an integer.
+        (emacs-lisp-docstring-fill-column t))
+    (fill-paragraph nil region)))
 
 (defun my/get-file-content-as-string (filePath)
   "Return filePath's content as string."
