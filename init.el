@@ -157,7 +157,7 @@
        (bind-key "M-`" 'other-frame)
        (use-package exec-path-from-shell
          :config
-         (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
+         (setq shell-file-name "/opt/homebrew/bin/zsh") ;; Let emacs know which shell to use.
          (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH" "GOPATH"))
          (if (string-equal system-type "darwin")
              (exec-path-from-shell-initialize)))
@@ -283,7 +283,7 @@
   ;; Enable global auto-revert
   (global-auto-revert-mode t)
   ;; sort directory first
-  (setq insert-directory-program "/usr/local/bin/gls"
+  (setq insert-directory-program "/opt/homebrew/bin/gls"
         dired-use-ls-dired t)
   (setq dired-listing-switches "-laXGh --group-directories-first")
   ;; Reuse same dired buffer, to prevent numerous buffers while navigating in dired
@@ -605,8 +605,8 @@
   (conda-env-initialize-interactive-shells) ;; interactive shell support
   ;; (conda-env-initialize-eshell)             ;; eshell support
   ;; (conda-env-autoactivate-mode t)           ;; autoactivate
-  (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
-  (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
+  (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/")
+  (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/"))
 
 (use-package numpydoc
   :after python
@@ -1035,6 +1035,7 @@
           org-ref-insert-cite-function 'org-ref-cite-insert-ivy
           org-ref-insert-label-function 'org-ref-insert-label-link
           org-ref-insert-ref-function 'org-ref-insert-ref-link))
+
   ;; -------------------- PDF --------------------
   (use-package pdf-tools
     :init
@@ -1148,7 +1149,7 @@
 (use-package langtool
   :init
   (setq langtool-default-language "en-US")
-  (setq langtool-bin "/usr/local/bin/languagetool")
+  (setq langtool-bin "/opt/homebrew/bin/languagetool")
   )
 
 ;;; Stefan Monnier <foo at acm.org>. It is the opposite of fill-paragraph

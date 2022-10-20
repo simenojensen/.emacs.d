@@ -329,7 +329,7 @@ Make sure the =$PATH= is loaded from the default shell.
 #+begin_src emacs-lisp :tangle no :noweb-ref macOS
   (use-package exec-path-from-shell
     :config
-    (setq shell-file-name "/usr/local/bin/zsh") ;; Let emacs know which shell to use.
+    (setq shell-file-name "/opt/homebrew/bin/zsh") ;; Let emacs know which shell to use.
     (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH" "GOPATH"))
     (if (string-equal system-type "darwin")
         (exec-path-from-shell-initialize)))
@@ -561,7 +561,7 @@ Helpful is an alternative to the built-in Emacs help that provides much more con
       ;; Enable global auto-revert
       (global-auto-revert-mode t)
       ;; sort directory first
-      (setq insert-directory-program "/usr/local/bin/gls"
+      (setq insert-directory-program "/opt/homebrew/bin/gls"
             dired-use-ls-dired t)
       (setq dired-listing-switches "-laXGh --group-directories-first")
       ;; Reuse same dired buffer, to prevent numerous buffers while navigating in dired
@@ -1127,8 +1127,8 @@ Usage:
     (conda-env-initialize-interactive-shells) ;; interactive shell support
     ;; (conda-env-initialize-eshell)             ;; eshell support
     ;; (conda-env-autoactivate-mode t)           ;; autoactivate
-    (setq conda-env-home-directory "/usr/local/Caskroom/miniconda/base/")
-    (setq conda-anaconda-home "/usr/local/Caskroom/miniconda/base/"))
+    (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/")
+    (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/"))
 #+end_src
 
 ** =numpydoc=
@@ -1778,6 +1778,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
             org-ref-insert-cite-function 'org-ref-cite-insert-ivy
             org-ref-insert-label-function 'org-ref-insert-label-link
             org-ref-insert-ref-function 'org-ref-insert-ref-link))
+
     ;; -------------------- PDF --------------------
     (use-package pdf-tools
       :init
@@ -1855,10 +1856,6 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     )
 #+end_src
 
-#+RESULTS:
-| (lambda nil (flyspell-mode) (display-fill-column-indicator-mode) (auto-fill-mode)) | (lambda nil (org-superstar-mode 1)) | (closure (bootstrap-version t) nil (flyspell-mode) (display-fill-column-indicator-mode) (auto-fill-mode)) | (closure (bootstrap-version t) nil (org-superstar-mode 1)) | org-ref-org-menu | jupyter-org-interaction-mode | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | (closure ((mode . org-mode-hook) (--dolist-tail--) bootstrap-version t) nil (display-line-numbers-mode 0)) |
-
-
 ** Bibliography
 
 * Writing
@@ -1927,7 +1924,7 @@ typing. Automatically switches the spell checker and typo-mode if present.
   (use-package langtool
     :init
     (setq langtool-default-language "en-US")
-    (setq langtool-bin "/usr/local/bin/languagetool")
+    (setq langtool-bin "/opt/homebrew/bin/languagetool")
     )
 #+end_src
 
