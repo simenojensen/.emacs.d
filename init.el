@@ -262,24 +262,23 @@
   :bind
   (("C-x C-j" . dired-jump)
    ("C-x j" . dired-jump-other-window))
-  :custom
-  ;; Always delete and copy recursively
-  (dired-recursive-deletes 'always)
-  (dired-recursive-copies 'always)
-  ;; Auto refresh Dired, but be quiet about it
-  (global-auto-revert-non-file-buffers t)
-  (auto-revert-verbose nil)
-  ;; Quickly copy/move file in Dired
-  (dired-dwim-target t)
-  ;; Move files to trash when deleting
-  (delete-by-moving-to-trash t)
-  (trash-directory "~/.Trash")
-  ;; Load the newest version of a file
-  (load-prefer-newer t)
-  ;; Detect external file changes and auto refresh file
-  (auto-revert-use-notify nil)
-  (auto-revert-interval 3) ; Auto revert every 3 sec
   :config
+  ;; Always delete and copy recursively
+  (setq dired-recursive-deletes 'always)
+  (setq dired-recursive-copies 'always)
+  ;; Auto refresh Dired, but be quiet about it
+  (setq global-auto-revert-non-file-buffers t)
+  (setq auto-revert-verbose nil)
+  ;; Quickly copy/move file in Dired
+  (setq dired-dwim-target t)
+  ;; Move files to trash when deleting
+  (setq delete-by-moving-to-trash t)
+  (setq trash-directory "~/.Trash")
+  ;; Load the newest version of a file
+  (setq load-prefer-newer t)
+  ;; Detect external file changes and auto refresh file
+  (setq auto-revert-use-notify nil)
+  (setq auto-revert-interval 3) ; Auto revert every 3 sec
   ;; Enable global auto-revert
   (global-auto-revert-mode t)
   ;; sort directory first
@@ -294,6 +293,15 @@
                   (local-set-key (kbd "RET") #'dired-find-alternate-file)
                   (local-set-key (kbd "^")
                                  (lambda () (interactive) (find-alternate-file ".."))))))
+
+(use-package dired-subtree
+  :after dired
+  :bind (:map dired-mode-map
+              ("<tab>" . dired-subtree-toggle)))
+
+(use-package dired-narrow
+  :bind (:map dired-mode-map
+              ("/" . dired-narrow)))
 
 (use-package disk-usage)
 
@@ -1121,7 +1129,9 @@
   ;; Tell ispell-mode to use hunspell.
   (setq ispell-program-name "hunspell")
   (setq-default ispell-hunspell-dict-paths-alist
-                '(("en_US" "~/Library/Spelling/en_US.aff"))))
+                '(("en_US" "~/Library/Spelling/en_US.aff")
+                  ("nb" "~/Library/Spelling/nb.aff")
+                  )))
 
 (defun my/save-word-to-personal-dictionary ()
   "Save word to personal dictionary"
