@@ -14,7 +14,7 @@
 (defvar file-name-handler-alist-original file-name-handler-alist)
 (setq file-name-handler-alist nil)
 
-(defvar better-gc-cons-threshold 100000000 ; 100mb
+(defvar better-gc-cons-threshold 1000000 ; 1mb
   "The default value to use for `gc-cons-threshold'.
    If you experience freezing, decrease this.  If you experience stuttering, increase this.")
 
@@ -232,6 +232,7 @@
   (setq counsel-switch-buffer-preview-virtual-buffers nil)
   ;; (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
+(use-package helm)
 
 (use-package helpful
   :bind
@@ -242,15 +243,6 @@
   :config
   (setq counsel-describe-function-function #'helpful-callable)
   (setq counsel-describe-variable-function #'helpful-variable))
-
-(use-package undo-tree
-  :diminish undo-tree-mode
-  :init
-  (global-undo-tree-mode)
-  :config
-  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
-  (setq undo-tree-visualizer-diff t)
-  (setq undo-tree-visualizer-timestamps t))
 
 (use-package color-rg
   :straight
@@ -834,6 +826,7 @@
       :hook
       (after-save . my/tangle-emacs-config)
       (org-mode . (lambda ()
+                    ;; (flyspell-mode)
                     (display-fill-column-indicator-mode)
                     (auto-fill-mode)
                     ))
@@ -1078,26 +1071,26 @@
 \\usepackage{listings}
 \\lstloadlanguages{XML,XSLT}
 \\lstset{defaultdialect=XSLT,frame=single,
-	framesep=.5em,backgroundcolor=\\color{AliceBlue},
-	rulecolor=\\color{LightSteelBlue},framerule=1pt}
+        framesep=.5em,backgroundcolor=\\color{AliceBlue},
+        rulecolor=\\color{LightSteelBlue},framerule=1pt}
 \\usepackage{xcolor}
 \\newcommand\\basicdefault[1]{\\scriptsize\\color{Black}\\ttfamily#1}
 \\lstset{basicstyle=\\basicdefault{\\spaceskip.5em}}
 \\lstset{literate=
-	    {§}{{\\S}}1
-	    {©}{{\\raisebox{.125ex}{\\copyright}\\enspace}}1
-	    {«}{{\\guillemotleft}}1
-	    {»}{{\\guillemotright}}1
-	    {’}{{'}}1
-	    {…}{{\dots}}1
-	    keywordstyle=\\color{DarkGreen}\bfseries,
-	    identifierstyle=\\color{DarkRed},
-	    commentstyle=\\color{Gray}\\upshape,
-	    stringstyle=\\color{DarkBlue}\\upshape,
-	    emphstyle=\\color{Chocolate}\\upshape,
-	    showstringspaces=false,
-	    columns=fullflexible,
-	    keepspaces=true}
+            {§}{{\\S}}1
+            {©}{{\\raisebox{.125ex}{\\copyright}\\enspace}}1
+            {«}{{\\guillemotleft}}1
+            {»}{{\\guillemotright}}1
+            {’}{{'}}1
+            {…}{{\dots}}1
+            keywordstyle=\\color{DarkGreen}\bfseries,
+            identifierstyle=\\color{DarkRed},
+            commentstyle=\\color{Gray}\\upshape,
+            stringstyle=\\color{DarkBlue}\\upshape,
+            emphstyle=\\color{Chocolate}\\upshape,
+            showstringspaces=false,
+            columns=fullflexible,
+            keepspaces=true}
 
   [DEFAULT-PACKAGES]
   [PACKAGES]
