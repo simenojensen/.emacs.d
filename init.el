@@ -228,6 +228,7 @@
   (setq ivy-height 20)
   (setq ivy-initial-inputs-alist nil)
   (setq ivy-display-style 'fancy)
+  (setq ivy-use-selectable-prompt t)
   (setq counsel-switch-buffer-preview-virtual-buffers nil)
   ;; (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
@@ -336,7 +337,7 @@
   (setq vterm-max-scrollback 10000)
   (setq vterm-always-compile-module t)
   )
-;; (use-package multi-vterm)
+(use-package multi-vterm)
 
 (use-package magit
   :bind
@@ -456,6 +457,11 @@
   (prog-mode . flycheck-mode)
   :config
   (setq flycheck-checker-error-threshold 1000)
+  ;; (setq-default flycheck-c/c++-clang-executable "/usr/bin/clangd")
+  ;; (setq-default flycheck-clang-standard-library "libc++")
+  (setq-default flycheck-clang-language-standard "c++20")
+  (setq-default flycheck-cppcheck-standards '("c++20"))
+  (setq-default flycheck-clang-args "-std=c++20")
   )
 
 (use-package expand-region
@@ -608,7 +614,7 @@
 
 (use-package conda
   :hook
-  (python-mode . (lambda () (conda-env-activate "py3")))
+  (python-mode . (lambda () (conda-env-activate "base")))
   :config
   (conda-env-initialize-interactive-shells) ;; interactive shell support
   ;; (conda-env-initialize-eshell)             ;; eshell support
@@ -726,6 +732,7 @@
   (cursor ((t (:background "DarkRed"))))
   :config
   (load-theme 'doom-gruvbox t)
+  ;; (load-theme 'doom-opera-light t)
 
   (doom-themes-visual-bell-config)  ;; flashing mode-line on errors
 
@@ -751,16 +758,6 @@
   (setq doom-modeline-major-mode-color-icon t)
   (setq doom-modeline-height 15))
 
-;; (use-package spacemacs-theme
-;;   :config
-;;   (load-theme spacemacs-theme-light))
-;; ;; (use-package solarized-theme)
-;; (use-package darktooth-theme)
-;; (use-package kaolin-themes)
-;; (use-package gruvbox-theme
-;;   :config
-;;   (load-theme 'gruvbox))
-
 (use-package beacon
   :config
   (beacon-mode 1)
@@ -774,351 +771,6 @@
   :config
   (setq dimmer-fraction 0)
   (dimmer-mode t))
-
-;; Tangle on config file
-(defun my/tangle-emacs-config ()
-  "If the current file is this file, the code blocks are tangled"
-  (when (equal (buffer-file-name) (expand-file-name "~/.emacs.d/my-literate-emacs-configuration.org"))
-    (org-babel-tangle nil "~/.emacs.d/init.el")))
-
-(use-package org
-  :straight (:type built-in)
-  :hook
-  (after-save . my/tangle-emacs-config)
-  (org-mode . (lambda ()
-                (flyspell-mode)
-                (display-fill-column-indicator-mode)
-                (auto-fill-mode)
-                ))
-  :init
-  (use-package org-indent :straight (:type built-in))
-  :config
-  ;; -------------------- Org Agenda --------------------
-  ;; Org settings
-  (setq org-directory "~/Documents/Org") ;; Set default org directory
-  (setq org-default-notes-file (concat org-directory "/tasks.org")) ;; Set default org capture file
-  ;; Org agenda
-  (setq org-todo-keywords
-        '((sequence "TODO"  "|" "DONE" "CANCELED")))
-  (setq org-agenda-files '("~/Documents/Org/"))
-  (setq org-agenda-window-setup 'current-window)
-  ;; org capture
-  (setq org-capture-templates
-        '(("a" "Assignment" entry
-           (file+headline "~/Documents/Org/Academic.org" "Assignments")
-           "* TODO %?\n")
-          ("E" "Exam" entry
-           (file+headline "~/Documents/Org/Academic.org" "Exams")
-           "* TODO %?\n")
-          ("P" "Project" entry
-           (file+headline "~/Documents/Org/Academic.org" "Projects")
-           "* TODO %?\n")))
-  ;; -------------------- Evaluation of Source Blocks --------------------
-  ;; Do not confirm when evaluating code blocks
-  (setq org-confirm-babel-evaluate nil)
-  ;; Run/highlight code using babel in org-mode
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((python . t)
-     (js . t)
-     (latex . t)
-     (jupyter . t)
-     (sql . t)
-     (shell . t)
-     (emacs-lisp . t)))
-  ;; How to edit source code blocks: [plain, current-window, split-window-below, other-window, other-frame]
-  (setq org-src-window-setup 'current-window)
-  ;; Edit source code blocks menu
-  (setq org-structure-template-alist
-        '(("a" . "export ascii\n")
-          ("c" . "center\n")
-          ("C" . "comment\n")
-          ("e" . "src emacs-lisp\n")
-          ("E" . "export")
-          ("h" . "export html\n")
-          ("l" . "src latex\n")
-          ("q" . "quote\n")
-          ("p" . "src python\n")
-          ("s" . "src sql")
-          ("v" . "verse\n")))
-  ;; -------------------- Various Behavior --------------------
-  ;; Follow link when hitting return
-  (setq org-return-follows-link t)
-  ;; -------------------- Latex Exports --------------------
-  ;; auctex
-  (use-package tex
-    :straight auctex)
-  ;; Remove logfiles
-  (setq org-latex-logfiles-extensions '(
-                                        ;; Default settings
-                                        "aux" "bcf" "blg" "fdb_latexmk" "fls" "figlist" "idx" "log" "nav" "out" "ptc" "run.xml" "snm" "toc" "vrb" "xdv"
-                                        ;; Added settings
-                                        "bbl" "lof" "lot" "tex" "glo" "ist" "glg" "gls" "acn" "acr" "alg"
-                                        ))
-  (setq org-latex-remove-logfiles t)
-  ;; Set default figure position
-  (setq org-latex-default-figure-position "H")
-  ;; Set default caption position
-  (setq org-latex-caption-above nil) ;; '("table" "image")
-  ;; Set default export to async
-  (setq org-export-in-background t)
-  ;; Remove default header exports
-  (setq org-export-with-title nil
-        org-export-with-date nil
-        org-export-with-creator nil
-        org-export-with-toc nil
-        )
-  ;; add glossary and acronyms
-  (add-to-list 'org-export-before-parsing-hook 'org-ref-acronyms-before-parsing)
-  (add-to-list 'org-export-before-parsing-hook 'org-ref-glossary-before-parsing)
-  ;; Latex compilation
-  ;; (setq org-latex-pdf-process (list "latexmk -shell-escape -bibtex -f -pdf %f"))
-  (setq org-latex-pdf-process
-        '("pdflatex -interaction nonstopmode -output-directory %o %f"
-          "bibtex %b"
-          "makeglossaries %b"
-          "pdflatex -interaction nonstopmode -output-directory %o %f"
-          "pdflatex -interaction nonstopmode -output-directory %o %f"))
-  ;; Latex classes
-  (setq org-latex-classes
-        '(("article"
-           "
-\\documentclass[10pt]{article}
-% Setup
-\\usepackage[english]{babel}
-\\usepackage[utf8]{inputenc}
-\\usepackage{import}
-\\usepackage[hidelinks]{hyperref}
-\\usepackage{url}
-\\hypersetup{colorlinks=false}
-% Geometry
-\\usepackage[a4paper, width=150mm, top=25mm, bottom=25mm]{geometry}
-\\usepackage{parskip}
-\\setlength{\\parindent}{0pt}
-\\setlength{\\parskip}{\\baselineskip}
-% Math
-\\usepackage{amsmath}
-\\usepackage{amssymb}
-% Tables
-\\usepackage{array}
-\\usepackage{multirow}
-\\usepackage{longtable}
-% Color
-\\usepackage{xcolor}
-% Figures
-\\usepackage{graphicx} % To show figures
-\\usepackage{wrapfig}  % Wrap text around figures
-\\usepackage{subcaption}
-\\usepackage{rotating}
-% Others
-\\usepackage{float}
-\\usepackage{lastpage}
-\\usepackage[normalem]{ulem}
-\\usepackage{capt-of}
-\\usepackage{csquotes}
-\\usepackage{enumitem}
-\\usepackage{ragged2e}
-\\setlist{nosep} % or \setlist{noitemsep} to leave space around whole list
-% TOC and Appendix
-\\usepackage{appendix}
-\\usepackage[nottoc]{tocbibind}
-  \\usepackage[acronyms, section]{glossaries}
-  \\makeglossaries
-% Footers and Headers
-\\usepackage{fancyhdr}
-\\pagestyle{fancy}
-\\fancyhf{}
-\\fancyfoot[C]{\\thepage}
-\\renewcommand{\\footrulewidth}{0.1pt}
-% Bibliography
-\\usepackage{natbib}
-\\makeatletter
-\\renewcommand{\\maketitle}{%
-\\begingroup\\parindent0pt
-\\Large{\\bfseries\\@title}\\newline
-\\normalsize{\\bfseries\\@author}\\newline
-\\normalsize{\\@date}\\vspace{-0.2cm}\\newline
-\\noindent\\makebox[\\textwidth]{\\rule{\\textwidth}{0.4pt}}
-\\endgroup\\@afterindentfalse\\@afterheading}
-\\makeatother
-[NO-DEFAULT-PACKAGES]
-"
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-           ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-
-          ("report"
-           "
-\\documentclass[10pt]{report}
-% Setup
-\\usepackage[english]{babel}
-\\usepackage[utf8]{inputenc}
-\\usepackage{import}
-\\usepackage[hidelinks]{hyperref}
-\\usepackage{url}
-\\hypersetup{colorlinks=false}
-% Geometry
-\\usepackage[a4paper, width=150mm, top=25mm, bottom=25mm]{geometry}
-\\usepackage{parskip}
-\\setlength{\\parindent}{0pt}
-\\setlength{\\parskip}{\\baselineskip}
-% Math
-\\usepackage{amsmath}
-\\usepackage{amssymb}
-% Tables
-\\usepackage{array}
-\\usepackage{multirow}
-\\usepackage{longtable}
-% Color
-\\usepackage{xcolor}
-% Figures
-\\usepackage{graphicx} % To show figures
-\\usepackage{wrapfig}  % Wrap text around figures
-\\usepackage{subcaption}
-\\usepackage{rotating}
-% Others
-\\usepackage{float}
-\\usepackage{lastpage}
-\\usepackage[normalem]{ulem}
-\\usepackage{capt-of}
-\\usepackage{csquotes}
-\\usepackage{enumitem}
-\\usepackage{ragged2e}
-\\setlist{nosep} % or \setlist{noitemsep} to leave space around whole list
-% TOC and Appendix
-\\usepackage{appendix}
-\\usepackage[nottoc]{tocbibind}
-  \\usepackage[acronyms, section]{glossaries}
-  \\makeglossaries
-% Footers and Headers
-\\usepackage{fancyhdr}
-\\pagestyle{fancy}
-\\fancyhf{}
-\\fancyfoot[C]{\\thepage}
-\\renewcommand{\\footrulewidth}{0.1pt}
-% Bibliography
-\\usepackage{natbib}
-
-[NO-DEFAULT-PACKAGES]
-"
-
-           ("\\chapter{%s}" . "\\chapter*{%s}")
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
-
-          ("book" "\\documentclass[10pt]{book}"
-           ("\\part{%s}" . "\\part*{%s}")
-           ("\\chapter{%s}" . "\\chapter*{%s}")
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
-        )
-  ;; -------------------- Bibliography --------------------
-  (setq org-latex-prefer-user-labels t)
-  (use-package bibtex
-    :straight (:type built-in)
-    :init
-    (use-package ivy-bibtex)
-    (setq bibtex-completion-bibliography '("~/Documents/Org/Bibliography/Master.bib"))
-    (setq bibtex-completion-library-path nil)
-    (setq bibtex-completion-notes-path nil)
-    (setq bibtex-completion-pdf-field "file")
-    (setq bibtex-completion-pdf-open-function
-          (lambda (fpath)
-            (call-process "open" nil 0 nil fpath))))
-
-  (use-package org-ref
-    :bind
-    (:map bibtex-mode-map
-          ("H-]" . org-ref-bibtex-hydra/body)
-          :map org-mode-map
-          ("C-c ]" . org-ref-insert-link)
-          ("s-]" . org-ref-insert-link-hydra/body))
-    :init
-    (use-package org-ref-ivy :straight (:type built-in))
-    (setq org-ref-insert-link-function 'org-ref-insert-link-hydra/body
-          org-ref-insert-cite-function 'org-ref-cite-insert-ivy
-          org-ref-insert-label-function 'org-ref-insert-label-link
-          org-ref-insert-ref-function 'org-ref-insert-ref-link))
-
-  ;; -------------------- PDF --------------------
-  (use-package pdf-tools
-    :init
-    (use-package tablist)
-
-    :mode ("\\.pdf\\'" . pdf-view-mode)
-    :bind
-    (:map pdf-view-mode-map
-          ("C-s" . isearch-forward))
-    :config
-    (pdf-loader-install)
-    (setq pdf-view-display-size 'fit-page)
-    )
-  (use-package pdf-view-restore
-    :after pdf-tools
-    :hook
-    (pdf-view-mode . pdf-view-restore-mode)
-    :config
-    (setq pdf-view-restore-filename "~/.emacs.d/.pdf-view-restore")
-    )
-  ;; -------------------- Org Download --------------------
-  ;; https://github.com/abo-abo/org-download
-  (use-package org-download
-    :config
-    (setq org-download-display-inline-images t))
-  ;; -------------------- Beautifying Org Mode --------------------
-  ;; Emphasis - disable strikethrough
-  (setq org-emphasis-alist '(("*" bold)
-                             ("/" italic)
-                             ("_" underline)
-                             ("=" org-verbatim verbatim)
-                             ("~" org-code verbatim)
-                             ("+" (:strike-through nil))))
-  ;; Emphasis - hide markers
-  (setq org-hide-emphasis-markers t)
-  ;; Org-Superstar - https://github.com/integral-dw/org-superstar-mode
-  (use-package org-superstar
-    :hook
-    (org-mode . (lambda () (org-superstar-mode 1)))
-    :config
-    (setq org-superstar-headline-bullets-list '("◉" "◈" "○" "▷"))
-    ;; Do not cycle after bottom level
-    (setq org-superstar-cycle-headline-bullets nil)
-    )
-  ;; Fonts and Section Title color
-  (let* ((variable-tuple
-          (cond ((x-list-fonts "ETBembo")         '(:font "ETBembo"))
-                ((x-list-fonts "Source Sans Pro") '(:font "Source Sans Pro"))
-                ((x-list-fonts "Lucida Grande")   '(:font "Lucida Grande"))
-                ((x-list-fonts "Verdana")         '(:font "Verdana"))
-                ((x-family-fonts "Sans Serif")    '(:family "Sans Serif"))
-                (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
-         (base-font-color     (face-foreground 'default nil 'default))
-         (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
-
-    (custom-theme-set-faces
-     'user
-     `(org-level-8 ((t (,@headline ,@variable-tuple))))
-     `(org-level-7 ((t (,@headline ,@variable-tuple))))
-     `(org-level-6 ((t (,@headline ,@variable-tuple))))
-     `(org-level-5 ((t (,@headline ,@variable-tuple))))
-     `(org-level-4 ((t (,@headline ,@variable-tuple :forground "RoyalBlue1"   :height 1.1))))
-     `(org-level-3 ((t (,@headline ,@variable-tuple :foreground "firebrick3" :height 1.25))))
-     `(org-level-2 ((t (,@headline ,@variable-tuple :foreground "green3" :height 1.5))))
-     `(org-level-1 ((t (,@headline ,@variable-tuple :foreground "DarkOrange2" :height 1.75))))
-     `(org-document-title ((t (,@headline ,@variable-tuple :height 2.0 :underline nil))))))
-  ;; Indentation
-  (setq org-startup-indented nil)
-  ;; prettify symbols
-  (setq org-pretty-entities nil)
-  ;; images - set width
-  (setq org-startup-with-inline-images t
-        org-image-actual-width '(300))
-
-  )
 
 (use-package flyspell
   :config
@@ -1170,6 +822,394 @@
         ;; This would override `fill-column' if it's an integer.
         (emacs-lisp-docstring-fill-column t))
     (fill-paragraph nil region)))
+
+;; Tangle on config file
+    (defun my/tangle-emacs-config ()
+      "If the current file is this file, the code blocks are tangled"
+      (when (equal (buffer-file-name) (expand-file-name "~/.emacs.d/my-literate-emacs-configuration.org"))
+        (org-babel-tangle nil "~/.emacs.d/init.el")))
+
+    (use-package org
+      :straight (:type built-in)
+      :hook
+      (after-save . my/tangle-emacs-config)
+      (org-mode . (lambda ()
+                    (display-fill-column-indicator-mode)
+                    (auto-fill-mode)
+                    ))
+      :init
+      (use-package org-indent :straight (:type built-in))
+      :config
+      ;; -------------------- Org Agenda --------------------
+      ;; Org settings
+      (setq org-directory "~/Documents/Org") ;; Set default org directory
+      (setq org-default-notes-file (concat org-directory "/tasks.org")) ;; Set default org capture file
+      ;; Org agenda
+      (setq org-todo-keywords
+            '((sequence "TODO"  "|" "DONE" "CANCELED")))
+      (setq org-agenda-files '("~/Documents/Org/"))
+      (setq org-agenda-window-setup 'current-window)
+      ;; org capture
+      (setq org-capture-templates
+            '(("a" "Assignment" entry
+               (file+headline "~/Documents/Org/Academic.org" "Assignments")
+               "* TODO %?\n")
+              ("E" "Exam" entry
+               (file+headline "~/Documents/Org/Academic.org" "Exams")
+               "* TODO %?\n")
+              ("P" "Project" entry
+               (file+headline "~/Documents/Org/Academic.org" "Projects")
+               "* TODO %?\n")))
+      ;; -------------------- Evaluation of Source Blocks --------------------
+      ;; Do not confirm when evaluating code blocks
+      (setq org-confirm-babel-evaluate nil)
+      ;; Run/highlight code using babel in org-mode
+      (org-babel-do-load-languages
+       'org-babel-load-languages
+       '((python . t)
+         (js . t)
+         (latex . t)
+         (jupyter . t)
+         (sql . t)
+         (shell . t)
+         (emacs-lisp . t)))
+      ;; How to edit source code blocks: [plain, current-window, split-window-below, other-window, other-frame]
+      (setq org-src-window-setup 'current-window)
+      ;; Edit source code blocks menu
+      (setq org-structure-template-alist
+            '(("a" . "export ascii\n")
+              ("c" . "center\n")
+              ("C" . "comment\n")
+              ("e" . "src emacs-lisp\n")
+              ("E" . "export")
+              ("h" . "export html\n")
+              ("l" . "src latex\n")
+              ("q" . "quote\n")
+              ("p" . "src python\n")
+              ("s" . "src sql")
+              ("v" . "verse\n")))
+      ;; -------------------- Export reveal --------------------
+      (use-package htmlize)
+      ;; -------------------- Various Behavior --------------------
+      ;; Follow link when hitting return
+      (setq org-return-follows-link t)
+      ;; -------------------- Latex Exports --------------------
+      ;; auctex
+      (use-package tex
+        :straight auctex)
+      ;; Remove logfiles
+      (setq org-latex-logfiles-extensions '(
+                                            ;; Default settings
+                                            "aux" "bcf" "blg" "fdb_latexmk" "fls" "figlist" "idx" "log" "nav" "out" "ptc" "run.xml" "snm" "toc" "vrb" "xdv"
+                                            ;; Added settings
+                                            "bbl" "lof" "lot" "tex" "glo" "ist" "glg" "gls" "acn" "acr" "alg" "loa"
+                                            ))
+      (setq org-latex-remove-logfiles t)
+      ;; Set default figure position
+      (setq org-latex-default-figure-position "H")
+      ;; Set default caption position
+      (setq org-latex-caption-above nil) ;; '("table" "image")
+      ;; Set default export to async
+      (setq org-export-in-background nil)
+      ;; Remove default header exports
+      (setq org-export-with-title t
+            org-export-with-date t
+            org-export-with-author t
+            org-export-with-creator nil
+            org-export-with-toc t
+            )
+      ;; add glossary and acronyms
+      (add-to-list 'org-export-before-parsing-hook 'org-ref-acronyms-before-parsing)
+      (add-to-list 'org-export-before-parsing-hook 'org-ref-glossary-before-parsing)
+      ;; Latex compilation
+      ;; (setq org-latex-pdf-process (list "latexmk -shell-escape -bibtex -f -pdf %f"))
+      (setq org-latex-pdf-process
+            '("pdflatex -interaction nonstopmode -output-directory %o %f"
+              "bibtex %b"
+              "makeglossaries %b"
+              "pdflatex -interaction nonstopmode -output-directory %o %f"
+              "pdflatex -interaction nonstopmode -output-directory %o %f"))
+      ;; Latex classes
+      (setq org-latex-classes
+            '(("article"
+               "
+    \\documentclass[10pt]{article}
+    % Setup
+    \\usepackage[english]{babel}
+    \\usepackage[utf8]{inputenc}
+    \\usepackage{import}
+    \\usepackage[hidelinks]{hyperref}
+    \\usepackage{url}
+    \\hypersetup{colorlinks=false}
+    % Geometry
+    \\usepackage[a4paper, width=150mm, top=25mm, bottom=25mm]{geometry}
+    \\usepackage{parskip}
+    \\setlength{\\parindent}{0pt}
+    \\setlength{\\parskip}{\\baselineskip}
+    % Math
+    \\usepackage{amsmath}
+    \\usepackage{amssymb}
+    % Tables
+    \\usepackage{array}
+    \\usepackage{multirow}
+    \\usepackage{longtable}
+    % Color
+    \\usepackage{xcolor}
+    % Figures
+    \\usepackage{graphicx} % To show figures
+    \\usepackage{wrapfig}  % Wrap text around figures
+    \\usepackage{subcaption}
+    \\usepackage{rotating}
+    % Others
+    \\usepackage{float}
+    \\usepackage{lastpage}
+    \\usepackage[normalem]{ulem}
+    \\usepackage{capt-of}
+    \\usepackage{csquotes}
+    \\usepackage{enumitem}
+    \\usepackage{ragged2e}
+    \\setlist{nosep} % or \setlist{noitemsep} to leave space around whole list
+    % TOC and Appendix
+    \\usepackage{appendix}
+    \\usepackage[nottoc]{tocbibind}
+      \\usepackage[acronyms, section]{glossaries}
+      \\makeglossaries
+    % Footers and Headers
+    \\usepackage{fancyhdr}
+    \\pagestyle{fancy}
+    \\fancyhf{}
+    \\fancyfoot[C]{\\thepage}
+    \\renewcommand{\\footrulewidth}{0.1pt}
+    % Bibliography
+    \\usepackage{natbib}
+    \\makeatletter
+    \\renewcommand{\\maketitle}{%
+    \\begingroup\\parindent0pt
+    \\Large{\\bfseries\\@title}\\newline
+    \\normalsize{\\bfseries\\@author}\\newline
+    \\normalsize{\\@date}\\vspace{-0.2cm}\\newline
+    \\noindent\\makebox[\\textwidth]{\\rule{\\textwidth}{0.4pt}}
+    \\endgroup\\@afterindentfalse\\@afterheading}
+    \\makeatother
+    [NO-DEFAULT-PACKAGES]
+    "
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+
+              ("report"
+               "
+    \\documentclass[10pt]{report}
+    % Setup
+    \\usepackage[english]{babel}
+    \\usepackage[utf8]{inputenc}
+    \\usepackage{import}
+    \\usepackage[hidelinks]{hyperref}
+    \\usepackage{url}
+    \\hypersetup{colorlinks=false}
+    % Geometry
+    \\usepackage[a4paper, width=150mm, top=25mm, bottom=25mm]{geometry}
+    \\usepackage{parskip}
+    \\setlength{\\parindent}{0pt}
+    \\setlength{\\parskip}{\\baselineskip}
+    % Math
+    \\usepackage{amsmath}
+    \\usepackage{amssymb}
+    \\usepackage[ruled, vlined]{algorithm2e}
+    \\usepackage{mathrsfs}
+    % Tables
+    \\usepackage{array}
+    \\usepackage{multirow}
+    \\usepackage{longtable}
+    \\usepackage{lscape}
+    % Color
+    \\usepackage{xcolor}
+    % Figures
+    \\usepackage{graphicx} % To show figures
+    \\usepackage{wrapfig}  % Wrap text around figures
+    \\usepackage{subcaption}
+    \\usepackage{rotating}
+    % others
+    \\usepackage{float}
+    \\usepackage{lastpage}
+    \\usepackage[normalem]{ulem}
+    \\usepackage{capt-of}
+    \\usepackage{csquotes}
+    \\usepackage{enumitem}
+    \\usepackage{ragged2e}
+    \\usepackage{comment}
+    \\setlist{nosep} % or \setlist{noitemsep} to leave space around whole list
+    % TOC and Appendix
+    \\usepackage{appendix}
+    \\usepackage[nottoc]{tocbibind}
+      \\usepackage[acronyms, section]{glossaries}
+      \\makeglossaries
+    % Footers and Headers
+    \\usepackage{fancyhdr}
+    \\pagestyle{fancy}
+    \\fancyhf{}
+    \\fancyfoot[C]{\\thepage}
+    \\renewcommand{\\footrulewidth}{0.1pt}
+    % Bibliography
+    \\usepackage{natbib}
+
+    [NO-DEFAULT-PACKAGES]
+    "
+
+               ("\\chapter{%s}" . "\\chapter*{%s}")
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+
+
+              ;; Book
+              ("book" "\\documentclass[10pt]{book}"
+               ("\\part{%s}" . "\\part*{%s}")
+               ("\\chapter{%s}" . "\\chapter*{%s}")
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+              ;; Beamer
+              ("beamer"
+  "
+  \\documentclass[presentation]{beamer}
+\\usepackage{listings}
+\\lstloadlanguages{XML,XSLT}
+\\lstset{defaultdialect=XSLT,frame=single,
+	framesep=.5em,backgroundcolor=\\color{AliceBlue},
+	rulecolor=\\color{LightSteelBlue},framerule=1pt}
+\\usepackage{xcolor}
+\\newcommand\\basicdefault[1]{\\scriptsize\\color{Black}\\ttfamily#1}
+\\lstset{basicstyle=\\basicdefault{\\spaceskip.5em}}
+\\lstset{literate=
+	    {§}{{\\S}}1
+	    {©}{{\\raisebox{.125ex}{\\copyright}\\enspace}}1
+	    {«}{{\\guillemotleft}}1
+	    {»}{{\\guillemotright}}1
+	    {’}{{'}}1
+	    {…}{{\dots}}1
+	    keywordstyle=\\color{DarkGreen}\bfseries,
+	    identifierstyle=\\color{DarkRed},
+	    commentstyle=\\color{Gray}\\upshape,
+	    stringstyle=\\color{DarkBlue}\\upshape,
+	    emphstyle=\\color{Chocolate}\\upshape,
+	    showstringspaces=false,
+	    columns=fullflexible,
+	    keepspaces=true}
+
+  [DEFAULT-PACKAGES]
+  [PACKAGES]
+  [EXTRA]
+  "
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))
+
+            ))
+      ;; -------------------- Bibliography --------------------
+      (setq org-latex-prefer-user-labels t)
+      (use-package bibtex
+        :straight (:type built-in)
+        :init
+        (use-package ivy-bibtex)
+        (setq bibtex-completion-bibliography '("~/Documents/Org/Bibliography/Master.bib"))
+        (setq bibtex-completion-library-path nil)
+        (setq bibtex-completion-notes-path nil)
+        (setq bibtex-completion-pdf-field "file")
+        (setq bibtex-completion-pdf-open-function
+              (lambda (fpath)
+                (call-process "open" nil 0 nil fpath))))
+
+      (use-package org-ref
+        :bind
+        (:map bibtex-mode-map
+              ("H-]" . org-ref-bibtex-hydra/body)
+              :map org-mode-map
+              ("C-c ]" . org-ref-insert-link)
+              ("s-]" . org-ref-insert-link-hydra/body))
+        :init
+        (use-package org-ref-ivy :straight (:type built-in))
+        (setq org-ref-insert-link-function 'org-ref-insert-link-hydra/body
+              org-ref-insert-cite-function 'org-ref-cite-insert-ivy
+              org-ref-insert-label-function 'org-ref-insert-label-link
+              org-ref-insert-ref-function 'org-ref-insert-ref-link))
+
+      ;; -------------------- PDF --------------------
+      (use-package pdf-tools
+        :init
+        (use-package tablist)
+
+        :mode ("\\.pdf\\'" . pdf-view-mode)
+        :bind
+        (:map pdf-view-mode-map
+              ("C-s" . isearch-forward))
+        :config
+        (pdf-loader-install)
+        (setq pdf-view-display-size 'fit-page)
+        )
+      (use-package pdf-view-restore
+        :after pdf-tools
+        :hook
+        (pdf-view-mode . pdf-view-restore-mode)
+        :config
+        (setq pdf-view-restore-filename "~/.emacs.d/.pdf-view-restore")
+        )
+      ;; -------------------- Org Download --------------------
+      ;; https://github.com/abo-abo/org-download
+      (use-package org-download
+        :config
+        (setq org-download-display-inline-images t))
+      ;; -------------------- Beautifying Org Mode --------------------
+      ;; Emphasis - disable strikethrough
+      (setq org-emphasis-alist '(("*" bold)
+                                 ("/" italic)
+                                 ("_" underline)
+                                 ("=" org-verbatim verbatim)
+                                 ("~" org-code verbatim)
+                                 ("+" (:strike-through nil))))
+      ;; Emphasis - hide markers
+      (setq org-hide-emphasis-markers t)
+      ;; Org-Superstar - https://github.com/integral-dw/org-superstar-mode
+      (use-package org-superstar
+        :hook
+        (org-mode . (lambda () (org-superstar-mode 1)))
+        :config
+        (setq org-superstar-headline-bullets-list '("◉" "◈" "○" "▷"))
+        ;; Do not cycle after bottom level
+        (setq org-superstar-cycle-headline-bullets nil)
+        )
+      ;; Fonts and Section Title color
+      (let* ((variable-tuple
+              (cond ((x-list-fonts "ETBembo")         '(:font "ETBembo"))
+                    ((x-list-fonts "Source Sans Pro") '(:font "Source Sans Pro"))
+                    ((x-list-fonts "Lucida Grande")   '(:font "Lucida Grande"))
+                    ((x-list-fonts "Verdana")         '(:font "Verdana"))
+                    ((x-family-fonts "Sans Serif")    '(:family "Sans Serif"))
+                    (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
+             (base-font-color     (face-foreground 'default nil 'default))
+             (headline           `(:inherit default :weight bold :foreground ,base-font-color)))
+
+        (custom-theme-set-faces
+         'user
+         `(org-level-8 ((t (,@headline ,@variable-tuple))))
+         `(org-level-7 ((t (,@headline ,@variable-tuple))))
+         `(org-level-6 ((t (,@headline ,@variable-tuple))))
+         `(org-level-5 ((t (,@headline ,@variable-tuple))))
+         `(org-level-4 ((t (,@headline ,@variable-tuple :forground "RoyalBlue1"   :height 1.1))))
+         `(org-level-3 ((t (,@headline ,@variable-tuple :foreground "firebrick3" :height 1.25))))
+         `(org-level-2 ((t (,@headline ,@variable-tuple :foreground "green3" :height 1.5))))
+         `(org-level-1 ((t (,@headline ,@variable-tuple :foreground "DarkOrange2" :height 1.75))))
+         `(org-document-title ((t (,@headline ,@variable-tuple :height 2.0 :underline nil))))))
+      ;; Indentation
+      (setq org-startup-indented nil)
+      ;; prettify symbols
+      (setq org-pretty-entities nil)
+      ;; images - set width
+      (setq org-startup-with-inline-images t
+            org-image-actual-width '(300))
+)
 
 (defun my/get-file-content-as-string (filePath)
   "Return filePath's content as string."

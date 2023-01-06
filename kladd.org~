@@ -1,192 +1,3 @@
-#+TITLE: My Literate Emacs Configuration
-#+AUTHOR: Simen Omholt-Jensen
-#+STARTUP:     hidestars overview
-#+PROPERTIES: header-args:emacs-lisp :tangle "~/.emacs.d/init.el"
-
-
-[[https://github.com/simenojensen/.emacs.d/blob/master/my-literate-emacs-configuration.org][My Configs]]
-
-* Start up
-** Lexical Binding
-
-#+begin_quote
-Until Emacs 24.1 (June 2012), Elisp only had dynamically scoped variables, a
-feature, mostly by accident, common to old lisp dialects. While dynamic scope
-has some selective uses, it’s widely regarded as a mistake for local variables,
-and virtually no other languages have adopted it.
-#+end_quote
-
-[[https://nullprogram.com/blog/2016/12/22/][More Information]]
-
-#+begin_src emacs-lisp
-  ;;; init.el --- -*- lexical-binding: t -*-
-#+end_src
-
-** Avoid Garbage Collection at Startup
-
-#+begin_quote
-The GC can easily double startup time, so we suppress it at startup by turning
-up =gc-cons-threshold= (and perhaps =gc-cons-percentage=) temporarily:
-#+end_quote
-
-[[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how-does-doom-start-up-so-quickly][More Information]]
-
-#+begin_src emacs-lisp
-  (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
-        gc-cons-percentage 0.6)
-#+end_src
-
-** Benchmarking
-
-First, declare a hook which will benchmark the startup process. It reports how
-long the it took to start up, and how many garbage collections were performed.
-
-[[https://blog.d46.us/advanced-emacs-startup/][More Information]]
-
-#+begin_src emacs-lisp
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (message "Emacs ready in %s with %d garbage collections."
-                       (format "%.2f seconds"
-                               (float-time
-                                (time-subtract after-init-time before-init-time)))
-                       gcs-done)))
-#+end_src
-
-** Unset =file-name-handler-alist=
-
-Every file opened and loaded by Emacs will run through this list to check for a
-proper handler for the file, but during startup, it won’t need any of them.
-
-#+begin_src emacs-lisp
-  (defvar file-name-handler-alist-original file-name-handler-alist)
-  (setq file-name-handler-alist nil)
-#+end_src
-
-* Garbage Collection
-** Set =gc-cons-threshold= Smaller for Interactive Use
-
-A large =gc-cons-threshold= may cause freezing and stuttering during long-term
-interactive use. If you experience freezing, decrease this amount, if you
-increase stuttering, increase this amount.
-
-#+begin_src emacs-lisp
-  (defvar better-gc-cons-threshold 100000000 ; 100mb
-    "The default value to use for `gc-cons-threshold'.
-     If you experience freezing, decrease this.  If you experience stuttering, increase this.")
-
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (setq gc-cons-threshold better-gc-cons-threshold)
-              (setq file-name-handler-alist file-name-handler-alist-original)
-              (makunbound 'file-name-handler-alist-original)))
-#+end_src
-
-Garbage Collect when Emacs is out of focus and avoid garbage collection when
-using minibuffer.
-
-#+begin_src emacs-lisp
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (if (boundp 'after-focus-change-function)
-                  (add-function :after after-focus-change-function
-                                (lambda ()
-                                  (unless (frame-focus-state)
-                                    (garbage-collect))))
-                (add-hook 'after-focus-change-function 'garbage-collect))
-              (defun gc-minibuffer-setup-hook ()
-                (setq gc-cons-threshold (* better-gc-cons-threshold 2)))
-
-              (defun gc-minibuffer-exit-hook ()
-                (garbage-collect)
-                (setq gc-cons-threshold better-gc-cons-threshold))
-
-              (add-hook 'minibuffer-setup-hook #'gc-minibuffer-setup-hook)
-              (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit-hook)))
-#+end_src
-
-* Package Management
-** =straight.el=
-
-[[https://github.com/raxod502/straight.el#getting-started][More Information]]
-
-#+begin_src emacs-lisp
-  (defvar bootstrap-version)
-  (let ((bootstrap-file
-         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-        (bootstrap-version 5))
-    (unless (file-exists-p bootstrap-file)
-      (with-current-buffer
-          (url-retrieve-synchronously
-           "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-           'silent 'inhibit-cookies)
-        (goto-char (point-max))
-        (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage))
-#+end_src
-
-*** =use-package= integration
-[[https://github.com/raxod502/straight.el#getting-started][More Information]]
-
-#+begin_src emacs-lisp
-  (straight-use-package 'use-package)
-  (setq straight-use-package-by-default t)
-#+end_src
-
-** =package-enable-at-startup=
-
-Set =package-enable-at-startup= to =nil= to prevent superfluous loading of packages.
-
-[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Package-Installation.html][More Information]]
-
-#+begin_src emacs-lisp
-  (setq-default package-enable-at-startup nil)
-#+end_src
-
-** Prefer Newer =.el= Files Over Older =.elc= Files.
-
-#+begin_src emacs-lisp
-  (setq-default load-prefer-newer t)
-#+end_src
-
-** Automatically Compile Packages During Startup.
-
-[[https://github.com/emacscollective/auto-compile][More Information]]
-
-#+begin_src emacs-lisp
-  (use-package auto-compile
-    :config
-    (auto-compile-on-load-mode)
-    (auto-compile-on-save-mode))
-#+end_src
-
-** =bind-key=
-
-To use with =use-package=.
-
-#+begin_src emacs-lisp
-  (use-package bind-key)
-#+end_src
-
-** =diminish=
-
-The =diminish= package makes it possible to remove clutter from the modeline. The =:diminish= keyword in the =use-package= declarations signify =diminish= invocation.
-
-[[https://github.com/myrjola/diminish.el][More Information]]
-
-#+begin_src emacs-lisp
-  (use-package diminish)
-#+end_src
-
-** =try=
-
-The =try= package let's you try new packages without installed them. On the next restart of Emacs, they are not loaded.
-
-[[https://github.com/larstvei/Try][More Information]]
-
-#+begin_src emacs-lisp
-  (use-package try)
-#+end_src
 
 * Global Functionalities
 ** User Information
@@ -612,6 +423,7 @@ Helpful is an alternative to the built-in Emacs help that provides much more con
 #+begin_src emacs-lisp
   (use-package restart-emacs)
 #+end_src
+
 * Navigation
 ** =ace-window=
 
@@ -637,6 +449,7 @@ Built-in =winner-mode= for remembering previous window actions.
 #+begin_src emacs-lisp
   (winner-mode 1)
 #+end_src
+
 * Console
 ** =vterm=
 Emacs-libvterm (vterm) is fully-fledged terminal emulator inside GNU Emacs based on libvterm, a C library. As a result of using compiled code (instead of elisp), emacs-libvterm is fully capable, fast, and it can seamlessly handle large outputs.
@@ -1184,6 +997,7 @@ Usage:
 #+begin_src emacs-lisp
   (use-package cython-mode)
 #+end_src
+
 * CPP
 * Java
 ** =lsp-java=
@@ -1387,11 +1201,11 @@ Usage:
 
 [[https://github.com/seagle0128/all-the-icons-ivy-rich][More Information]]
 
-#+begin_src emacs-lisp
+  #+begin_src emacs-lisp
     (use-package all-the-icons-ivy-rich
       :config
       (all-the-icons-ivy-rich-mode 1))
-#+end_src
+  #+end_src
 
 *** =ivy-rich=
 
@@ -1454,6 +1268,44 @@ Doom Themes, an UI plugin and pack of themes
     ;; (load-theme 'doom-gruvbox t)
 #+end_src
 
+*** Other Themes
+
+#+begin_src emacs-lisp
+  ;; (use-package spacemacs-theme
+    ;; :config
+    ;; (load-theme spacemacs-theme-light)
+    ;; )
+  (use-package solarized-theme)
+  (use-package darktooth-theme)
+  (use-package kaolin-themes)
+  (use-package gruvbox-theme
+    :config
+    ;; (load-theme 'gruvbox)
+    )
+
+  (use-package solo-jazz-theme
+    :config
+    ;; (load-theme 'solo-jazz t)
+    )
+
+
+  (use-package vs-light-theme
+    :config
+    ;; (load-theme 'vs-light)
+    )
+
+
+  (use-package color-theme-sanityinc-tomorrow)
+  (use-package color-theme-sanityinc-solarized)
+  (use-package kaolin-themes
+    :config
+    ;; (load-theme 'kaolin-light t)
+    (kaolin-treemacs-theme))
+
+
+#+end_src
+
+
 ** Doom Modeline
 
 Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
@@ -1471,6 +1323,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     (setq doom-modeline-major-mode-color-icon t)
     (setq doom-modeline-height 15))
 #+end_src
+
 ** =beacon=
 
 [[https://github.com/Malabarba/beacon][More Information]]
@@ -1481,6 +1334,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     (beacon-mode 1)
     (setq beacon-color "#39FF14"))
 #+end_src
+
 ** =rainbow-delimiters=
 
 [[https://github.com/Fanael/rainbow-delimiters][More Information]]
@@ -1490,6 +1344,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     :hook
     (prog-mode . rainbow-delimiters-mode))
 #+end_src
+
 ** =dimmer.el=
 
 [[https://github.com/gonewest818/dimmer.el][More Information]]
@@ -1501,98 +1356,21 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     (dimmer-mode t))
 #+end_src
 
-* Writing
-** =flyspell=
-#+begin_src emacs-lisp
-  (use-package flyspell
-    :config
-    (setenv
-     "DICPATH"
-     (concat (getenv "HOME") "/Library/Spelling"))
-    (setenv "DICTIONARY" "en_US")
-    ;; Tell ispell-mode to use hunspell.
-    (setq ispell-program-name "hunspell")
-    (setq-default ispell-hunspell-dict-paths-alist
-                  '(("en_US" "~/Library/Spelling/en_US.aff")
-                    ("nb" "~/Library/Spelling/nb.aff")
-                    )))
+** =dashboard=
 
-  (defun my/save-word-to-personal-dictionary ()
-    "Save word to personal dictionary"
-    (interactive)
-    (let ((current-location (point))
-          (word (flyspell-get-word)))
-      (when (consp word)
-        (flyspell-do-correct 'save nil (car word) current-location (cadr word) (caddr word) current-location))))
-
-  ;; Remap
-  (unbind-key "C-c $" flyspell-mode-map)
-  (bind-key "C-c $" 'my/save-word-to-personal-dictionary flyspell-mode-map)
-
-  ;; Norsk tastatur
-  (bind-key "C-ø" 'flyspell-auto-correct-previous-word flyspell-mode-map)
-#+end_src
-
-** =synosaurus=
-
-Synosaurus is a thesaurus fontend for Emacs with pluggable backends.
-[[https://github.com/hpdeifel/synosaurus][More Information]]
-
-#+begin_src emacs-lisp
-  (use-package synosaurus
-    :init
-    (synosaurus-mode)
-    :hook
-    (text-mode . synosaurus-mode)
-    :config
-    (setq synosaurus-choose-method 'ido))
-#+end_src
-
-** =guess-language=
-=guess-language= is an Emacs minor mode that detects the language of what you're
-typing. Automatically switches the spell checker and typo-mode if present.
-[[https://github.com/tmalsburg/guess-language.el][More Information]]
+=dashboard= is an extensible emacs startup screen showing you what's most important.
+[[https://github.com/emacs-dashboard/emacs-dashboard][More Information]]
 
 #+begin_src emacs-lisp :tangle no
-  (use-package guess-language
-    :hook
-    (text-mode . guess-language-mode)
+  ;; Dependency
+  (use-package page-break-lines)
+
+  (use-package dashboard
     :config
-    (setq guess-language-langcodes '((en . ("en_US" "English"))
-                                     (no . ("nb_NO" "Norwegian"))))
-    (setq guess-language-languages '(en no))
-    (setq guess-language-min-paragraph-length 45))
+    (setq show-week-agenda-p t)
+    (dashboard-setup-startup-hook))
 #+end_src
 
-** languagetool
-#+begin_src emacs-lisp
-  (use-package langtool
-    :init
-    (setq langtool-default-language "en-US")
-    (setq langtool-bin "/opt/homebrew/bin/languagetool")
-    )
-#+end_src
-
-** =lsp-grammarly=
-[[https://github.com/emacs-grammarly/lsp-grammarly][More Information]]
-#+begin_src emacs-lisp :tangle no
-  (use-package lsp-grammarly
-    :hook (org-mode . (lambda ()
-                        (require 'lsp-grammarly)
-                        (lsp))))
-#+end_src
-
-** =unfill-paragraph=
-#+begin_src emacs-lisp
-      ;;; Stefan Monnier <foo at acm.org>. It is the opposite of fill-paragraph
-      (defun unfill-paragraph (&optional region)
-        "Takes a multi-line paragraph and makes it into a single line of text."
-        (interactive (progn (barf-if-buffer-read-only) '(t)))
-        (let ((fill-column (point-max))
-              ;; This would override `fill-column' if it's an integer.
-              (emacs-lisp-docstring-fill-column t))
-          (fill-paragraph nil region)))
-#+end_src
 * Org
 #+begin_src emacs-lisp
     ;; Tangle on config file
@@ -1606,6 +1384,7 @@ typing. Automatically switches the spell checker and typo-mode if present.
       :hook
       (after-save . my/tangle-emacs-config)
       (org-mode . (lambda ()
+                    (flyspell-mode)
                     (display-fill-column-indicator-mode)
                     (auto-fill-mode)
                     ))
@@ -1662,6 +1441,10 @@ typing. Automatically switches the spell checker and typo-mode if present.
               ("v" . "verse\n")))
       ;; -------------------- Export reveal --------------------
       (use-package htmlize)
+      ;; (use-package ox-reveal
+      ;;   :init
+      ;;   (setq org-reveal-root "file:///Users/simenojensen/.emacs.d/Packages/reveal.js")
+      ;;   (setq org-reveal-mathjax t))
       ;; -------------------- Various Behavior --------------------
       ;; Follow link when hitting return
       (setq org-return-follows-link t)
@@ -1859,14 +1642,39 @@ typing. Automatically switches the spell checker and typo-mode if present.
 	    {§}{{\\S}}1
 	    {©}{{\\raisebox{.125ex}{\\copyright}\\enspace}}1
 	    {«}{{\\guillemotleft}}1
-	    {»}{{\\guillemotright}}1
+	    {»}{{\guillemotright}}1
+	    {Á}{{\'A}}1
+	    {Ä}{{\"A}}1
+	    {É}{{\'E}}1
+	    {Í}{{\'I}}1
+	    {Ó}{{\'O}}1
+	    {Ö}{{\"O}}1
+	    {Ú}{{\'U}}1
+	    {Ü}{{\"U}}1
+	    {ß}{{\ss}}2
+	    {à}{{\`a}}1
+	    {á}{{\'a}}1
+	    {ä}{{\"a}}1
+	    {é}{{\'e}}1
+	    {í}{{\'i}}1
+	    {ó}{{\'o}}1
+	    {ö}{{\"o}}1
+	    {ú}{{\'u}}1
+	    {ü}{{\"u}}1
+	    {¹}{{\textsuperscript1}}1
+            {²}{{\textsuperscript2}}1
+            {³}{{\textsuperscript3}}1
+	    {ı}{{\i}}1
+	    {—}{{---}}1
 	    {’}{{'}}1
 	    {…}{{\dots}}1
-	    keywordstyle=\\color{DarkGreen}\bfseries,
-	    identifierstyle=\\color{DarkRed},
-	    commentstyle=\\color{Gray}\\upshape,
-	    stringstyle=\\color{DarkBlue}\\upshape,
-	    emphstyle=\\color{Chocolate}\\upshape,
+            {⮠}{{$\hookleftarrow$}}1
+	    {␣}{{\textvisiblespace}}1,
+	    keywordstyle=\color{DarkGreen}\bfseries,
+	    identifierstyle=\color{DarkRed},
+	    commentstyle=\color{Gray}\upshape,
+	    stringstyle=\color{DarkBlue}\upshape,
+	    emphstyle=\color{Chocolate}\upshape,
 	    showstringspaces=false,
 	    columns=fullflexible,
 	    keepspaces=true}
@@ -1981,7 +1789,106 @@ typing. Automatically switches the spell checker and typo-mode if present.
       ;; images - set width
       (setq org-startup-with-inline-images t
             org-image-actual-width '(300))
-)
+
+      )
+#+end_src
+
+#+RESULTS:
+| (lambda nil (flyspell-mode) (display-fill-column-indicator-mode) (auto-fill-mode)) | (lambda nil (org-superstar-mode 1)) | (closure (bootstrap-version t) nil (flyspell-mode) (display-fill-column-indicator-mode) (auto-fill-mode)) | (closure (bootstrap-version t) nil (org-superstar-mode 1)) | org-ref-org-menu | jupyter-org-interaction-mode | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | (closure ((mode . org-mode-hook) (--dolist-tail--) bootstrap-version t) nil (display-line-numbers-mode 0)) |
+
+** Bibliography
+
+* Writing
+** =flyspell=
+#+begin_src emacs-lisp
+  (use-package flyspell
+    :config
+    (setenv
+     "DICPATH"
+     (concat (getenv "HOME") "/Library/Spelling"))
+    (setenv "DICTIONARY" "en_US")
+    ;; Tell ispell-mode to use hunspell.
+    (setq ispell-program-name "hunspell")
+    (setq-default ispell-hunspell-dict-paths-alist
+                  '(("en_US" "~/Library/Spelling/en_US.aff")
+                    ("nb" "~/Library/Spelling/nb.aff")
+                    )))
+
+  (defun my/save-word-to-personal-dictionary ()
+    "Save word to personal dictionary"
+    (interactive)
+    (let ((current-location (point))
+          (word (flyspell-get-word)))
+      (when (consp word)
+        (flyspell-do-correct 'save nil (car word) current-location (cadr word) (caddr word) current-location))))
+
+  ;; Remap
+  (unbind-key "C-c $" flyspell-mode-map)
+  (bind-key "C-c $" 'my/save-word-to-personal-dictionary flyspell-mode-map)
+
+  ;; Norsk tastatur
+  (bind-key "C-ø" 'flyspell-auto-correct-previous-word flyspell-mode-map)
+#+end_src
+
+** =synosaurus=
+
+Synosaurus is a thesaurus fontend for Emacs with pluggable backends.
+[[https://github.com/hpdeifel/synosaurus][More Information]]
+
+#+begin_src emacs-lisp
+  (use-package synosaurus
+    :init
+    (synosaurus-mode)
+    :hook
+    (text-mode . synosaurus-mode)
+    :config
+    (setq synosaurus-choose-method 'ido))
+#+end_src
+
+** =guess-language=
+=guess-language= is an Emacs minor mode that detects the language of what you're
+typing. Automatically switches the spell checker and typo-mode if present.
+[[https://github.com/tmalsburg/guess-language.el][More Information]]
+
+#+begin_src emacs-lisp :tangle no
+  (use-package guess-language
+    :hook
+    (text-mode . guess-language-mode)
+    :config
+    (setq guess-language-langcodes '((en . ("en_US" "English"))
+                                     (no . ("nb_NO" "Norwegian"))))
+    (setq guess-language-languages '(en no))
+    (setq guess-language-min-paragraph-length 45))
+#+end_src
+
+** languagetool
+#+begin_src emacs-lisp
+  (use-package langtool
+    :init
+    (setq langtool-default-language "en-US")
+    (setq langtool-bin "/opt/homebrew/bin/languagetool")
+    )
+#+end_src
+
+** =lsp-grammarly=
+[[https://github.com/emacs-grammarly/lsp-grammarly][More Information]]
+#+begin_src emacs-lisp :tangle no
+  (use-package lsp-grammarly
+    :hook (org-mode . (lambda ()
+                        (require 'lsp-grammarly)
+                        (lsp))))
+#+end_src
+
+** =unfill-paragraph=
+#+begin_src emacs-lisp
+      ;;; Stefan Monnier <foo at acm.org>. It is the opposite of fill-paragraph
+      (defun unfill-paragraph (&optional region)
+        "Takes a multi-line paragraph and makes it into a single line of text."
+        (interactive (progn (barf-if-buffer-read-only) '(t)))
+        (let ((fill-column (point-max))
+              ;; This would override `fill-column' if it's an integer.
+              (emacs-lisp-docstring-fill-column t))
+          (fill-paragraph nil region)))
 #+end_src
 
 * Elisp Functions
@@ -2070,6 +1977,7 @@ typing. Automatically switches the spell checker and typo-mode if present.
 
   (bind-key "C-x C-t" 'window-split-toggle)
 #+end_src
+
 * Tools
 ** Wireshark
 *** =pcap-mode=
@@ -2127,6 +2035,7 @@ typing. Automatically switches the spell checker and typo-mode if present.
     (setq tramp-default-method "ssh")
     )
 #+end_src
+
 * Experimental
 
 #+begin_src emacs-lisp
@@ -2144,5 +2053,5 @@ typing. Automatically switches the spell checker and typo-mode if present.
 - [[https://github.com/hpdeifel/synosaurus][synosaurus]]
 - [[https://github.com/org-roam/org-roam][org-roam]]
   - [[https://rgoswami.me/posts/org-note-workflow/][org-mode notes workflow]]
-- =org2blog= to wordpress
+- =org2blog= to wordspress
 - =org-publish=
