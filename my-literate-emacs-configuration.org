@@ -116,15 +116,15 @@ using minibuffer.
 #+begin_src emacs-lisp :tangle init.el
   (defvar bootstrap-version)
   (let ((bootstrap-file
-	 (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-	(bootstrap-version 6))
+         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 6))
     (unless (file-exists-p bootstrap-file)
       (with-current-buffer
-	  (url-retrieve-synchronously
-	   "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-	   'silent 'inhibit-cookies)
-	(goto-char (point-max))
-	(eval-print-last-sexp)))
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
     (load bootstrap-file nil 'nomessage))
 
   ;; Install use-package
@@ -132,8 +132,8 @@ using minibuffer.
 
   ;; Configure use-package to use straight.el by default
   (use-package straight
-	       :custom
-	       (straight-use-package-by-default t))
+    :config
+    (setq straight-use-package-by-default t))
 #+end_src
 
 ** =bind-key=
@@ -172,51 +172,52 @@ The =try= package let's you try new packages without installed them. On the next
 ** Convenient Default Settings
 
 #+begin_src emacs-lisp :tangle init.el
-  (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))                       ;; Fancy titlebar for MacOS
-  (add-to-list 'default-frame-alist '(ns-appearance . dark))                              ;; Fancy titlebar for MacOS
-  (setq ns-use-proxy-icon  nil)                                                           ;; Fancy titlebar for MacOS
-  (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
-                                       (abbreviate-file-name (buffer-file-name)) "%b")))
-  (set-language-environment "UTF-8")                                                      ;; Set enconding language
-  (set-default-coding-systems 'utf-8)                                                     ;; Set enconding language
-  (prefer-coding-system 'utf-8)                                                           ;; Set enconding language
-  (set-terminal-coding-system 'utf-8)                                                     ;; Set enconding language
-  (set-keyboard-coding-system 'utf-8)                                                     ;; Set enconding language
-  (global-display-line-numbers-mode)                                                      ;; Display line numbers
-  (dolist (mode '(org-mode-hook                                                           ;; Disable line numbers for some modes
-                  term-mode-hook
-                  vterm-mode-hook
-                  jupyter-repl-mode-hook
-                  eshell-mode-hook))
-    (add-hook mode (lambda () (display-line-numbers-mode 0))))
-  (setq-default read-process-output-max (* 1024 1024))                                    ;; Increase the amount of data which Emacs reads from the process
-  (setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
-  (setq-default column-number-mode t)                                                     ;; Display column numbers
-  (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
-  (setq inhibit-startup-echo-area-message t)                                              ;; Don't show the startup echo message
-  (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
-  (set-fringe-mode 10)                                                                    ;; Give some breathing room
-  (set-default 'truncate-lines t)                                                         ;; default truncate lines
-  (setq debug-on-error nil)                                                               ;; Receive more information errors
-  (setq custom-file "~/.emacs.d/custom.el")
-  (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
-  (setq-default create-lockfiles nil)                                                     ;; Disable lock files
-  (setq-default backup-directory-alist '(("." . "/Users/simenojensen/.emacs.d/backups"))) ;; Save backup files
-  (setq-default indent-tabs-mode nil)                                                     ;; Don't use hard tabs
-  (setq echo-keystrokes 0.1)                                                              ;; Echo keystrokes fast
-  (fset 'yes-or-no-p 'y-or-n-p)                                                           ;; y-or-n instead of yes-or-no
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)                                ;; Delete trailing whitespace on save
-  (setq require-final-newline t)                                                          ;; Add a newline at end of file on save
-  (global-auto-revert-mode t)                                                             ;; Automatically update buffers if a file content has changed on disk
-  (save-place-mode t)                                                                     ;; Save position of the point in file
-  (global-hl-line-mode t)                                                                 ;; Highlight the line with the point
-  (add-hook 'before-save-hook 'time-stamp)                                                ;; Update timestamp of 8 first lines on save
-  (setq large-file-warning-threshold 100000000)                                           ;; Warn when opening file larger than 100 MB
-  (desktop-save-mode 1)                                                                   ;; save desktop
-  (setq history-delete-duplicates t)                                                      ;; delete duplicate history
-  (setq revert-without-query '(".*"))                                                     ;; do not ask when reverting buffer
-  (setq-default cursor-type '(bar . 4))                                                   ;; use bar for cursor
-  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)                                 ;; Cancel on escape
+    (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))                       ;; Fancy titlebar for MacOS
+    (add-to-list 'default-frame-alist '(ns-appearance . dark))                              ;; Fancy titlebar for MacOS
+    (setq ns-use-proxy-icon  nil)                                                           ;; Fancy titlebar for MacOS
+    (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
+                                         (abbreviate-file-name (buffer-file-name)) "%b")))
+    (set-language-environment "UTF-8")                                                      ;; Set enconding language
+    (set-default-coding-systems 'utf-8)                                                     ;; Set enconding language
+    (prefer-coding-system 'utf-8)                                                           ;; Set enconding language
+    (set-terminal-coding-system 'utf-8)                                                     ;; Set enconding language
+    (set-keyboard-coding-system 'utf-8)                                                     ;; Set enconding language
+    (global-display-line-numbers-mode)                                                      ;; Display line numbers
+    (dolist (mode '(org-mode-hook                                                           ;; Disable line numbers for some modes
+                    term-mode-hook
+                    vterm-mode-hook
+                    jupyter-repl-mode-hook
+                    eshell-mode-hook
+                    pdf-view-mode-hook))
+      (add-hook mode (lambda () (display-line-numbers-mode 0))))
+    (setq-default read-process-output-max (* 1024 1024))                                    ;; Increase the amount of data which Emacs reads from the process
+    (setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
+    (setq-default column-number-mode t)                                                     ;; Display column numbers
+    (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
+    (setq inhibit-startup-echo-area-message t)                                              ;; Don't show the startup echo message
+    (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
+    (set-fringe-mode 10)                                                                    ;; Give some breathing room
+    (set-default 'truncate-lines t)                                                         ;; default truncate lines
+    (setq debug-on-error nil)                                                               ;; Receive more information errors
+    (setq custom-file "~/.emacs.d/custom.el")
+    (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
+    (setq-default create-lockfiles nil)                                                     ;; Disable lock files
+    (setq-default backup-directory-alist '(("." . "/Users/simenojensen/.emacs.d/backups"))) ;; Save backup files
+    (setq-default indent-tabs-mode nil)                                                     ;; Don't use hard tabs
+    (setq echo-keystrokes 0.1)                                                              ;; Echo keystrokes fast
+    (fset 'yes-or-no-p 'y-or-n-p)                                                           ;; y-or-n instead of yes-or-no
+    (add-hook 'before-save-hook 'delete-trailing-whitespace)                                ;; Delete trailing whitespace on save
+    (setq require-final-newline t)                                                          ;; Add a newline at end of file on save
+    (global-auto-revert-mode t)                                                             ;; Automatically update buffers if a file content has changed on disk
+    (save-place-mode t)                                                                     ;; Save position of the point in file
+    (global-hl-line-mode t)                                                                 ;; Highlight the line with the point
+    (add-hook 'before-save-hook 'time-stamp)                                                ;; Update timestamp of 8 first lines on save
+    (setq large-file-warning-threshold 100000000)                                           ;; Warn when opening file larger than 100 MB
+    (desktop-save-mode 1)                                                                   ;; save desktop
+    (setq history-delete-duplicates t)                                                      ;; delete duplicate history
+    (setq revert-without-query '(".*"))                                                     ;; do not ask when reverting buffer
+    (setq-default cursor-type '(bar . 4))                                                   ;; use bar for cursor
+    (global-set-key (kbd "<escape>") 'keyboard-escape-quit)                                 ;; Cancel on escape
 #+end_src
 
 ** Smooth Scrolling
@@ -304,6 +305,7 @@ Make sure the =$PATH= is loaded from the default shell.
     :config
     (setq shell-file-name "/opt/homebrew/bin/zsh") ;; Let emacs know which shell to use.
     (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH" "GOPATH"))
+    (setenv "PYTHONPATH" "/Applications/QGIS.app/Contents/Resources/python:/Applications/QGIS.app/Contents/Resources/python/plugins")
     (if (string-equal system-type "darwin")
         (exec-path-from-shell-initialize)))
 #+end_src
@@ -602,20 +604,20 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 [[https://www.flycheck.org/en/latest/][More Information]]
 
 #+begin_src emacs-lisp :tangle init.el
-  (use-package flycheck
-    :diminish
-    :init
-    (global-flycheck-mode)
-    :hook
-    (prog-mode . flycheck-mode)
-    :config
-    (setq flycheck-checker-error-threshold 1000)
-    ;; (setq-default flycheck-c/c++-clang-executable "/usr/bin/clangd")
-    ;; (setq-default flycheck-clang-standard-library "libc++")
-    (setq-default flycheck-clang-language-standard "c++20")
-    (setq-default flycheck-cppcheck-standards '("c++20"))
-    (setq-default flycheck-clang-args "-std=c++20")
-    )
+    (use-package flycheck
+      :diminish
+      :init
+      (global-flycheck-mode)
+      :hook
+      (prog-mode . flycheck-mode)
+      :config
+      (setq flycheck-checker-error-threshold 1000)
+      ;; (setq-default flycheck-c/c++-clang-executable "/usr/bin/clangd")
+      ;; (setq-default flycheck-clang-standard-library "libc++")
+      (setq-default flycheck-clang-language-standard "c++20")
+      (setq-default flycheck-cppcheck-standards '("c++20"))
+      (setq-default flycheck-clang-args "-std=c++20")
+      )
 #+end_src
 
 ** =yasnippets=
@@ -688,17 +690,13 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     ;; signatures
     (setq lsp-signature-auto-activate nil)
     (setq lsp-signature-render-documentation nil)
+    ;; disable semgrep
+    (setq lsp-disabled-clients '(semgrep-ls))
     ;; completion
     (setq lsp-completion-provider :capf)
     (setq lsp-completion-show-detail t)
-    (setq lsp-completion-show-kind t)
-    (progn
-      (lsp-register-client
-       (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
-                        :major-modes '(c-mode c++-mode)
-                        :remote? t
-                        :server-id 'clangd-remote)))
-    )
+    (setq lsp-completion-show-kind t))
+
 #+end_src
 
 *** =lsp-ui=
@@ -727,6 +725,8 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     (setq lsp-ui-sideline-show-code-actions t)
     (setq lsp-ui-sideline-show-hover nil)
     (setq lsp-ui-sideline-show-diagnostics t)
+    (setq lsp-ui-sideline-diagnostic-max-line-length 100)
+    (setq lsp-ui-sideline-diagnostic-max-lines 5)
     )
            ;; lsp-ui-doc
     ;;        ("M-i" . lsp-ui-doc-focus-frame))
@@ -783,6 +783,12 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
     (setq company-box-doc-delay 0.2)
     )
 #+end_src
+** =format-all=
+[[https://github.com/lassik/emacs-format-all-the-code][More Information]]
+#+begin_src emacs-lisp :tangle init.el
+  (use-package format-all)
+#+end_src
+
 * Python
 
 Some python settings.
@@ -802,7 +808,10 @@ Some python settings.
 ** =lsp-pyright=
 
 #+begin_src emacs-lisp :tangle init.el
-  (use-package lsp-pyright)
+  (use-package lsp-pyright
+    :hook (python-mode . (lambda ()
+                            (require 'lsp-pyright)
+                            (lsp-deferred))))
 #+end_src
 
 ** =conda=
@@ -852,11 +861,12 @@ Usage:
 #+end_src
 
 ** =isort=
+[[https://github.com/paetzke/py-isort.el/tree/e67306f459c47c53a65604e4eea88a3914596560][More Information]]
+
 #+begin_src emacs-lisp :tangle init.el
-  (use-package python-isort
-    :hook
-    (python-mode . python-isort-on-save-mode)
-    )
+(use-package py-isort
+  :after python
+  :hook (before-save . py-isort-before-save))
 #+end_src
 
 * Golang
@@ -867,12 +877,57 @@ Usage:
                  (add-hook 'before-save-hook #'lsp-format-buffer t t)
                  (add-hook 'before-save-hook #'lsp-organize-imports t t))))
 #+end_src
+* Protobuf
+#+begin_src emacs-lisp :tangle init.el
+  (use-package protobuf-mode
+    :mode "\\.proto\\'")
+#+end_src
+
 * CPP
 #+begin_src emacs-lisp :tangle init.el
   (defun my/c++-save-hook ()
     (when (eq major-mode 'c++-mode)
       (lsp-format-buffer)))
   (add-hook 'before-save-hook #'my/c++-save-hook)
+#+end_src
+
+* Scala
+** =lsp-metals=
+[[https://emacs-lsp.github.io/lsp-metals/][More Information]]
+#+begin_src emacs-lisp :tangle no
+  (use-package lsp-metals
+    ;; You might set metals server options via -J arguments. This might not always work, for instance when
+    ;; metals is installed using nix. In this case you can use JAVA_TOOL_OPTIONS environment variable.
+    ;; (lsp-metals-server-args '(;; Metals claims to support range formatting by default but it supports range
+                              ;; formatting of multiline strings only. You might want to disable it so that
+                              ;; emacs can use indentation provided by scala-mode.
+                              ;; "-J-Dmetals.allow-multiline-string-formatting=off"
+                              ;; Enable unicode icons. But be warned that emacs might not render unicode
+                              ;; correctly in all cases.
+                              ;; "-J-Dmetals.icons=unicode"))
+    ;; In case you want semantic highlighting. This also has to be enabled in lsp-mode using
+    ;; `lsp-semantic-tokens-enable' variable. Also you might want to disable highlighting of modifiers
+    ;; setting `lsp-semantic-tokens-apply-modifiers' to `nil' because metals sends `abstract' modifier
+    ;; which is mapped to `keyword' face.
+    :hook (scala-mode . lsp)
+    :config
+    (setq lsp-metals-enable-semantic-highlighting t)
+    )
+#+end_src
+
+* CSV-mode
+#+begin_src emacs-lisp :tangle init.el
+(use-package csv-mode
+  :mode "\\.[Cc][Ss][Vv]\\'")
+#+end_src
+
+* GraphQL-mode
+#+begin_src emacs-lisp :tangle init.el
+(use-package graphql-mode
+  :mode "\\.graphql\\'"
+  :config
+  ;; Optional: set indentation level to 2 spaces
+  (setq graphql-indent-level 2))
 #+end_src
 
 * Org
@@ -1304,8 +1359,21 @@ Usage:
     )
 #+end_src
 
-#+RESULTS:
-| (lambda nil (display-fill-column-indicator-mode) (auto-fill-mode)) | (lambda nil (org-superstar-mode 1)) | (closure (bootstrap-version t) nil (display-fill-column-indicator-mode) (auto-fill-mode)) | (closure (bootstrap-version t) nil (org-superstar-mode 1)) | org-ref-org-menu | jupyter-org-interaction-mode | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | (closure ((mode . org-mode-hook) (--dolist-tail--) bootstrap-version t) nil (display-line-numbers-mode 0)) |
+* Markdown
+#+begin_src emacs-lisp :tangle init.el
+  (use-package markdown-mode
+    :commands (markdown-mode gfm-mode)
+    :mode (("README\\.md\\'" . gfm-mode)
+           ("\\.md\\'" . markdown-mode)
+           ("\\.markdown\\'" . markdown-mode))
+    :init
+    (setq markdown-command
+          (concat
+           "pandoc"
+           " --from=markdown --to=html"
+           " --standalone --mathjax --highlight-style=pygments"))
+    )
+#+end_src
 
 * Appearance
 ** Icons
@@ -1373,9 +1441,9 @@ Doom Themes, an UI plugin and pack of themes
 
 #+begin_src emacs-lisp :tangle init.el
   (use-package doom-themes
-    :custom-face
-    (cursor ((t (:background "DarkRed"))))
     :config
+    (set-face-attribute 'cursor nil :background "DarkRed")
+
     (load-theme 'doom-gruvbox t)
     ;; (load-theme 'doom-opera-light t)
 
@@ -1387,11 +1455,11 @@ Doom Themes, an UI plugin and pack of themes
     (doom-themes-org-config)          ;; Corrects (and improves) org-mode's native fontification.
     )
 
-    ;; (load-theme 'doom-city-lights t))
-    ;; (load-theme 'doom-molokai t)
-    ;; (load-theme 'doom-sourcerer t)
-    ;; (load-theme 'doom-tomorrow-night t)
-    ;; (load-theme 'doom-gruvbox t)
+  ;; (load-theme 'doom-city-lights t))
+  ;; (load-theme 'doom-molokai t)
+  ;; (load-theme 'doom-sourcerer t)
+  ;; (load-theme 'doom-tomorrow-night t)
+  ;; (load-theme 'doom-gruvbox t)
 #+end_src
 
 *** Other
@@ -1441,6 +1509,12 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     (prog-mode . rainbow-delimiters-mode))
 #+end_src
 
+** =emojify=
+#+begin_src emacs-lisp :tangle init.el
+(use-package emojify
+  :hook (after-init . global-emojify-mode))
+#+end_src
+
 * Writing
 ** =flyspell=
 #+begin_src emacs-lisp :tangle init.el
@@ -1454,7 +1528,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     (setq ispell-program-name "hunspell")
     (setq-default ispell-hunspell-dict-paths-alist
                   '(("en_US" "~/Library/Spelling/en_US.aff")
-                    ("nb" "~/Library/Spelling/nb.aff")
+                    ("nb" "~/Library/Spelling/nb_NO.aff")
                     )))
 
   (defun my/save-word-to-personal-dictionary ()
@@ -1481,6 +1555,15 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     "Opens the my-literate-emacs-configuration.org file."
     (interactive)
     (find-file "~/.emacs.d/my-literate-emacs-configuration.org"))
+#+end_src
+
+** Open MO notes
+
+#+begin_src emacs-lisp :tangle init.el
+  (defun my/open-mo-notes ()
+    "Opens Maritime Optima Notes folder"
+    (interactive)
+    (dired "~/Documents/Work/Maritime-Optima/Notes/"))
 #+end_src
 
 ** Transpose windows

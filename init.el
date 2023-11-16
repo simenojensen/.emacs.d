@@ -48,9 +48,9 @@
       (bootstrap-version 6))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
-	(url-retrieve-synchronously
-	 "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-	 'silent 'inhibit-cookies)
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
@@ -60,8 +60,8 @@
 
 ;; Configure use-package to use straight.el by default
 (use-package straight
-	     :custom
-	     (straight-use-package-by-default t))
+  :config
+  (setq straight-use-package-by-default t))
 
 (use-package bind-key)
 
@@ -87,7 +87,8 @@
                 term-mode-hook
                 vterm-mode-hook
                 jupyter-repl-mode-hook
-                eshell-mode-hook))
+                eshell-mode-hook
+                pdf-view-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 (setq-default read-process-output-max (* 1024 1024))                                    ;; Increase the amount of data which Emacs reads from the process
 (setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
@@ -153,6 +154,7 @@
          :config
          (setq shell-file-name "/opt/homebrew/bin/zsh") ;; Let emacs know which shell to use.
          (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH" "GOPATH"))
+         (setenv "PYTHONPATH" "/Applications/QGIS.app/Contents/Resources/python:/Applications/QGIS.app/Contents/Resources/python/plugins")
          (if (string-equal system-type "darwin")
              (exec-path-from-shell-initialize)))
        )
@@ -390,17 +392,12 @@
   ;; signatures
   (setq lsp-signature-auto-activate nil)
   (setq lsp-signature-render-documentation nil)
+  ;; disable semgrep
+  (setq lsp-disabled-clients '(semgrep-ls))
   ;; completion
   (setq lsp-completion-provider :capf)
   (setq lsp-completion-show-detail t)
-  (setq lsp-completion-show-kind t)
-  (progn
-    (lsp-register-client
-     (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
-                      :major-modes '(c-mode c++-mode)
-                      :remote? t
-                      :server-id 'clangd-remote)))
-  )
+  (setq lsp-completion-show-kind t))
 
 (use-package lsp-ui
   :commands lsp-ui-mode
@@ -421,6 +418,8 @@
   (setq lsp-ui-sideline-show-code-actions t)
   (setq lsp-ui-sideline-show-hover nil)
   (setq lsp-ui-sideline-show-diagnostics t)
+  (setq lsp-ui-sideline-diagnostic-max-line-length 100)
+  (setq lsp-ui-sideline-diagnostic-max-lines 5)
   )
          ;; lsp-ui-doc
   ;;        ("M-i" . lsp-ui-doc-focus-frame))
@@ -467,6 +466,8 @@
   (setq company-box-doc-delay 0.2)
   )
 
+(use-package format-all)
+
 (use-package python
   :hook
   (python-mode . (lambda () ;; emulate python-shell-send-buffer
@@ -477,7 +478,10 @@
   ;; silence indentation guesses
   (setq python-indent-guess-indent-offset-verbose nil))
 
-(use-package lsp-pyright)
+(use-package lsp-pyright
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp-deferred))))
 
 (use-package conda
   :hook
@@ -503,10 +507,9 @@
   :hook
   (python-mode . blacken-mode))
 
-(use-package python-isort
-  :hook
-  (python-mode . python-isort-on-save-mode)
-  )
+(use-package py-isort
+  :after python
+  :hook (before-save . py-isort-before-save))
 
 (use-package go-mode
   :hook
@@ -514,10 +517,22 @@
                (add-hook 'before-save-hook #'lsp-format-buffer t t)
                (add-hook 'before-save-hook #'lsp-organize-imports t t))))
 
+(use-package protobuf-mode
+  :mode "\\.proto\\'")
+
 (defun my/c++-save-hook ()
   (when (eq major-mode 'c++-mode)
     (lsp-format-buffer)))
 (add-hook 'before-save-hook #'my/c++-save-hook)
+
+(use-package csv-mode
+  :mode "\\.[Cc][Ss][Vv]\\'")
+
+(use-package graphql-mode
+  :mode "\\.graphql\\'"
+  :config
+  ;; Optional: set indentation level to 2 spaces
+  (setq graphql-indent-level 2))
 
 ;; Tangle on config file
 (defun my/tangle-emacs-config ()
@@ -945,6 +960,19 @@
         org-image-actual-width '(300))
   )
 
+(use-package markdown-mode
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init
+  (setq markdown-command
+        (concat
+         "pandoc"
+         " --from=markdown --to=html"
+         " --standalone --mathjax --highlight-style=pygments"))
+  )
+
 (use-package all-the-icons)
 
 (use-package all-the-icons-ivy-rich
@@ -968,9 +996,9 @@
   (mode-icons-mode))
 
 (use-package doom-themes
-  :custom-face
-  (cursor ((t (:background "DarkRed"))))
   :config
+  (set-face-attribute 'cursor nil :background "DarkRed")
+
   (load-theme 'doom-gruvbox t)
   ;; (load-theme 'doom-opera-light t)
 
@@ -982,11 +1010,11 @@
   (doom-themes-org-config)          ;; Corrects (and improves) org-mode's native fontification.
   )
 
-  ;; (load-theme 'doom-city-lights t))
-  ;; (load-theme 'doom-molokai t)
-  ;; (load-theme 'doom-sourcerer t)
-  ;; (load-theme 'doom-tomorrow-night t)
-  ;; (load-theme 'doom-gruvbox t)
+;; (load-theme 'doom-city-lights t))
+;; (load-theme 'doom-molokai t)
+;; (load-theme 'doom-sourcerer t)
+;; (load-theme 'doom-tomorrow-night t)
+;; (load-theme 'doom-gruvbox t)
 
 (use-package modus-themes)
 (use-package tango-plus-theme)
@@ -1013,6 +1041,9 @@
   :hook
   (prog-mode . rainbow-delimiters-mode))
 
+(use-package emojify
+  :hook (after-init . global-emojify-mode))
+
 (use-package flyspell
   :config
   (setenv
@@ -1023,7 +1054,7 @@
   (setq ispell-program-name "hunspell")
   (setq-default ispell-hunspell-dict-paths-alist
                 '(("en_US" "~/Library/Spelling/en_US.aff")
-                  ("nb" "~/Library/Spelling/nb.aff")
+                  ("nb" "~/Library/Spelling/nb_NO.aff")
                   )))
 
 (defun my/save-word-to-personal-dictionary ()
@@ -1045,6 +1076,11 @@
   "Opens the my-literate-emacs-configuration.org file."
   (interactive)
   (find-file "~/.emacs.d/my-literate-emacs-configuration.org"))
+
+(defun my/open-mo-notes ()
+  "Opens Maritime Optima Notes folder"
+  (interactive)
+  (dired "~/Documents/Work/Maritime-Optima/Notes/"))
 
 (defun window-split-toggle ()
   "Toggle between horizontal and vertical split with two windows."
