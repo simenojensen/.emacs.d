@@ -226,6 +226,10 @@
   (setq ivy-display-style 'fancy)
   (setq ivy-use-selectable-prompt t)
   (setq counsel-switch-buffer-preview-virtual-buffers nil)
+  ;; sort counsel-rg results
+  (setq ivy-sort-functions-alist
+      '((counsel-rg . ivy-sort-file-function-default)
+        (t . nil)))
   ;; (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
 (use-package helm)
@@ -365,6 +369,7 @@
          (c++-mode . lsp-deferred)
          (go-mode . lsp-deferred)
          (java-mode . lsp-deferred)
+         (sql-mode . lsp-deferred)
          ;; if you want which-key integration
          (lsp-mode . lsp-enable-which-key-integration)
          (lsp-mode . (lambda ()
@@ -397,7 +402,8 @@
   ;; completion
   (setq lsp-completion-provider :capf)
   (setq lsp-completion-show-detail t)
-  (setq lsp-completion-show-kind t))
+  (setq lsp-completion-show-kind t)
+)
 
 (use-package lsp-ui
   :commands lsp-ui-mode
@@ -485,7 +491,7 @@
 
 (use-package conda
   :hook
-  (python-mode . (lambda () (conda-env-activate "base")))
+  (python-mode . (lambda () (conda-env-activate "py3")))
   :config
   (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/")
   (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/"))
@@ -506,6 +512,12 @@
 (use-package blacken
   :hook
   (python-mode . blacken-mode))
+
+(use-package numpydoc
+  :config
+  (setq numpydoc-insert-examples-block nil)
+  (setq numpydoc-insert-return-without-typehint t)
+  )
 
 (use-package py-isort
   :after python
@@ -565,12 +577,6 @@
   (setq org-capture-templates
         '(("a" "Assignment" entry
            (file+headline "~/Documents/Org/Academic.org" "Assignments")
-           "* TODO %?\n")
-          ("E" "Exam" entry
-           (file+headline "~/Documents/Org/Academic.org" "Exams")
-           "* TODO %?\n")
-          ("P" "Project" entry
-           (file+headline "~/Documents/Org/Academic.org" "Projects")
            "* TODO %?\n")))
   ;; -------------------- Evaluation of Source Blocks --------------------
   ;; Do not confirm when evaluating code blocks
@@ -598,6 +604,7 @@
           ("l" . "src latex\n")
           ("q" . "quote\n")
           ("p" . "src python\n")
+          ("j" . "src jupyter-python\n")
           ("s" . "src sql")
           ("v" . "verse\n")))
   ;; -------------------- Export reveal --------------------
@@ -999,7 +1006,8 @@
   :config
   (set-face-attribute 'cursor nil :background "DarkRed")
 
-  (load-theme 'doom-gruvbox t)
+  ;; (load-theme 'doom-gruvbox t)
+  ;; (load-theme 'spacemacs-light t)
   ;; (load-theme 'doom-opera-light t)
 
   (doom-themes-visual-bell-config)  ;; flashing mode-line on errors
@@ -1019,7 +1027,9 @@
 (use-package modus-themes)
 (use-package tango-plus-theme)
 (use-package base16-theme)
-(use-package spacemacs-theme)
+(use-package spacemacs-theme
+  :config
+  (load-theme 'spacemacs-light t))
 
 (use-package doom-modeline
   :init
@@ -1107,22 +1117,4 @@
   :straight (:type built-in)
   :config
   (setq tramp-default-method "ssh")
-  )
-
-(defun my/google-translate ()
-  (interactive)
-  (gts-translate (gts-translator
-                  :picker (gts-noprompt-picker)
-                  :engines (gts-google-engine)
-                  :render (gts-kill-ring-render))))
-
-(use-package go-translate
-  :config
-  (setq gts-translate-list '(("en" "zh")))
-
-  (setq gts-default-translator
-        (gts-translator
-         :picker (gts-prompt-picker)
-         :engines (list (gts-bing-engine) (gts-google-engine))
-         :render (gts-buffer-render)))
   )

@@ -16,3 +16,4 @@ org-persist/
 /.pdf-view-restore
 /emojis
 /eshell
+tramp
