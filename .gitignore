@@ -17,3 +17,6 @@ org-persist/
 /emojis
 /eshell
 tramp
+temp-files/
+nil
+recentf

@@ -20,35 +20,8 @@ and virtually no other languages have adopted it.
   ;;; init.el --- -*- lexical-binding: t -*-
 #+end_src
 
-** Avoid Garbage Collection at Startup
-
-#+begin_quote
-The GC can easily double startup time, so we suppress it at startup by turning
-up =gc-cons-threshold= (and perhaps =gc-cons-percentage=) temporarily:
-#+end_quote
-
-[[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how-does-doom-start-up-so-quickly][More Information]]
-
-#+begin_src emacs-lisp :tangle init.el
-  (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
-        gc-cons-percentage 0.6)
-#+end_src
-
-** Benchmarking
-
-First, declare a hook which will benchmark the startup process. It reports how
-long the it took to start up, and how many garbage collections were performed.
-
-[[https://blog.d46.us/advanced-emacs-startup/][More Information]]
-
-#+begin_src emacs-lisp :tangle init.el
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (message "Emacs ready in %s with %d garbage collections."
-                       (format "%.2f seconds"
-                               (float-time
-                                (time-subtract after-init-time before-init-time)))
-                       gcs-done)))
+#+begin_src emacs-lisp :tangle early-init.el
+  ;;; early-init.el --- -*- lexical-binding: t -*-
 #+end_src
 
 ** Unset =file-name-handler-alist=
@@ -57,25 +30,33 @@ Every file opened and loaded by Emacs will run through this list to check for a
 proper handler for the file, but during startup, it won’t need any of them.
 
 #+begin_src emacs-lisp :tangle init.el
-  (defvar file-name-handler-alist-original file-name-handler-alist)
-  (setq file-name-handler-alist nil)
+  (defvar file-name-handler-alist-original file-name-handler-alist
+    "Save the original `file-name-handler-alist' for restoration after startup.")
+
+  (setq file-name-handler-alist nil) ; Disable file-name handlers temporarily
 #+end_src
 
-* Garbage Collection
-** Set =gc-cons-threshold= Smaller for Interactive Use
+** Garbage Collection
 
-A large =gc-cons-threshold= may cause freezing and stuttering during long-term
-interactive use. If you experience freezing, decrease this amount, if you
-increase stuttering, increase this amount.
+#+begin_quote
+The GC can easily double startup time, so we suppress it at startup by turning
+up =gc-cons-threshold= and =gc-cons-percentage= temporarily:
+#+end_quote
+
+[[https://github.com/hlissner/doom-emacs/blob/develop/docs/faq.org#how-does-doom-start-up-so-quickly][More Information]]
 
 #+begin_src emacs-lisp :tangle init.el
-  (defvar better-gc-cons-threshold 33554432 ; 32mb
+  (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
+        gc-cons-percentage 0.6)
+
+  (defvar better-gc-cons-threshold (* 100 1024 1024) ; 100 MB
     "The default value to use for `gc-cons-threshold'.
-     If you experience freezing, decrease this.  If you experience stuttering, increase this.")
+     If you experience freezing, decrease this. If you experience stuttering, increase this.")
 
   (add-hook 'emacs-startup-hook
             (lambda ()
-              (setq gc-cons-threshold better-gc-cons-threshold)
+              (setq gc-cons-threshold better-gc-cons-threshold
+                    gc-cons-percentage 0.1) ; Reset to a reasonable default
               (setq file-name-handler-alist file-name-handler-alist-original)
               (makunbound 'file-name-handler-alist-original)))
 #+end_src
@@ -103,6 +84,23 @@ using minibuffer.
               (add-hook 'minibuffer-exit-hook #'gc-minibuffer-exit-hook)))
 #+end_src
 
+** Benchmarking
+
+First, declare a hook which will benchmark the startup process. It reports how
+long the it took to start up, and how many garbage collections were performed.
+
+[[https://blog.d46.us/advanced-emacs-startup/][More Information]]
+
+#+begin_src emacs-lisp :tangle init.el
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (message "Emacs ready in %s with %d garbage collections."
+                       (format "%.2f seconds"
+                               (float-time
+                                (time-subtract after-init-time before-init-time)))
+                       gcs-done)))
+#+end_src
+
 * Package Management
 ** =straight.el=
 
@@ -114,10 +112,14 @@ using minibuffer.
 #+end_src
 
 #+begin_src emacs-lisp :tangle init.el
+  ;; Setup straight.el
   (defvar bootstrap-version)
   (let ((bootstrap-file
-         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-        (bootstrap-version 6))
+         (expand-file-name
+          "straight/repos/straight.el/bootstrap.el"
+          (or (bound-and-true-p straight-base-dir)
+              user-emacs-directory)))
+        (bootstrap-version 7))
     (unless (file-exists-p bootstrap-file)
       (with-current-buffer
           (url-retrieve-synchronously
@@ -127,22 +129,13 @@ using minibuffer.
         (eval-print-last-sexp)))
     (load bootstrap-file nil 'nomessage))
 
-  ;; Install use-package
+  ;; Install and configure use-package
   (straight-use-package 'use-package)
 
-  ;; Configure use-package to use straight.el by default
-  (use-package straight
-    :config
-    (setq straight-use-package-by-default t))
+  ;; Ensure that packages are installed automatically if not present
+  (setq straight-use-package-by-default t)
 #+end_src
 
-** =bind-key=
-
-To use with =use-package=.
-
-#+begin_src emacs-lisp :tangle init.el
-  (use-package bind-key)
-#+end_src
 ** =diminish=
 
 The =diminish= package makes it possible to remove clutter from the modeline. The =:diminish= keyword in the =use-package= declarations signify =diminish= invocation.
@@ -152,73 +145,101 @@ The =diminish= package makes it possible to remove clutter from the modeline. Th
 #+begin_src emacs-lisp :tangle init.el
   (use-package diminish)
 #+end_src
-** =try=
-
-The =try= package let's you try new packages without installed them. On the next restart of Emacs, they are not loaded.
-
-[[https://github.com/larstvei/Try][More Information]]
-
-#+begin_src emacs-lisp :tangle init.el
-  (use-package try)
-#+end_src
 
 * Global Functionalities
 ** User Information
 #+begin_src emacs-lisp :tangle init.el
-  (setq user-full-name "Simen Omholt-Jensen")
-  (setq user-mail-address "simen@omholt-jensen.com")
+  (setq-default user-full-name "Simen Omholt-Jensen")
+  (setq-default user-mail-address "simen@omholt-jensen.com")
 #+end_src
 
 ** Convenient Default Settings
+#+begin_src emacs-lisp :tangle init.el
+  (setq-default read-process-output-max (* 2 1024 1024))                                  ;; Increase the amount of data which Emacs reads from the process
+
+  (global-display-line-numbers-mode)                                                      ;; Display line numbers
+  (dolist (mode '(org-mode-hook                                                           ;; Disable line numbers for some modes
+                  term-mode-hook
+                  vterm-mode-hook
+                  jupyter-repl-mode-hook
+                  eshell-mode-hook
+                  pdf-view-mode-hook))
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
+  (setq-default column-number-mode t)                                                     ;; Display column numbers
+  (setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
+
+  (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
+  (setq inhibit-startup-echo-area-message t)                                              ;; Don't show the startup echo message
+  (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
+
+  (set-default 'truncate-lines t)                                                         ;; default truncate lines
+  (setq debug-on-error nil)                                                               ;; Receive more information errors
+
+  (setq custom-file "~/.emacs.d/custom.el")                                               ;; Set the path for custom-file
+  (unless (file-exists-p custom-file)                                                     ;; Create the custom file if it does not exist
+    (with-temp-buffer (write-file custom-file)))                                          ;; Load custom-file if it exists
+  (ignore-errors (load custom-file))
+
+  (setq-default indent-tabs-mode nil)                                                     ;; Don't use hard tabs
+  (setq echo-keystrokes 0.1)                                                              ;; Echo keystrokes fast
+  (fset 'yes-or-no-p 'y-or-n-p)                                                           ;; y-or-n instead of yes-or-no
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)                                ;; Delete trailing whitespace on save
+  (setq require-final-newline t)                                                          ;; Add a newline at end of file on save
+  (global-auto-revert-mode t)                                                             ;; Automatically update buffers if a file content has changed on disk
+  (save-place-mode t)                                                                     ;; Save position of the point in file
+  (global-hl-line-mode t)                                                                 ;; Highlight the line with the point
+  (setq large-file-warning-threshold 100000000)                                           ;; Warn when opening file larger than 100 MB
+  (desktop-save-mode 1)                                                                   ;; save desktop
+  (setq history-delete-duplicates t)                                                      ;; delete duplicate history
+  (setq revert-without-query '(".*"))                                                     ;; do not ask when reverting buffer
+  (setq-default cursor-type '(bar . 4))                                                   ;; use bar for cursor
+  (bind-key "<escape>" 'keyboard-escape-quit)                                             ;; Cancel on escape
+#+end_src
+
+** Undo
 
 #+begin_src emacs-lisp :tangle init.el
-    (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))                       ;; Fancy titlebar for MacOS
-    (add-to-list 'default-frame-alist '(ns-appearance . dark))                              ;; Fancy titlebar for MacOS
-    (setq ns-use-proxy-icon  nil)                                                           ;; Fancy titlebar for MacOS
-    (setq frame-title-format '(:eval (if (buffer-file-name)                                 ;; Set frame title to *Buffer/File Name*
-                                         (abbreviate-file-name (buffer-file-name)) "%b")))
-    (set-language-environment "UTF-8")                                                      ;; Set enconding language
-    (set-default-coding-systems 'utf-8)                                                     ;; Set enconding language
-    (prefer-coding-system 'utf-8)                                                           ;; Set enconding language
-    (set-terminal-coding-system 'utf-8)                                                     ;; Set enconding language
-    (set-keyboard-coding-system 'utf-8)                                                     ;; Set enconding language
-    (global-display-line-numbers-mode)                                                      ;; Display line numbers
-    (dolist (mode '(org-mode-hook                                                           ;; Disable line numbers for some modes
-                    term-mode-hook
-                    vterm-mode-hook
-                    jupyter-repl-mode-hook
-                    eshell-mode-hook
-                    pdf-view-mode-hook))
-      (add-hook mode (lambda () (display-line-numbers-mode 0))))
-    (setq-default read-process-output-max (* 1024 1024))                                    ;; Increase the amount of data which Emacs reads from the process
-    (setq-default fill-column 80)                                                           ;; Set fill column to 80 chars by default
-    (setq-default column-number-mode t)                                                     ;; Display column numbers
-    (setq-default inhibit-startup-screen t)                                                 ;; Don't show the startup message
-    (setq inhibit-startup-echo-area-message t)                                              ;; Don't show the startup echo message
-    (setq-default initial-scratch-message nil)                                              ;; Set initial scratch message to nil
-    (set-fringe-mode 10)                                                                    ;; Give some breathing room
-    (set-default 'truncate-lines t)                                                         ;; default truncate lines
-    (setq debug-on-error nil)                                                               ;; Receive more information errors
-    (setq custom-file "~/.emacs.d/custom.el")
-    (ignore-errors (load custom-file))                                                      ;; Load custom.el if it exists
-    (setq-default create-lockfiles nil)                                                     ;; Disable lock files
-    (setq-default backup-directory-alist '(("." . "/Users/simenojensen/.emacs.d/backups"))) ;; Save backup files
-    (setq-default indent-tabs-mode nil)                                                     ;; Don't use hard tabs
-    (setq echo-keystrokes 0.1)                                                              ;; Echo keystrokes fast
-    (fset 'yes-or-no-p 'y-or-n-p)                                                           ;; y-or-n instead of yes-or-no
-    (add-hook 'before-save-hook 'delete-trailing-whitespace)                                ;; Delete trailing whitespace on save
-    (setq require-final-newline t)                                                          ;; Add a newline at end of file on save
-    (global-auto-revert-mode t)                                                             ;; Automatically update buffers if a file content has changed on disk
-    (save-place-mode t)                                                                     ;; Save position of the point in file
-    (global-hl-line-mode t)                                                                 ;; Highlight the line with the point
-    (add-hook 'before-save-hook 'time-stamp)                                                ;; Update timestamp of 8 first lines on save
-    (setq large-file-warning-threshold 100000000)                                           ;; Warn when opening file larger than 100 MB
-    (desktop-save-mode 1)                                                                   ;; save desktop
-    (setq history-delete-duplicates t)                                                      ;; delete duplicate history
-    (setq revert-without-query '(".*"))                                                     ;; do not ask when reverting buffer
-    (setq-default cursor-type '(bar . 4))                                                   ;; use bar for cursor
-    (global-set-key (kbd "<escape>") 'keyboard-escape-quit)                                 ;; Cancel on escape
+  ;; Function to ensure a directory exists
+  (defun ensure-directory-exists (dir)
+    "Ensure that the directory DIR exists."
+    (unless (file-exists-p dir)
+      (make-directory dir t)))
+
+  ;; Define a centralized directory for all Emacs-generated files
+  (defvar emacs-temp-files-dir (expand-file-name "temp-files/" user-emacs-directory)
+    "Directory for storing Emacs-generated files to reduce clutter.")
+
+  ;; Ensure the temp-files directory exists
+  (unless (file-exists-p emacs-temp-files-dir)
+    (make-directory emacs-temp-files-dir t))
+
+  ;; Ensure necessary directories exist
+  (dolist (dir '("backups" "auto-saves" "auto-save-list" "locks" "undo-tree-history"))
+    (ensure-directory-exists (expand-file-name dir emacs-temp-files-dir)))
+
+  ;; Backup files
+  (setq backup-directory-alist `(("." . ,(expand-file-name "backups/" emacs-temp-files-dir))))
+
+  ;; Lock files
+  (setq lock-file-name-transforms
+        `((".*" ,(expand-file-name "locks/" emacs-temp-files-dir) t)))
+
+  ;; auto-save files
+  (setq auto-save-file-name-transforms
+        `((".*" ,(expand-file-name "auto-saves/" emacs-temp-files-dir) t)))
+  (setq auto-save-list-file-prefix (expand-file-name "auto-save-list/.saves-" emacs-temp-files-dir))
+
+  ;; Undo-tree configuration using use-package
+  (use-package undo-tree
+    :diminish
+    :init
+    (setq undo-tree-history-directory-alist
+          `(("." . ,(expand-file-name "undo-tree-history/" emacs-temp-files-dir))))
+    (setq undo-tree-auto-save-history t)
+    :config
+    (global-undo-tree-mode 1))
 #+end_src
+
 
 ** Smooth Scrolling
 
@@ -277,10 +298,10 @@ Detect which OS Emacs is being run on, and configure keybindings accordingly.
 Remap mac modifier keys to emacs modifier sequences.
 
 #+begin_src emacs-lisp :tangle no :noweb-ref macOS
-  (customize-set-variable 'mac-command-modifier 'meta)
-  (customize-set-variable 'mac-right-command-modifier 'super)
-  (customize-set-variable 'mac-option-modifier 'alt)
-  (customize-set-variable 'mac-right-option-modifier 'hyper)
+  (setq mac-command-modifier 'meta)
+  (setq mac-right-command-modifier 'super)
+  (setq mac-option-modifier 'alt)
+  (setq mac-right-option-modifier 'hyper)
 #+end_src
 
 Next, we are binding ~M-=~ to increase the font size, and ~M--~ to decrease the font
@@ -296,6 +317,7 @@ Use ~M-`~ to switch focus between frames
 #+begin_src emacs-lisp :tangle no :noweb-ref macOS
   (bind-key "M-`" 'other-frame)
 #+end_src
+
 Make sure the =$PATH= is loaded from the default shell.
 
 [[https://github.com/purcell/exec-path-from-shell][More Information]]
@@ -304,10 +326,9 @@ Make sure the =$PATH= is loaded from the default shell.
   (use-package exec-path-from-shell
     :config
     (setq shell-file-name "/opt/homebrew/bin/zsh") ;; Let emacs know which shell to use.
-    (setq exec-path-from-shell-variables  '("PATH" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH" "GOPATH"))
+    (setq exec-path-from-shell-variables  '("PATH" "R_HOME" "MANPATH" "VIRTUAL_ENV" "PKG_CONFIG_PATH" "GOPATH"))
     (setenv "PYTHONPATH" "/Applications/QGIS.app/Contents/Resources/python:/Applications/QGIS.app/Contents/Resources/python/plugins")
-    (if (string-equal system-type "darwin")
-        (exec-path-from-shell-initialize)))
+    (exec-path-from-shell-initialize))
 #+end_src
 
 ** Windows
@@ -344,13 +365,11 @@ The =which-key= package automatically displays potential command information as 
 
 ** =bind-key=
 *** Window Adjustment
-
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp
   (bind-key "s-<left>" 'shrink-window-horizontally)
   (bind-key "s-<right>" 'enlarge-window-horizontally)
   (bind-key "s-<down>" 'shrink-window)
   (bind-key "s-<up>" 'enlarge-window)
-  (unbind-key "C-v" global-map) ;; disable annoying scroll window
 #+end_src
 
 *** Truncate Lines
@@ -371,12 +390,6 @@ The =which-key= package automatically displays potential command information as 
 
 #+begin_src emacs-lisp :tangle init.el
   (bind-key "C-x b" 'ibuffer-other-window)
-  (bind-key "C-x C-b" 'switch-to-buffer)
-#+end_src
-
-*** set column fill
-#+begin_src emacs-lisp :tangle init.el
-(unbind-key "C-x f" global-map)
 #+end_src
 
 * Interface Enhancement
@@ -389,9 +402,8 @@ The =which-key= package automatically displays potential command information as 
 #+begin_src emacs-lisp :tangle init.el
   (use-package crux
     :bind
-    ("C-a" . crux-move-beginning-of-line)
-    :config
-    (defalias 'rename-file-and-buffer #'crux-rename-file-and-buffer))
+    ("C-a" . crux-move-beginning-of-line))
+
 #+end_src
 
 ** =Ivy= / =Counsel= / =Swiper= / =amx=
@@ -405,59 +417,58 @@ The =which-key= package automatically displays potential command information as 
 [[https://github.com/DarwinAwardWinner/amx][More Information]]
 
 #+begin_src emacs-lisp :tangle init.el
-  (use-package ivy
-    :diminish
-    :init
     (use-package amx)
-    (use-package counsel :diminish :config (counsel-mode 1))
+
+    (use-package counsel
+      :diminish
+      :config (counsel-mode 1))
+
     (use-package swiper)
-    (ivy-mode 1)
-    :bind
-    (("C-x C-f" . counsel-find-file)
-     ("C-x f". counsel-fzf)
-     ("C-h f" . counsel-describe-function)
-     ("C-h v" . counsel-describe-variable)
-     ("C-h l" . counsel-find-library)
-     ("C-h i" . counsel-info-lookup-symbol)
-     ("C-h u" . counsel-unicode-char)
-     ("C-c k" . counsel-rg)
-     ("C-x l" . counsel-locate)
-     ("M-x" . counsel-M-x)
-     ("M-v" . counsel-yank-pop)
-     ("C-s" . swiper-isearch)
-     :map ivy-minibuffer-map
-     ("A-<tab>" . ivy-mark) ;; Mark multiple candidates
-     ("C-<return>" . ivy-call) ;; perform call
-     )
-    :config
-    (ivy-mode 1)
-    (setq ivy-height 20)
-    (setq ivy-initial-inputs-alist nil)
-    (setq ivy-display-style 'fancy)
-    (setq ivy-use-selectable-prompt t)
-    (setq counsel-switch-buffer-preview-virtual-buffers nil)
-    ;; sort counsel-rg results
-    (setq ivy-sort-functions-alist
-        '((counsel-rg . ivy-sort-file-function-default)
-          (t . nil)))
-    ;; (setq ivy-use-virtual-buffers t)
-    (setq ivy-count-format "(%d/%d) "))
-  (use-package helm)
-#+end_src
 
-** =undo-tree=
-[[https://www.emacswiki.org/emacs/UndoTree][More Information]]
+    (use-package ivy
+      :diminish
+      :init
+      (ivy-mode 1)
+      :bind
+      (("C-x C-f" . counsel-find-file)
+       ("C-x f" . counsel-fzf)
+       ("C-x C-b" . counsel-switch-buffer)
+       ("C-h f" . counsel-describe-function)
+       ("C-h v" . counsel-describe-variable)
+       ("C-h l" . counsel-find-library)
+       ("C-h i" . counsel-info-lookup-symbol)
+       ("C-h u" . counsel-unicode-char)
+       ("C-c k" . counsel-rg)
+       ("C-x l" . counsel-locate)
+       ("M-x" . counsel-M-x)
+       ("M-v" . counsel-yank-pop)
+       ("C-s" . swiper-isearch)
+       :map ivy-minibuffer-map
+       ("A-<tab>" . ivy-mark) ;; Mark multiple candidates
+       ("C-<return>" . ivy-call) ;; perform call
+       )
+      :config
+      (ivy-mode 1)
+      (setq ivy-height 20)
+      (setq ivy-initial-inputs-alist nil)
+      (setq ivy-display-style 'fancy)
+      (setq ivy-use-selectable-prompt t)
+      (setq counsel-switch-buffer-preview-virtual-buffers nil)
+      ;; sort counsel-rg results
+      (setq ivy-sort-functions-alist
+          '((counsel-rg . ivy-sort-file-function-default)
+            (t . nil)))
+      (setq ivy-use-virtual-buffers t)
+      (setq ivy-count-format "(%d/%d) "))
 
+  (use-package all-the-icons-ivy-rich
+    :init
+    (all-the-icons-ivy-rich-mode 1))
 
-#+begin_src emacs-lisp :tangle init.el
-(use-package undo-tree
-  :diminish undo-tree-mode
-  :init
-  (global-undo-tree-mode)
-  :config
-  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
-  (setq undo-tree-visualizer-diff t)
-  (setq undo-tree-visualizer-timestamps t))
+  (use-package ivy-rich
+    :init
+    (ivy-rich-mode 1)
+    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
 #+end_src
 
 ** =Dired=
@@ -489,8 +500,6 @@ The =which-key= package automatically displays potential command information as 
     ;; Detect external file changes and auto refresh file
     (setq auto-revert-use-notify nil)
     (setq auto-revert-interval 3) ; Auto revert every 3 sec
-    ;; Enable global auto-revert
-    (global-auto-revert-mode t)
     ;; sort directory first
     (setq insert-directory-program "/opt/homebrew/bin/gls"
           dired-use-ls-dired t)
@@ -503,6 +512,13 @@ The =which-key= package automatically displays potential command information as 
                     (local-set-key (kbd "RET") #'dired-find-alternate-file)
                     (local-set-key (kbd "^")
                                    (lambda () (interactive) (find-alternate-file ".."))))))
+
+  (use-package all-the-icons-dired
+    :diminish
+    :custom-face
+    (all-the-icons-dired-dir-face ((t (:foreground nil))))
+    :hook
+    (dired-mode . all-the-icons-dired-mode))
 #+end_src
 
 * Navigation
@@ -583,10 +599,87 @@ Projectile is a project interaction library for Emacs.
 #+begin_src emacs-lisp :tangle init.el
   (use-package projectile
     :diminish
+    :init
+    (projectile-mode +1)
+    :bind (:map projectile-mode-map
+                ("s-p" . projectile-command-map))
     :config
-    (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
-    (setq projectile-completion-system 'ivy)
-    (projectile-mode +1))
+    (setq projectile-completion-system 'ivy))
+#+end_src
+
+** =company=
+*** =company-mode=
+
+#+begin_src emacs-lisp :tangle init.el
+  (use-package company
+    :diminish
+    :init
+    (global-company-mode)
+    :bind
+    (:map company-active-map
+          ("C-n" . company-select-next)
+          ("C-p" . company-select-previous)
+          ("<TAB>" . company-complete-common))
+    (:map company-search-map
+          ("C-n" . company-select-next)
+          ("C-p" . company-select-previous)
+          ("<TAB>" . company-complete-common))
+    :config
+    (setq company-minimum-prefix-length 2)
+    (setq company-idle-delay
+          (lambda () (if (company-in-string-or-comment) nil 0.1)))
+    (setq company-tooltip-idle-delay 0.2)
+    (setq company-echo-delay nil) ;; after some time the definition is shown in the echo area
+    (setq company-tooltip-align-annotations t) ;; right-align description strings
+    ;; backends
+    (setq company-files-exclusions '(".git/" ".DS_Store"))
+    )
+
+  (use-package company-box
+    :diminish
+    :hook
+    (company-mode . company-box-mode)
+    :bind
+    (:map company-active-map
+          ("C-h" . company-box-doc-manually))
+    (:map company-search-map
+          ("C-h" . company-box-doc-manually))
+    :config
+    (setq company-box-doc-enable nil)
+    )
+#+end_src
+
+** =flycheck=
+
+Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intended as replacement for the older Flymake extension which is part of GNU Emacs.
+
+[[https://www.flycheck.org/en/latest/][More Information]]
+
+#+begin_src emacs-lisp :tangle init.el
+  (use-package flycheck
+    :diminish
+    :hook
+    (prog-mode . flycheck-mode))
+
+  ;; :config
+  ;; (setq flycheck-checker-error-threshold 1000)
+  ;; (setq-default flycheck-c/c++-clang-executable "/usr/bin/clangd")
+  ;; (setq-default flycheck-clang-standard-library "libc++")
+  ;; (setq-default flycheck-clang-language-standard "c++20")
+  ;; (setq-default flycheck-cppcheck-standards '("c++20"))
+  ;;; (setq-default flycheck-clang-args "-std=c++20")
+  ;; )
+
+
+#+end_src
+
+** =yasnippets=
+#+begin_src emacs-lisp :tangle init.el
+  (use-package yasnippet
+    :diminish yas-minor-mode
+    :config
+    (use-package yasnippet-snippets)
+    (yas-global-mode t))
 #+end_src
 
 ** =evil-nerd-commenter=
@@ -601,53 +694,6 @@ Projectile is a project interaction library for Emacs.
     ("C-;" . evilnc-comment-or-uncomment-lines))
 #+end_src
 
-** =flycheck=
-
-Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intended as replacement for the older Flymake extension which is part of GNU Emacs.
-
-[[https://www.flycheck.org/en/latest/][More Information]]
-
-#+begin_src emacs-lisp :tangle init.el
-    (use-package flycheck
-      :diminish
-      :init
-      (global-flycheck-mode)
-      :hook
-      (prog-mode . flycheck-mode)
-      :config
-      (setq flycheck-checker-error-threshold 1000)
-      ;; (setq-default flycheck-c/c++-clang-executable "/usr/bin/clangd")
-      ;; (setq-default flycheck-clang-standard-library "libc++")
-      (setq-default flycheck-clang-language-standard "c++20")
-      (setq-default flycheck-cppcheck-standards '("c++20"))
-      (setq-default flycheck-clang-args "-std=c++20")
-      )
-#+end_src
-
-** =yasnippets=
-#+begin_src emacs-lisp :tangle init.el
-  (use-package yasnippet
-    :bind
-    (:map yas-keymap
-          ("M-j" . yas-next-field-or-maybe-expand)
-          ("M-k" . yas-prev-field))
-    :config
-    (use-package yasnippet-snippets)
-    (yas-global-mode t)
-    )
-#+end_src
-** =smartparens=
-[[https://github.com/Fuco1/smartparens][More Information]]
-
-#+begin_src emacs-lisp :tangle init.el
-  (use-package smartparens
-    :init
-    (smartparens-global-mode 1)
-    :config
-    (setq smartparens-strict-mode t)
-    )
-#+end_src
-
 ** =lsp-mode=
 
  LSP Mode - Language Server Protocol support for Emacs
@@ -655,142 +701,53 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
 
  [[https://emacs-lsp.github.io/lsp-mode/][More Information]]
 
-#+begin_src emacs-lisp :tangle init.el
-  (use-package lsp-mode
-    :init
-    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-    (setq lsp-keymap-prefix "C-c l")
-    :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-           (html-mode . lsp-deferred)
-           (json-mode . lsp-deferred)
-           (python-mode . lsp-deferred)
-           (c++-mode . lsp-deferred)
-           (go-mode . lsp-deferred)
-           (java-mode . lsp-deferred)
-           (sql-mode . lsp-deferred)
-           ;; if you want which-key integration
-           (lsp-mode . lsp-enable-which-key-integration)
-           (lsp-mode . (lambda ()
-                         (bind-key "M-;" 'lsp-rename lsp-mode-map))))
-    :commands lsp
-    :config
-    (setq lsp-idle-delay 0.2)
-    (setq lsp-log-io nil) ; if set to true can cause a performance hit
-    ;; enable snippets
-    (setq lsp-enable-snippet t)
-    ;; symbol highlighting
-    (setq lsp-enable-symbol-highlighting t)
-    ;; lenses
-    (setq lsp-lens-enable nil)
-    ;; headerline
-    (setq lsp-headerline-breadcrumb-enable t)
-    ;; modeline
-    (setq lsp-modeline-code-actions-enable nil)
-    (setq lsp-modeline-diagnostics-enable t)
-    ;; linter
-    (setq lsp-diagnostics-provider :auto) ;; prefer flycheck, fallback to flymake
-    ;; eldoc
-    (setq lsp-eldoc-enable-hover nil)
-    (setq lsp-eldoc-render-all t)
-    ;; signatures
-    (setq lsp-signature-auto-activate nil)
-    (setq lsp-signature-render-documentation nil)
-    ;; disable semgrep
-    (setq lsp-disabled-clients '(semgrep-ls))
-    ;; completion
-    (setq lsp-completion-provider :capf)
-    (setq lsp-completion-show-detail t)
-    (setq lsp-completion-show-kind t)
-  )
-#+end_src
-
-*** =lsp-ui=
-
- UI integrations for lsp-mode
-
- [[https://emacs-lsp.github.io/lsp-ui/][More Information]]
 
 #+begin_src emacs-lisp :tangle init.el
-  (use-package lsp-ui
-    :commands lsp-ui-mode
-    :bind
-    ;; lsp-ui-peek
-    ((:map lsp-ui-mode-map
-           ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
-           ([remap xref-find-references] . lsp-ui-peek-find-references)
-           ("C-c d" . lsp-ui-doc-show)
-           ))
-    :config
-    ;; show docs
-    (setq lsp-ui-doc-enable t)
-    (setq lsp-ui-doc-show-with-cursor nil)
-    (setq lsp-ui-doc-show-with-mouse t)
-    ;; sideline
-    (setq lsp-ui-sideline-enable t)
-    (setq lsp-ui-sideline-show-code-actions t)
-    (setq lsp-ui-sideline-show-hover nil)
-    (setq lsp-ui-sideline-show-diagnostics t)
-    (setq lsp-ui-sideline-diagnostic-max-line-length 100)
-    (setq lsp-ui-sideline-diagnostic-max-lines 5)
-    )
-           ;; lsp-ui-doc
-    ;;        ("M-i" . lsp-ui-doc-focus-frame))
-    ;;  ("s-i" . my/toggle-lsp-ui-doc))
-    ;; :preface
-    ;; (defun my/toggle-lsp-ui-doc ()
-    ;;   (interactive)
-    ;;   (if lsp-ui-doc-mode
-    ;;       (lsp
-    ;;         (progn-ui-doc-mode -1)
-    ;;         (lsp-ui-doc--hide-frame))
-    ;;     (lsp-ui-doc-mode 1))))
+    (use-package lsp-mode
+      :diminish
+      :init
+      (setq lsp-keymap-prefix "C-c l")
+      :bind
+      (:map lsp-mode-map
+            ("M-;" . lsp-rename))
+      :hook
+      ((python-mode . lsp)
+       (lsp-mode . lsp-enable-which-key-integration))
+      :config
+      ;; prefer ruff for linting and formatting
+      (setq lsp-diagnostics-provider :none)
+      (setq flycheck-checker 'python-ruff)
+      )
+
+    (use-package lsp-ui
+      :bind
+      ;; lsp-ui-peek
+      (:map lsp-ui-mode-map
+             ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
+             ([remap xref-find-references] . lsp-ui-peek-find-references)
+             ("C-c d" . lsp-ui-doc-show)
+             ("C-c i" . lsp-ui-doc-focus-frame)
+             )
+      :config
+      ;; sideline
+      (setq lsp-ui-sideline-show-diagnostics t)
+      (setq lsp-ui-sideline-show-hover nil)
+      (setq lsp-ui-sideline-show-code-actions nil)
+      ;; doc
+      (setq lsp-ui-doc-enable t)
+      (setq lsp-ui-doc-show-with-mouse nil)
+      (setq lsp-ui-doc-show-with-cursor nil)
+      (setq lsp-ui-doc-position 'top)
+      (setq lsp-ui-doc-side 'right)
+      (setq lsp-ui-doc-alignment 'frame)
+      (setq lsp-ui-doc-max-width 160)
+      (setq lsp-ui-doc-max-height 40)
+      )
+    (use-package lsp-ivy)
 #+end_src
 
-** =company=
-*** =company-mode=
-
-#+begin_src emacs-lisp :tangle init.el
-  (use-package company
-    :diminish company-mode
-    :hook
-    (after-init . global-company-mode)
-    :bind
-    ((:map company-active-map
-           ("C-n" . company-select-next)
-           ("C-p" . company-select-previous))
-     (:map company-search-map
-           ("C-n" . company-select-next)
-           ("C-p" . company-select-previous)))
-    :config
-    (setq company-minimum-prefix-length 1)
-    (setq company-idle-delay 0.2)
-    (setq company-echo-delay 5)
-    ;; (setq company-tooltip-idle-delay 0.0)
-    ;; (setq company-tooltip-align-annotations t)
-    (setq company-require-match nil)
-    (setq company-show-numbers t)
-    (setq company-dabbrev-downcase nil) ;; case insensitive for dabbrev backend
-    (global-company-mode 1)
-    ;; Don't use company in debugger mode
-    (setq company-global-modes '(not gud-mode)))
-#+end_src
-
-*** =company-box=
-[[https://github.com/sebastiencs/company-box#installation][More Information]]
-
-#+begin_src emacs-lisp :tangle init.el
-  (use-package company-box
-    :diminish
-    :hook
-    (company-mode . company-box-mode)
-    :config
-    (setq company-box-doc-enable t)
-    (setq company-box-doc-delay 0.2)
-    )
-#+end_src
 ** =format-all=
-[[https://github.com/lassik/emacs-format-all-the-code][More Information]]
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp
   (use-package format-all)
 #+end_src
 
@@ -800,23 +757,13 @@ Some python settings.
 
 #+begin_src emacs-lisp :tangle init.el
   (use-package python
+    :init
+    (setq python-indent-guess-indent-offset-verbose nil)
+    (setq python-indent-offset 4)
     :hook
-    (python-mode . (lambda () ;; emulate python-shell-send-buffer
-                     (setq indent-tabs-mode nil)
-                     (display-fill-column-indicator-mode) ;; display column
-                     ))
-    :config
-    ;; silence indentation guesses
-    (setq python-indent-guess-indent-offset-verbose nil))
-#+end_src
-
-** =lsp-pyright=
-
-#+begin_src emacs-lisp :tangle init.el
-  (use-package lsp-pyright
-    :hook (python-mode . (lambda ()
-                            (require 'lsp-pyright)
-                            (lsp-deferred))))
+    (python-mode . (lambda()
+                     (add-hook 'before-save-hook #'lsp-format-buffer t t)
+                     (add-hook 'before-save-hook #'lsp-organize-imports t t))))
 #+end_src
 
 ** =conda=
@@ -838,6 +785,25 @@ Usage:
     (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/"))
 #+end_src
 
+** =lsp-pyright=
+
+#+begin_src emacs-lisp :tangle init.el
+  (defun my/conda-python-path ()
+    "Return the path to the Python executable for the current Conda environment."
+    (when (and (boundp 'conda-env-current-path) conda-env-current-path)
+      (let ((conda-python-path (concat conda-env-current-path "bin/python")))
+        (when (file-executable-p conda-python-path)
+          conda-python-path))))
+
+  (use-package lsp-pyright
+    :after conda
+    :config
+    ;; (setq lsp-pyright-python-executable-cmd "/opt/homebrew/Caskroom/miniconda/base/envs/py3/bin/python")
+    ;; (setq lsp-pyright-venv-path "/opt/homebrew/Caskroom/miniconda/base/envs/")
+    ;; (setq lsp-pyright-venv-directory "/opt/homebrew/Caskroom/miniconda/base/envs/")
+    (add-to-list 'lsp-pyright-python-search-functions #'my/conda-python-path))
+#+end_src
+
 ** =emacs-jupyter=
 [[https://github.com/nnicandro/emacs-jupyter][More Information]]
 
@@ -848,6 +814,7 @@ Usage:
     (jupyter-load-file (buffer-file-name)))
 
   (use-package jupyter
+    :diminish
     :bind
     (:map python-mode-map
           ("C-c C-p" . jupyter-run-repl))
@@ -856,19 +823,10 @@ Usage:
     (setq jupyter-repl-echo-eval-p t)) ;; show plots
 #+end_src
 
-** =Blacken=
-[[https://github.com/pythonic-emacs/blacken][More Information]]
-
-#+begin_src emacs-lisp :tangle init.el
-  (use-package blacken
-    :hook
-    (python-mode . blacken-mode))
-#+end_src
-
 ** =numpydoc.el=
 
 [[https://github.com/douglasdavis/numpydoc.el][More Information]]
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle init.el
   (use-package numpydoc
     :config
     (setq numpydoc-insert-examples-block nil)
@@ -876,13 +834,10 @@ Usage:
     )
 #+end_src
 
-** =isort=
-[[https://github.com/paetzke/py-isort.el/tree/e67306f459c47c53a65604e4eea88a3914596560][More Information]]
+** =ein=
 
-#+begin_src emacs-lisp :tangle init.el
-(use-package py-isort
-  :after python
-  :hook (before-save . py-isort-before-save))
+#+begin_src emacs-lisp
+  (use-package ein)
 #+end_src
 
 * Golang
@@ -890,6 +845,7 @@ Usage:
   (use-package go-mode
     :hook
     (go-mode . (lambda()
+                 (lsp-deferred)
                  (add-hook 'before-save-hook #'lsp-format-buffer t t)
                  (add-hook 'before-save-hook #'lsp-organize-imports t t))))
 #+end_src
@@ -900,7 +856,7 @@ Usage:
 #+end_src
 
 * CPP
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp :tangle nil
   (defun my/c++-save-hook ()
     (when (eq major-mode 'c++-mode)
       (lsp-format-buffer)))
@@ -938,7 +894,7 @@ Usage:
 #+end_src
 
 * GraphQL-mode
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp :tangle nil
 (use-package graphql-mode
   :mode "\\.graphql\\'"
   :config
@@ -946,7 +902,24 @@ Usage:
   (setq graphql-indent-level 2))
 #+end_src
 
+* Markdown
+#+begin_src emacs-lisp :tangle nil
+  (use-package markdown-mode
+    :commands (markdown-mode gfm-mode)
+    :mode (("README\\.md\\'" . gfm-mode)
+           ("\\.md\\'" . markdown-mode)
+           ("\\.markdown\\'" . markdown-mode))
+    :init
+    (setq markdown-command
+          (concat
+           "pandoc"
+           " --from=markdown --to=html"
+           " --standalone --mathjax --highlight-style=pygments"))
+    )
+#+end_src
+
 * Org
+
 #+begin_src emacs-lisp :tangle init.el
   ;; Tangle on config file
   (defun my/tangle-emacs-config ()
@@ -1370,22 +1343,6 @@ Usage:
     )
 #+end_src
 
-* Markdown
-#+begin_src emacs-lisp :tangle init.el
-  (use-package markdown-mode
-    :commands (markdown-mode gfm-mode)
-    :mode (("README\\.md\\'" . gfm-mode)
-           ("\\.md\\'" . markdown-mode)
-           ("\\.markdown\\'" . markdown-mode))
-    :init
-    (setq markdown-command
-          (concat
-           "pandoc"
-           " --from=markdown --to=html"
-           " --standalone --mathjax --highlight-style=pygments"))
-    )
-#+end_src
-
 * Appearance
 ** Icons
 *** =all-the-icons=
@@ -1400,39 +1357,6 @@ Usage:
 
 #+begin_src emacs-lisp :tangle init.el
   (use-package all-the-icons)
-#+end_src
-
-*** =all-the-icons-ivy-rich=
-
-[[https://github.com/seagle0128/all-the-icons-ivy-rich][More Information]]
-
-#+begin_src emacs-lisp :tangle init.el
-    (use-package all-the-icons-ivy-rich
-      :config
-      (all-the-icons-ivy-rich-mode 1))
-#+end_src
-
-*** =ivy-rich=
-
-More friendly interface for ivy.
-[[https://github.com/Yevgnen/ivy-rich][More Information]]
-
-#+begin_src emacs-lisp :tangle init.el
-  (use-package ivy-rich
-    :config
-    (ivy-rich-mode 1)
-    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
-#+end_src
-
-*** =all-the-icons-dired=
-
-#+begin_src emacs-lisp :tangle init.el
-  (use-package all-the-icons-dired
-    :diminish
-    :custom-face
-    (all-the-icons-dired-dir-face ((t (:foreground nil))))
-    :hook
-    (dired-mode . all-the-icons-dired-mode))
 #+end_src
 
 *** =mode-icons=
@@ -1507,7 +1431,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 
 [[https://github.com/Malabarba/beacon][More Information]]
 
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp :tangle nil
   (use-package beacon
     :config
     (beacon-mode 1)
@@ -1517,21 +1441,21 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 
 [[https://github.com/Fanael/rainbow-delimiters][More Information]]
 
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp :tangle nil
   (use-package rainbow-delimiters
     :hook
     (prog-mode . rainbow-delimiters-mode))
 #+end_src
 
 ** =emojify=
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp :tangle nil
 (use-package emojify
   :hook (after-init . global-emojify-mode))
 #+end_src
 
 * Writing
 ** =flyspell=
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp :tangle nil
   (use-package flyspell
     :config
     (setenv
@@ -1580,6 +1504,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
     (dired "~/Documents/Work/Maritime-Optima/Notes/"))
 #+end_src
 
+
 ** Transpose windows
 [[https://emacs.stackexchange.com/questions/5371/how-to-change-emacs-windows-from-vertical-split-to-horizontal-split][More Information]]
 #+begin_src emacs-lisp :tangle init.el
@@ -1605,7 +1530,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 
 [[http://pragmaticemacs.com/emacs/google-search-from-inside-emacs/][More Information]]
 
-#+begin_src emacs-lisp :tangle init.el
+#+begin_src emacs-lisp :tangle nil
   (use-package google-this
     :diminish
     :config
