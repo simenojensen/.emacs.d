@@ -68,6 +68,9 @@
 ;; Ensure that packages are installed automatically if not present
 (setq straight-use-package-by-default t)
 
+;; do not download orgmode
+(setq straight-built-in-pseudo-packages '(org))
+
 (use-package diminish)
 
 (setq-default user-full-name "Simen Omholt-Jensen")
@@ -313,7 +316,8 @@
 (use-package all-the-icons-dired
   :diminish
   :custom-face
-  (all-the-icons-dired-dir-face ((t (:foreground nil))))
+  ;; don’t force a colour, just inherit whatever the theme says
+  (all-the-icons-dired-dir-face ((t (:foreground unspecified))))
   :hook
   (dired-mode . all-the-icons-dired-mode))
 

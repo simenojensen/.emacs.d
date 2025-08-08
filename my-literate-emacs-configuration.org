@@ -134,6 +134,9 @@ long the it took to start up, and how many garbage collections were performed.
 
   ;; Ensure that packages are installed automatically if not present
   (setq straight-use-package-by-default t)
+
+  ;; do not download orgmode
+  (setq straight-built-in-pseudo-packages '(org))
 #+end_src
 
 ** =diminish=
@@ -516,7 +519,8 @@ The =which-key= package automatically displays potential command information as 
   (use-package all-the-icons-dired
     :diminish
     :custom-face
-    (all-the-icons-dired-dir-face ((t (:foreground nil))))
+    ;; don’t force a colour, just inherit whatever the theme says
+    (all-the-icons-dired-dir-face ((t (:foreground unspecified))))
     :hook
     (dired-mode . all-the-icons-dired-mode))
 #+end_src
