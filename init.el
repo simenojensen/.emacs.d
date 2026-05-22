@@ -227,47 +227,54 @@
 
 (use-package amx)
 
-  (use-package counsel
-    :diminish
-    :config (counsel-mode 1))
+(use-package counsel
+  :diminish
+  :config (counsel-mode 1))
 
-  (use-package swiper)
+(use-package swiper)
 
-  (use-package ivy
-    :diminish
-    :init
-    (ivy-mode 1)
-    :bind
-    (("C-x C-f" . counsel-find-file)
-     ("C-x f" . counsel-fzf)
-     ("C-x C-b" . counsel-switch-buffer)
-     ("C-h f" . counsel-describe-function)
-     ("C-h v" . counsel-describe-variable)
-     ("C-h l" . counsel-find-library)
-     ("C-h i" . counsel-info-lookup-symbol)
-     ("C-h u" . counsel-unicode-char)
-     ("C-c k" . counsel-rg)
-     ("C-x l" . counsel-locate)
-     ("M-x" . counsel-M-x)
-     ("M-v" . counsel-yank-pop)
-     ("C-s" . swiper-isearch)
-     :map ivy-minibuffer-map
-     ("A-<tab>" . ivy-mark) ;; Mark multiple candidates
-     ("C-<return>" . ivy-call) ;; perform call
-     )
-    :config
-    (ivy-mode 1)
-    (setq ivy-height 20)
-    (setq ivy-initial-inputs-alist nil)
-    (setq ivy-display-style 'fancy)
-    (setq ivy-use-selectable-prompt t)
-    (setq counsel-switch-buffer-preview-virtual-buffers nil)
-    ;; sort counsel-rg results
-    (setq ivy-sort-functions-alist
+(use-package ivy
+  :diminish
+  :init
+  (ivy-mode 1)
+  :bind
+  (("C-x C-f" . counsel-find-file)
+   ("C-x f" . counsel-fzf)
+   ("C-x C-b" . counsel-switch-buffer)
+   ("C-h f" . counsel-describe-function)
+   ("C-h v" . counsel-describe-variable)
+   ("C-h l" . counsel-find-library)
+   ("C-h i" . counsel-info-lookup-symbol)
+   ("C-h u" . counsel-unicode-char)
+   ("C-c k" . counsel-rg)
+   ("C-x l" . counsel-locate)
+   ("M-x" . counsel-M-x)
+   ("M-v" . counsel-yank-pop)
+   ("C-s" . swiper-isearch)
+   :map ivy-minibuffer-map
+   ("A-<tab>" . ivy-mark) ;; Mark multiple candidates
+   ("C-<return>" . ivy-call) ;; perform call
+   )
+  :config
+  (ivy-mode 1)
+  (setq ivy-height 20)
+  (setq ivy-initial-inputs-alist nil)
+  (setq ivy-display-style 'fancy)
+  (setq ivy-use-selectable-prompt t)
+  (setq counsel-switch-buffer-preview-virtual-buffers nil)
+  ;; sort counsel-rg results
+  (setq ivy-sort-functions-alist
         '((counsel-rg . ivy-sort-file-function-default)
           (t . nil)))
-    (setq ivy-use-virtual-buffers t)
-    (setq ivy-count-format "(%d/%d) "))
+  (setq counsel-rg-base-command
+        "rg -M 240 --with-filename --no-heading --line-number --color never \
+-g '!*.csv' \
+-g '!*.html' \
+-g '!*.json' \
+-g '!*.geojson' \
+%s .")
+  (setq ivy-use-virtual-buffers t)
+  (setq ivy-count-format "(%d/%d) "))
 
 (use-package all-the-icons-ivy-rich
   :init
@@ -470,6 +477,13 @@
 
 (use-package format-all)
 
+(use-package blamer
+  :bind (("C-c b" . blamer-mode))
+  :custom
+  (blamer-idle-time 0.3)
+  (blamer-min-offset 70)
+  (blamer-view 'overlay))
+
 (use-package python
   :init
   (setq python-indent-guess-indent-offset-verbose nil)
@@ -484,7 +498,8 @@
   (python-mode . (lambda () (conda-env-activate "py3")))
   :config
   (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/")
-  (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/"))
+  (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/")
+  )
 
 (defun my/conda-python-path ()
   "Return the path to the Python executable for the current Conda environment."
@@ -501,11 +516,6 @@
   ;; (setq lsp-pyright-venv-directory "/opt/homebrew/Caskroom/miniconda/base/envs/")
   (add-to-list 'lsp-pyright-python-search-functions #'my/conda-python-path))
 
-(defun my/jupyter-load-file ()
-  "Send current buffer to jupyter kernel by default"
-  (interactive)
-  (jupyter-load-file (buffer-file-name)))
-
 (use-package jupyter
   :diminish
   :bind
@@ -513,7 +523,70 @@
         ("C-c C-p" . jupyter-run-repl))
   :init
   (setq jupyter-repl-allow-RET-when-busy t)
-  (setq jupyter-repl-echo-eval-p t)) ;; show plots
+  (setq jupyter-repl-echo-eval-p t)
+  )
+
+(with-eval-after-load 'jupyter-env
+
+  (defun jupyter-session-with-random-ports ()
+    "Return a `jupyter-session' with random channel ports."
+    (with-temp-buffer
+      (let* ((j (or (executable-find "jupyter")
+                    (error "Cannot find `jupyter` executable")))
+             (process
+              (if (file-remote-p default-directory)
+                  ;; Remote: still use start-file-process so TRAMP works
+                  (start-file-process
+                   "jupyter-session-with-random-ports" (current-buffer)
+                   j "kernel")
+                ;; Local: capture stderr too
+                (make-process
+                 :name "jupyter-session-with-random-ports"
+                 :buffer (current-buffer)
+                 :command (list j "kernel")
+                 :stderr (current-buffer)
+                 :noquery t))))
+        (set-process-query-on-exit-flag process nil)
+
+        (let ((conn-path nil)
+              (deadline (+ (float-time) jupyter-long-timeout)))
+          (while (and (process-live-p process)
+                      (not conn-path)
+                      (< (float-time) deadline))
+            (accept-process-output process 0.05)
+            (save-excursion
+              (goto-char (point-min))
+              (when (re-search-forward
+                     (rx "Connection file:" (* space)
+                         (group "/" (+ (not (any "\n\r"))) ".json"))
+                     nil t)
+                (setq conn-path (match-string 1)))))
+
+          (unless conn-path
+            (let ((out (buffer-string)))
+              (when (process-live-p process) (delete-process process))
+              (error "`jupyter kernel` did not print a parsable connection file path. Captured output:\n%s"
+                     (if (> (length out) 4000) (substring out 0 4000) out))))
+
+          (let* ((conn-file (concat
+                             (save-match-data (file-remote-p default-directory))
+                             conn-path))
+                 (conn-info (jupyter-read-connection conn-file)))
+            ;; shut down kernel
+            (interrupt-process process)
+
+            ;; wait for connection file cleanup
+            (jupyter-with-timeout
+                (nil (if (file-remote-p conn-file) 0 jupyter-default-timeout)
+                     (delete-file conn-file))
+              (not (file-exists-p conn-file)))
+
+            (delete-process process)
+
+            (let ((new-key (jupyter-new-uuid)))
+              (plist-put conn-info :key new-key)
+              (jupyter-session :conn-info conn-info :key new-key)))))))
+  )
 
 (use-package numpydoc
   :config
@@ -532,6 +605,31 @@
 
 (use-package protobuf-mode
   :mode "\\.proto\\'")
+
+(use-package lsp-metals
+  ;; You might set metals server options via -J arguments. This might not always work, for instance when
+  ;; metals is installed using nix. In this case you can use JAVA_TOOL_OPTIONS environment variable.
+  ;; (lsp-metals-server-args '(;; Metals claims to support range formatting by default but it supports range
+  ;; formatting of multiline strings only. You might want to disable it so that
+  ;; emacs can use indentation provided by scala-mode.
+  ;; "-J-Dmetals.allow-multiline-string-formatting=off"
+  ;; Enable unicode icons. But be warned that emacs might not render unicode
+  ;; correctly in all cases.
+  ;; "-J-Dmetals.icons=unicode"))
+  ;; In case you want semantic highlighting. This also has to be enabled in lsp-mode using
+  ;; `lsp-semantic-tokens-enable' variable. Also you might want to disable highlighting of modifiers
+  ;; setting `lsp-semantic-tokens-apply-modifiers' to `nil' because metals sends `abstract' modifier
+  ;; which is mapped to `keyword' face.
+  :hook (scala-mode . (lambda ()
+                        (lsp)
+                        ;; Optional: indentation preferences
+                        (setq-local tab-width 2)
+                        ;; Format + organize imports on save
+                        (add-hook 'before-save-hook #'lsp-format-buffer t t)
+                        (add-hook 'before-save-hook #'lsp-organize-imports t t)))
+  :config
+  (setq lsp-metals-enable-semantic-highlighting t)
+  )
 
 (use-package csv-mode
   :mode "\\.[Cc][Ss][Vv]\\'")
@@ -1028,6 +1126,8 @@
         (switch-to-buffer (other-buffer))))))
 
 (bind-key "C-x C-t" 'window-split-toggle)
+
+(use-package gptel)
 
 (use-package tramp
   :straight (:type built-in)
