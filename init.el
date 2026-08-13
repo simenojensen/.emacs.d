@@ -276,6 +276,11 @@
   (setq ivy-use-virtual-buffers t)
   (setq ivy-count-format "(%d/%d) "))
 
+(use-package ivy-prescient
+  :after counsel
+  :config
+  (ivy-prescient-mode 1))
+
 (use-package all-the-icons-ivy-rich
   :init
   (all-the-icons-ivy-rich-mode 1))
@@ -444,9 +449,8 @@
   ((python-mode . lsp)
    (lsp-mode . lsp-enable-which-key-integration))
   :config
-  ;; prefer ruff for linting and formatting
-  (setq lsp-diagnostics-provider :none)
-  (setq flycheck-checker 'python-ruff)
+  (setq lsp-diagnostics-provider :flycheck)
+  ;; (setq flycheck-checker 'python-ruff)
   )
 
 (use-package lsp-ui
@@ -457,6 +461,7 @@
          ([remap xref-find-references] . lsp-ui-peek-find-references)
          ("C-c d" . lsp-ui-doc-show)
          ("C-c i" . lsp-ui-doc-focus-frame)
+         ("C-c h" . lsp-ui-doc-hide)
          )
   :config
   ;; sideline
@@ -495,18 +500,31 @@
 
 (use-package conda
   :hook
-  (python-mode . (lambda () (conda-env-activate "py3")))
+  (python-mode . (lambda () (conda-env-activate "databricks")))
   :config
   (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/")
   (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/")
   )
 
+;; (defun my/conda-python-path ()
+;;   "Return the path to the Python executable for the current Conda environment."
+;;   (when (and (boundp 'conda-env-current-path) conda-env-current-path)
+;;     (let ((conda-python-path (concat conda-env-current-path "bin/python")))
+;;       (when (file-executable-p conda-python-path)
+;;         conda-python-path))))
+
 (defun my/conda-python-path ()
-  "Return the path to the Python executable for the current Conda environment."
-  (when (and (boundp 'conda-env-current-path) conda-env-current-path)
-    (let ((conda-python-path (concat conda-env-current-path "bin/python")))
-      (when (file-executable-p conda-python-path)
-        conda-python-path))))
+  "Return Python from the currently active Conda environment."
+  (when (and (boundp 'conda-env-current-path)
+             conda-env-current-path)
+    (let ((python
+           (expand-file-name
+            "bin/python"
+            (file-name-as-directory conda-env-current-path))))
+      (when (file-executable-p python)
+        python))))
+
+
 
 (use-package lsp-pyright
   :after conda

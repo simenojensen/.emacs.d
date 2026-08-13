@@ -471,6 +471,11 @@ The =which-key= package automatically displays potential command information as 
     (setq ivy-use-virtual-buffers t)
     (setq ivy-count-format "(%d/%d) "))
 
+  (use-package ivy-prescient
+    :after counsel
+    :config
+    (ivy-prescient-mode 1))
+
   (use-package all-the-icons-ivy-rich
     :init
     (all-the-icons-ivy-rich-mode 1))
@@ -480,7 +485,6 @@ The =which-key= package automatically displays potential command information as 
     (ivy-rich-mode 1)
     (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
 #+end_src
-
 
 ** =Dired=
 
@@ -714,47 +718,47 @@ Flycheck is a modern on-the-fly syntax checking extension for GNU Emacs, intende
  [[https://emacs-lsp.github.io/lsp-mode/][More Information]]
 
 #+begin_src emacs-lisp :tangle init.el
-    (use-package lsp-mode
-      :diminish
-      :init
-      (setq lsp-keymap-prefix "C-c l")
-      :bind
-      (:map lsp-mode-map
-            ("M-;" . lsp-rename))
-      :hook
-      ((python-mode . lsp)
-       (lsp-mode . lsp-enable-which-key-integration))
-      :config
-      ;; prefer ruff for linting and formatting
-      (setq lsp-diagnostics-provider :none)
-      (setq flycheck-checker 'python-ruff)
-      )
+  (use-package lsp-mode
+    :diminish
+    :init
+    (setq lsp-keymap-prefix "C-c l")
+    :bind
+    (:map lsp-mode-map
+          ("M-;" . lsp-rename))
+    :hook
+    ((python-mode . lsp)
+     (lsp-mode . lsp-enable-which-key-integration))
+    :config
+    (setq lsp-diagnostics-provider :flycheck)
+    ;; (setq flycheck-checker 'python-ruff)
+    )
 
-    (use-package lsp-ui
-      :bind
-      ;; lsp-ui-peek
-      (:map lsp-ui-mode-map
-             ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
-             ([remap xref-find-references] . lsp-ui-peek-find-references)
-             ("C-c d" . lsp-ui-doc-show)
-             ("C-c i" . lsp-ui-doc-focus-frame)
-             )
-      :config
-      ;; sideline
-      (setq lsp-ui-sideline-show-diagnostics t)
-      (setq lsp-ui-sideline-show-hover nil)
-      (setq lsp-ui-sideline-show-code-actions nil)
-      ;; doc
-      (setq lsp-ui-doc-enable t)
-      (setq lsp-ui-doc-show-with-mouse nil)
-      (setq lsp-ui-doc-show-with-cursor nil)
-      (setq lsp-ui-doc-position 'top)
-      (setq lsp-ui-doc-side 'right)
-      (setq lsp-ui-doc-alignment 'frame)
-      (setq lsp-ui-doc-max-width 160)
-      (setq lsp-ui-doc-max-height 40)
-      )
-    (use-package lsp-ivy)
+  (use-package lsp-ui
+    :bind
+    ;; lsp-ui-peek
+    (:map lsp-ui-mode-map
+           ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
+           ([remap xref-find-references] . lsp-ui-peek-find-references)
+           ("C-c d" . lsp-ui-doc-show)
+           ("C-c i" . lsp-ui-doc-focus-frame)
+           ("C-c h" . lsp-ui-doc-hide)
+           )
+    :config
+    ;; sideline
+    (setq lsp-ui-sideline-show-diagnostics t)
+    (setq lsp-ui-sideline-show-hover nil)
+    (setq lsp-ui-sideline-show-code-actions nil)
+    ;; doc
+    (setq lsp-ui-doc-enable t)
+    (setq lsp-ui-doc-show-with-mouse nil)
+    (setq lsp-ui-doc-show-with-cursor nil)
+    (setq lsp-ui-doc-position 'top)
+    (setq lsp-ui-doc-side 'right)
+    (setq lsp-ui-doc-alignment 'frame)
+    (setq lsp-ui-doc-max-width 160)
+    (setq lsp-ui-doc-max-height 40)
+    )
+  (use-package lsp-ivy)
 #+end_src
 
 ** =format-all=
@@ -801,7 +805,7 @@ Usage:
 #+begin_src emacs-lisp :tangle init.el
   (use-package conda
     :hook
-    (python-mode . (lambda () (conda-env-activate "py3")))
+    (python-mode . (lambda () (conda-env-activate "databricks")))
     :config
     (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/")
     (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/")
@@ -811,12 +815,25 @@ Usage:
 ** =lsp-pyright=
 
 #+begin_src emacs-lisp :tangle init.el
+  ;; (defun my/conda-python-path ()
+  ;;   "Return the path to the Python executable for the current Conda environment."
+  ;;   (when (and (boundp 'conda-env-current-path) conda-env-current-path)
+  ;;     (let ((conda-python-path (concat conda-env-current-path "bin/python")))
+  ;;       (when (file-executable-p conda-python-path)
+  ;;         conda-python-path))))
+
   (defun my/conda-python-path ()
-    "Return the path to the Python executable for the current Conda environment."
-    (when (and (boundp 'conda-env-current-path) conda-env-current-path)
-      (let ((conda-python-path (concat conda-env-current-path "bin/python")))
-        (when (file-executable-p conda-python-path)
-          conda-python-path))))
+    "Return Python from the currently active Conda environment."
+    (when (and (boundp 'conda-env-current-path)
+               conda-env-current-path)
+      (let ((python
+             (expand-file-name
+              "bin/python"
+              (file-name-as-directory conda-env-current-path))))
+        (when (file-executable-p python)
+          python))))
+
+
 
   (use-package lsp-pyright
     :after conda
@@ -826,7 +843,6 @@ Usage:
     ;; (setq lsp-pyright-venv-directory "/opt/homebrew/Caskroom/miniconda/base/envs/")
     (add-to-list 'lsp-pyright-python-search-functions #'my/conda-python-path))
 #+end_src
-
 
 
 ** =emacs-jupyter=
