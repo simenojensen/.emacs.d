@@ -69,7 +69,7 @@
 (setq straight-use-package-by-default t)
 
 ;; do not download orgmode
-(setq straight-built-in-pseudo-packages '(org))
+(add-to-list 'straight-built-in-pseudo-packages 'org)
 
 (use-package diminish)
 
@@ -395,7 +395,7 @@
   (setq company-idle-delay
         (lambda () (if (company-in-string-or-comment) nil 0.1)))
   (setq company-tooltip-idle-delay 0.2)
-  (setq company-echo-delay nil) ;; after some time the definition is shown in the echo area
+  (setq company-echo-delay 0.01) ;; after some time the definition is shown in the echo area
   (setq company-tooltip-align-annotations t) ;; right-align description strings
   ;; backends
   (setq company-files-exclusions '(".git/" ".DS_Store"))
@@ -490,6 +490,7 @@
   (blamer-view 'overlay))
 
 (use-package python
+  :straight (:type built-in)
   :init
   (setq python-indent-guess-indent-offset-verbose nil)
   (setq python-indent-offset 4)
@@ -499,12 +500,18 @@
                    (add-hook 'before-save-hook #'lsp-organize-imports t t))))
 
 (use-package conda
+  :preface
+  (defun my-conda-activate-databricks ()
+    (let ((target "/opt/homebrew/Caskroom/miniconda/base/envs/databricks"))
+      (unless (equal (directory-file-name
+                      (or (getenv "CONDA_PREFIX") ""))
+                     target)
+        (conda-env-activate-path target))))
+  :init
+  (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/"
+        conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/")
   :hook
-  (python-mode . (lambda () (conda-env-activate "databricks")))
-  :config
-  (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/")
-  (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/")
-  )
+  (python-mode . my-conda-activate-databricks))
 
 ;; (defun my/conda-python-path ()
 ;;   "Return the path to the Python executable for the current Conda environment."

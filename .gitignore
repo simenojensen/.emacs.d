@@ -8,6 +8,7 @@ amx-items
 places
 .emacs.desktop*
 projectile-bookmarks.eld
+projectile-frecency.eld
 .org-id-locations
 org-persist/
 /.dap-breakpoints

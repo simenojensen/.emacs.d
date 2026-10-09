@@ -136,7 +136,7 @@ long the it took to start up, and how many garbage collections were performed.
   (setq straight-use-package-by-default t)
 
   ;; do not download orgmode
-  (setq straight-built-in-pseudo-packages '(org))
+  (add-to-list 'straight-built-in-pseudo-packages 'org)
 #+end_src
 
 ** =diminish=
@@ -645,7 +645,7 @@ Projectile is a project interaction library for Emacs.
     (setq company-idle-delay
           (lambda () (if (company-in-string-or-comment) nil 0.1)))
     (setq company-tooltip-idle-delay 0.2)
-    (setq company-echo-delay nil) ;; after some time the definition is shown in the echo area
+    (setq company-echo-delay 0.01) ;; after some time the definition is shown in the echo area
     (setq company-tooltip-align-annotations t) ;; right-align description strings
     ;; backends
     (setq company-files-exclusions '(".git/" ".DS_Store"))
@@ -783,6 +783,7 @@ Some python settings.
 
 #+begin_src emacs-lisp :tangle init.el
   (use-package python
+    :straight (:type built-in)
     :init
     (setq python-indent-guess-indent-offset-verbose nil)
     (setq python-indent-offset 4)
@@ -804,12 +805,19 @@ Usage:
 
 #+begin_src emacs-lisp :tangle init.el
   (use-package conda
+    :preface
+    (defun my-conda-activate-databricks ()
+      (let ((target "/opt/homebrew/Caskroom/miniconda/base/envs/databricks"))
+        (unless (equal (directory-file-name
+                        (or (getenv "CONDA_PREFIX") ""))
+                       target)
+          (conda-env-activate-path target))))
+    :init
+    (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/"
+          conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/")
     :hook
-    (python-mode . (lambda () (conda-env-activate "databricks")))
-    :config
-    (setq conda-env-home-directory "/opt/homebrew/Caskroom/miniconda/base/")
-    (setq conda-anaconda-home "/opt/homebrew/Caskroom/miniconda/base/")
-    )
+    (python-mode . my-conda-activate-databricks))
+
 #+end_src
 
 ** =lsp-pyright=
@@ -843,7 +851,6 @@ Usage:
     ;; (setq lsp-pyright-venv-directory "/opt/homebrew/Caskroom/miniconda/base/envs/")
     (add-to-list 'lsp-pyright-python-search-functions #'my/conda-python-path))
 #+end_src
-
 
 ** =emacs-jupyter=
 [[https://github.com/nnicandro/emacs-jupyter][More Information]]
@@ -920,10 +927,6 @@ Usage:
                 (plist-put conn-info :key new-key)
                 (jupyter-session :conn-info conn-info :key new-key)))))))
     )
-
-
-
-
 #+end_src
 
 ** =numpydoc.el=
@@ -959,7 +962,7 @@ Usage:
 #+end_src
 
 * CPP
-#+begin_src emacs-lisp :tangle nil
+#+begin_src emacs-lisp :tangle no
   (defun my/c++-save-hook ()
     (when (eq major-mode 'c++-mode)
       (lsp-format-buffer)))
@@ -1004,7 +1007,7 @@ Usage:
 #+end_src
 
 * GraphQL-mode
-#+begin_src emacs-lisp :tangle nil
+#+begin_src emacs-lisp :tangle no
 (use-package graphql-mode
   :mode "\\.graphql\\'"
   :config
@@ -1013,7 +1016,7 @@ Usage:
 #+end_src
 
 * Markdown
-#+begin_src emacs-lisp :tangle nil
+#+begin_src emacs-lisp :tangle no
   (use-package markdown-mode
     :commands (markdown-mode gfm-mode)
     :mode (("README\\.md\\'" . gfm-mode)
@@ -1541,7 +1544,7 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 
 [[https://github.com/Malabarba/beacon][More Information]]
 
-#+begin_src emacs-lisp :tangle nil
+#+begin_src emacs-lisp :tangle no
   (use-package beacon
     :config
     (beacon-mode 1)
@@ -1551,21 +1554,21 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 
 [[https://github.com/Fanael/rainbow-delimiters][More Information]]
 
-#+begin_src emacs-lisp :tangle nil
+#+begin_src emacs-lisp :tangle no
   (use-package rainbow-delimiters
     :hook
     (prog-mode . rainbow-delimiters-mode))
 #+end_src
 
 ** =emojify=
-#+begin_src emacs-lisp :tangle nil
+#+begin_src emacs-lisp :tangle no
 (use-package emojify
   :hook (after-init . global-emojify-mode))
 #+end_src
 
 * Writing
 ** =flyspell=
-#+begin_src emacs-lisp :tangle nil
+#+begin_src emacs-lisp :tangle no
   (use-package flyspell
     :config
     (setenv
@@ -1642,12 +1645,11 @@ Doom Modeline, a modeline from DOOM Emacs, but more powerful and faster.
 (use-package gptel)
 #+end_src
 
-
 ** =google-this=
 
 [[http://pragmaticemacs.com/emacs/google-search-from-inside-emacs/][More Information]]
 
-#+begin_src emacs-lisp :tangle nil
+#+begin_src emacs-lisp :tangle no
   (use-package google-this
     :diminish
     :config
