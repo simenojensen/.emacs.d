@@ -502,7 +502,7 @@
 (use-package conda
   :preface
   (defun my-conda-activate-databricks ()
-    (let ((target "/opt/homebrew/Caskroom/miniconda/base/envs/databricks"))
+    (let ((target "/opt/homebrew/Caskroom/miniconda/base/envs/sparky"))
       (unless (equal (directory-file-name
                       (or (getenv "CONDA_PREFIX") ""))
                      target)
@@ -1151,6 +1151,9 @@
         (switch-to-buffer (other-buffer))))))
 
 (bind-key "C-x C-t" 'window-split-toggle)
+
+(load (expand-file-name "lake-jupyter.el" user-emacs-directory)
+      nil 'nomessage)
 
 (use-package gptel)
 
