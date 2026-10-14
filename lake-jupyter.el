@@ -119,14 +119,44 @@ The token is kept in memory, not written to configuration or a log file."
        (process-live-p my/lake--forward)
        (condition-case nil
            (let ((jupyter-current-client my/lake--client))
-             (jupyter-repl-connected-p))
+             ;; The package keeps its IO slot after shutdown, so
+             ;; `jupyter-repl-connected-p' alone accepts a dead kernel.
+             (and (jupyter-repl-connected-p)
+                  (jupyter-kernel-alive-p my/lake--client)))
          (error nil))))
 
 (defun my/lake--stop-forward ()
-  "Stop only the local tunnel; do not shut down the user's Jupyter server."
-  (when (process-live-p my/lake--forward)
-    (delete-process my/lake--forward))
-  (setq my/lake--forward nil my/lake--client nil my/lake--pod-name nil))
+  "Forget the Lake client and stop its tunnel, leaving the server running."
+  (let ((client my/lake--client)
+        (forward my/lake--forward))
+    (setq my/lake--forward nil my/lake--client nil my/lake--pod-name nil)
+    (when (process-live-p forward)
+      (delete-process forward))
+    (when client
+      (dolist (buffer (buffer-list))
+        (with-current-buffer buffer
+          (when (and (boundp 'jupyter-current-client)
+                     (eq jupyter-current-client client))
+            (if (derived-mode-p 'jupyter-repl-mode)
+                (progn
+                  ;; Retain the transcript, but don't query the dead socket
+                  ;; for completion or disconnect it again on buffer kill.
+                  (remove-hook 'completion-at-point-functions
+                               #'jupyter-completion-at-point t)
+                  (remove-hook 'kill-buffer-query-functions
+                               #'jupyter-repl-kill-buffer-query-function t)
+                  (remove-hook 'kill-buffer-hook
+                               #'jupyter-repl--deactivate-interaction-buffers t)
+                  (setq buffer-read-only t))
+              (when (bound-and-true-p jupyter-repl-interaction-mode)
+                (jupyter-repl-interaction-mode -1)))
+            ;; Prevent persistent mode propagating this dead client again.
+            (setq-local jupyter-current-client nil)))))))
+
+(defun my/lake--after-shutdown (client)
+  "Forget CLIENT after shutdown when it is the cached Lake client."
+  (when (eq client my/lake--client)
+    (my/lake--stop-forward)))
 
 (cl-defun my/lake-jupyter (&optional repl-name (associate-buffer t)
                                     client-class (display t))
@@ -386,6 +416,7 @@ every invocation so execution uses the current saved edits."
 (with-eval-after-load 'jupyter-repl
   ;; Minor-mode bindings override the bindings in python-mode-map.
   (advice-add 'jupyter-run-repl :around #'my/lake--run-repl)
+  (advice-add 'jupyter-shutdown-kernel :after #'my/lake--after-shutdown)
   (define-key jupyter-repl-interaction-mode-map (kbd "C-c C-p") #'jupyter-run-repl)
   (define-key jupyter-repl-interaction-mode-map (kbd "C-c C-l")
     (lambda ()
